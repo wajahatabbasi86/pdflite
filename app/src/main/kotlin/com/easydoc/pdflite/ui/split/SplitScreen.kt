@@ -2,6 +2,7 @@ package com.easydoc.pdflite.ui.split
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,15 +16,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,10 +38,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.easydoc.pdflite.ui.common.FileIconAvatar
+import com.easydoc.pdflite.ui.common.GradientButton
 import com.easydoc.pdflite.ui.common.ResultScreen
 import com.easydoc.pdflite.util.SafFileUtils
 
@@ -107,12 +116,17 @@ fun SplitScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (uiState.fileName == null) {
-                Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                    Text("Select PDF")
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
+                        Text("Select PDF")
+                    }
                 }
             } else {
-                Text(uiState.fileName ?: "")
-            }
+            SourceDocumentCard(
+                fileName = uiState.fileName ?: "",
+                pageCount = uiState.pages.size,
+                onChange = { pickFileLauncher.launch(arrayOf("application/pdf")) }
+            )
 
             uiState.errorMessage?.let { message ->
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -130,30 +144,36 @@ fun SplitScreen(
             }
 
             if (uiState.pages.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = uiState.mode == SplitMode.EXTRACT_SELECTED,
-                        onClick = { viewModel.setMode(SplitMode.EXTRACT_SELECTED) },
-                        label = { Text("Extract selected pages") }
-                    )
-                    FilterChip(
-                        selected = uiState.mode == SplitMode.SPLIT_BY_RANGES,
-                        onClick = { viewModel.setMode(SplitMode.SPLIT_BY_RANGES) },
-                        label = { Text("Split into ranges") }
-                    )
-                }
+                Text(
+                    "CHOOSE SPLIT MODE",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-                if (uiState.mode == SplitMode.SPLIT_BY_RANGES) {
-                    OutlinedTextField(
-                        value = uiState.rangeInput,
-                        onValueChange = { viewModel.onRangeInputChanged(it) },
-                        label = { Text("Page ranges, e.g. 1-3, 5, 7-9") },
-                        isError = uiState.rangeError != null,
-                        supportingText = {
-                            uiState.rangeError?.let { Text(it) }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                SplitModeCard(
+                    title = "Extract selected pages",
+                    description = "Pick individual pages below to pull into one new PDF.",
+                    selected = uiState.mode == SplitMode.EXTRACT_SELECTED,
+                    onClick = { viewModel.setMode(SplitMode.EXTRACT_SELECTED) }
+                )
+                SplitModeCard(
+                    title = "Split into ranges",
+                    description = "Type ranges (e.g. 1-3, 5, 7-9); each range becomes its own file.",
+                    selected = uiState.mode == SplitMode.SPLIT_BY_RANGES,
+                    onClick = { viewModel.setMode(SplitMode.SPLIT_BY_RANGES) }
+                ) {
+                    if (uiState.mode == SplitMode.SPLIT_BY_RANGES) {
+                        OutlinedTextField(
+                            value = uiState.rangeInput,
+                            onValueChange = { viewModel.onRangeInputChanged(it) },
+                            label = { Text("e.g. 1-3, 5, 7-9") },
+                            isError = uiState.rangeError != null,
+                            supportingText = {
+                                uiState.rangeError?.let { Text(it) }
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        )
+                    }
                 }
 
                 LazyVerticalGrid(
@@ -165,12 +185,14 @@ fun SplitScreen(
                     items(uiState.pages, key = { it.index }) { page ->
                         Box(
                             modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
                                 .clickable(enabled = uiState.mode == SplitMode.EXTRACT_SELECTED) {
                                     viewModel.togglePage(page.index)
                                 }
                                 .border(
-                                    width = if (page.isSelected) 2.dp else 0.5.dp,
-                                    color = if (page.isSelected) Color(0xFF1D9E75) else Color.Gray
+                                    width = if (page.isSelected) 2.dp else 1.dp,
+                                    color = if (page.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = RoundedCornerShape(10.dp)
                                 )
                         ) {
                             Column {
@@ -203,7 +225,12 @@ fun SplitScreen(
                         CircularProgressIndicator()
                     }
                 } else {
-                    Button(
+                    val selectedCount = uiState.pages.count { it.isSelected }
+                    GradientButton(
+                        text = when (uiState.mode) {
+                            SplitMode.EXTRACT_SELECTED -> "Extract $selectedCount Page${if (selectedCount == 1) "" else "s"}"
+                            SplitMode.SPLIT_BY_RANGES -> "Split"
+                        },
                         onClick = {
                             if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
                                 viewModel.startExtract()
@@ -211,12 +238,72 @@ fun SplitScreen(
                                 viewModel.startSplit()
                             }
                         },
-                        enabled = if (uiState.mode == SplitMode.EXTRACT_SELECTED) uiState.canExtract else uiState.canSplit,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(if (uiState.mode == SplitMode.EXTRACT_SELECTED) "Extract" else "Split")
-                    }
+                        enabled = if (uiState.mode == SplitMode.EXTRACT_SELECTED) uiState.canExtract else uiState.canSplit
+                    )
                 }
+            }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceDocumentCard(fileName: String, pageCount: Int, onChange: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            FileIconAvatar()
+            Column(modifier = Modifier.weight(1f)) {
+                Text(fileName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                Text(
+                    "$pageCount page${if (pageCount == 1) "" else "s"} total",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = onChange) { Text("Change") }
+        }
+    }
+}
+
+@Composable
+private fun SplitModeCard(
+    title: String,
+    description: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    extraContent: (@Composable () -> Unit)? = null
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(selected = selected, onClick = onClick)
+                Column {
+                    Text(title, style = MaterialTheme.typography.titleSmall)
+                    Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            extraContent?.let {
+                Box(modifier = Modifier.padding(start = 40.dp)) { it() }
             }
         }
     }

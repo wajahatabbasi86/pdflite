@@ -2,6 +2,7 @@ package com.easydoc.pdflite.ui.merge
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,17 +13,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,10 +37,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.easydoc.pdflite.ui.common.DashedAddButton
+import com.easydoc.pdflite.ui.common.GradientButton
+import com.easydoc.pdflite.ui.common.InfoBanner
 import com.easydoc.pdflite.ui.common.ResultScreen
+
 import com.easydoc.pdflite.util.SafFileUtils
 
 /**
@@ -83,8 +93,26 @@ fun MergeScreen(
         return
     }
 
+    val validFiles = uiState.files.filter { it.error == null }
+    val totalPages = validFiles.sumOf { it.pageCount }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Merge PDFs") }) }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Merge PDFs")
+                        if (uiState.files.isNotEmpty()) {
+                            Text(
+                                "${uiState.files.size} file${if (uiState.files.size == 1) "" else "s"} selected",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -93,10 +121,6 @@ fun MergeScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Button(onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }) {
-                Text(if (uiState.files.isEmpty()) "Select PDFs" else "Add more PDFs")
-            }
-
             uiState.errorMessage?.let { message ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -110,9 +134,27 @@ fun MergeScreen(
 
             if (uiState.files.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Select at least 2 PDFs to merge")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("Select at least 2 PDFs to merge", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Button(onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }) {
+                            Text("Select PDFs")
+                        }
+                    }
                 }
             } else {
+                InfoBanner("Drag or tap the arrows to reorder pages before merging.")
+
+                DashedAddButton(
+                    text = "Add More Documents",
+                    onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }
+                )
+
+                Text(
+                    "MERGE QUEUE (${uiState.files.size}) · ${totalPages} pages",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -138,13 +180,15 @@ fun MergeScreen(
                         CircularProgressIndicator()
                     }
                 } else {
-                    Button(
+                    GradientButton(
+                        text = if (validFiles.size >= 2) {
+                            "Merge ${validFiles.size} PDFs ($totalPages Pages)"
+                        } else {
+                            "Merge"
+                        },
                         onClick = { viewModel.startMerge() },
-                        enabled = uiState.canMerge,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Merge")
-                    }
+                        enabled = uiState.canMerge
+                    )
                 }
             }
         }
@@ -160,30 +204,44 @@ private fun MergeFileRow(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            if (item.error != null) {
-                Icon(imageVector = Icons.Filled.Warning, contentDescription = "Error")
-            } else {
-                item.thumbnail?.let { bitmap ->
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp)
-                    )
+            when {
+                item.error != null -> Box(
+                    modifier = Modifier.size(44.dp).clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.Warning, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
                 }
+                item.thumbnail != null -> Image(
+                    bitmap = item.thumbnail.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
+                )
+                else -> Box(
+                    modifier = Modifier.size(44.dp).clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
             }
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(item.displayName)
+                Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 Text(
-                    item.error ?: "${item.pageCount} page(s)"
+                    item.error ?: "${item.pageCount} page${if (item.pageCount == 1) "" else "s"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (item.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -194,7 +252,7 @@ private fun MergeFileRow(
                 Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = "Remove")
+                Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
