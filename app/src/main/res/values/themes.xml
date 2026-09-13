@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+      Base theme for the single Activity that hosts the Compose UI.
+      Actual color/typography theming lives in ui/theme (Compose), per
+      docs/TECH_STACK.md — this XML theme only needs to exist for the manifest
+      and avoid a flash of the wrong system theme before Compose takes over.
+    -->
+    <style name="Theme.EasyDoc" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple document glyph for the adaptive icon foreground layer (API 26+).
+     Placeholder branding — matches the flat "page with lines" glyph used in the
+     PNG mipmap fallbacks for API < 26. Replace with real brand artwork later. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,22 H70 A6,6 0 0 1 76,28 V80 A6,6 0 0 1 70,86 H32 A6,6 0 0 1 26,80 V28 A6,6 0 0 1 32,22 Z" />
+    <path
+        android:fillColor="#1D9E75"
+        android:pathData="M36,42 H62 V47 H36 Z" />
+    <path
+        android:fillColor="#1D9E75"
+        android:pathData="M36,54 H62 V59 H36 Z" />
+    <path
+        android:fillColor="#1D9E75"
+        android:pathData="M36,66 H54 V71 H36 Z" />
+</vector>

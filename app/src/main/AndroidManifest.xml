@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      No storage permissions requested. All file access goes through the
+      Storage Access Framework (SAF) via ACTION_OPEN_DOCUMENT / ACTION_CREATE_DOCUMENT,
+      per docs/REQUIREMENTS.md §1.1 — no raw file paths, no broad storage permission.
+    -->
+
+    <application
+        android:name=".EasyDocApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EasyDoc">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.EasyDoc">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

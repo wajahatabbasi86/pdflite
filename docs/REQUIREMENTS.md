@@ -133,7 +133,116 @@ This document defines screen-by-screen flows for v1. It expands on the feature l
 ## 8. Out of Scope for v1
 
 - Password removal/addition on PDFs.
-- OCR / text recognition.
 - Cloud storage integration (Drive, Dropbox, etc.) — SAF covers local + any SAF-exposed provider, but no dedicated cloud UI.
-- Annotation, form-filling, or editing existing PDF content.
+- Annotation or editing existing PDF content (freehand markup, watermarking, in-place text correction).
+- Form-filling is not out of scope long-term, but is **not being developed now** — see §10 for the planned spec.
 - Dark mode is not required for v1 but should not be actively broken if the system theme is dark (Compose default theming should handle this gracefully).
+- OCR is not out of scope long-term, but is **not being developed now** — see §9 for the planned spec.
+
+---
+
+## 9. OCR / Searchable PDF (Planned — Not Yet Built)
+
+**Status:** Requirements only. No code exists for this feature yet. Do not implement until
+explicitly prioritized into the build order in the root `README.md`.
+
+**Purpose:** recognize text in scanned/image-based PDFs and re-embed it as a hidden,
+selectable/searchable text layer, so PDFs that are currently just pixels become
+searchable and copyable.
+
+**Scope for v1 of this feature (when built): Latin script only.**
+- Uses ML Kit Text Recognition v2, **bundled model variant** (`com.google.mlkit:text-recognition`),
+  not the unbundled/Play-Services-downloaded variant.
+- Covers English and other Latin-alphabet languages (Spanish, French, German, etc.).
+- Chinese, Japanese, Korean, and Devanagari are explicitly **not supported** in this scope,
+  since ML Kit only offers those as unbundled (Play Services, one-time download) models,
+  which would break the "works fully offline from install" guarantee this feature is meant
+  to preserve. Multi-script support is a separate, later feature decision — not an
+  incremental addition to this one — and must disclose the one-time download requirement
+  explicitly if pursued.
+
+**Why bundled, not unbundled:** the bundled model adds ~15–25MB to the APK but requires
+zero network access, ever, matching §1.1 ("no file ever leaves the device. No network
+calls related to file content") and the root README's "offline-first" claim without
+exception. The unbundled model is smaller at install but needs one network call to fetch
+the model before first use — inconsistent with the app's own positioning.
+
+**Draft flow (subject to revision when this is actually scoped for a build step):**
+1. Entry point: either a new "Scan to searchable PDF" tool card on Home, or an option
+   appended to the existing PDF→Image / Compress flows for image-based PDFs — not decided.
+2. Run ML Kit's on-device recognizer per page (background thread, per §1.2).
+3. Re-embed recognized text as an invisible text layer aligned to bounding boxes, via
+   PdfBox-Android (no existing built-in helper for this — custom implementation required).
+4. Flag low-confidence pages/results so the user knows recognition may be imperfect,
+   rather than silently producing a partially-wrong text layer.
+
+**Known open questions (not yet answered):**
+- Where OCR lives in navigation (new tool card vs. bundled into an existing flow).
+- Whether per-page confidence scores are surfaced to the user or only used internally.
+- Whether this becomes a paid/pro feature or ships free like the rest of v1.
+
+**Explicitly out of scope for this feature, even once built:**
+- Any non-Latin script (see above).
+- Structured data extraction (e.g. pulling specific fields from invoices) — this is
+  recognition only, not document understanding.
+
+---
+
+## 10. Fill Existing PDF Forms (Planned — Not Yet Built)
+
+**Status:** Requirements only. No code exists for this feature yet. Do not implement until
+explicitly prioritized into the build order in the root `README.md`.
+
+**Purpose:** let a user open a PDF that already contains interactive form fields (AcroForm) —
+e.g. a government form, HR paperwork, an application — fill in the values on-device, and
+save a completed copy. This is a different, easier problem than freeform "correct any text
+anywhere on the page" editing, which real PDF-editing tools (including Adobe Acrobat) still
+handle poorly, because PDF pages aren't structured for arbitrary reflow the way a Word
+document is. Scope here is deliberately narrower and realistic: **structured form fields
+only, not arbitrary text correction.**
+
+**In scope (when built):**
+- Detect whether a picked PDF has an AcroForm (a `PDAcroForm`, readable via PdfBox-Android)
+  and, if so, offer this as a distinct flow from the other five tools.
+- Render each field type PdfBox-Android exposes as a native Compose input, positioned to
+  match the field's location on the page:
+  - Text fields → text input
+  - Checkboxes → checkbox
+  - Radio button groups → radio group
+  - Dropdown/choice fields → dropdown
+- Write entered values back into the form field dictionary (`PDAcroForm`/`PDField` APIs)
+  and save a new PDF via SAF (`ACTION_CREATE_DOCUMENT`), following the same
+  processing → save-dialog → Result pattern as every other tool (§1.2).
+- All processing stays on-device — no exception to §1.1's offline/no-network guarantee;
+  unlike OCR (§9), this feature needs no ML model at all, so it carries no APK size or
+  bundled-vs-unbundled tradeoff.
+
+**Explicitly out of scope, even once built:**
+- **True in-place text editing/correction** — clicking arbitrary text on a page (not a
+  form field) and retyping it, with the surrounding layout reflowing. This requires
+  rewriting the PDF's content stream glyph-by-glyph and is a categorically harder problem
+  that no library handles cleanly. Not planned at all, for any future version, unless
+  explicitly revisited as its own separate decision.
+- XFA (dynamic XML-based) forms — PdfBox-Android's AcroForm support does not cover these;
+  a PDF using XFA falls back to "unsupported form type," same tone as the existing
+  password-protected-PDF error message (§1.4).
+- Adding brand-new form fields to a PDF that doesn't already have any (that would be a
+  form *creation* feature, not form *filling*).
+- Digital/cryptographic signatures — any signing here (if ever added) would be a plain
+  drawn/typed signature image dropped onto the page, not a cryptographically verifiable
+  e-signature.
+
+**Draft flow (subject to revision when this is actually scoped for a build step):**
+1. **Select File screen** — SAF single-select, `application/pdf`.
+2. Detect AcroForm presence on load. If none found: plain-language message ("This PDF
+   doesn't have any fillable fields.") rather than opening an empty/broken editor.
+3. **Fill Fields screen** — page-by-page view (via `PdfRenderer` for the background page
+   image, same as existing screens) with native inputs overlaid at each field's position.
+4. Tap "Save" → processing state (§1.2) → PdfBox-Android writes field values → SAF save
+   dialog → Result screen (shared `ResultScreen`, same as Merge).
+
+**Known open questions (not yet answered):**
+- Whether partially-filled forms can be saved as a draft and reopened, or only completed
+  in one session.
+- How required-vs-optional fields (if the PDF marks them) are surfaced to the user.
+- Whether this becomes a paid/pro feature or ships free like the rest of v1.
