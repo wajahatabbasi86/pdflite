@@ -1,4 +1,4 @@
-package com.easydoc.pdflite.ui.merge
+package com.easydoc.pdflite.ui.imagetopdf
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
@@ -43,40 +43,27 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.easydoc.pdflite.ui.common.DashedAddButton
 import com.easydoc.pdflite.ui.common.GradientButton
-import com.easydoc.pdflite.ui.common.InfoBanner
 import com.easydoc.pdflite.ui.common.ResultScreen
-
 import com.easydoc.pdflite.util.SafFileUtils
 
-/**
- * Merge PDFs screen, per docs/REQUIREMENTS.md §3.
- *
- * Note on reordering: the scaffold has no drag-and-drop dependency yet, so reordering
- * uses explicit up/down controls per row instead of drag handles. Swap in a
- * drag-and-drop list (e.g. reorderable) later without touching MergeViewModel —
- * moveFile(index, delta) already models "move by one position" either way.
- */
+/** Image(s) -> PDF screen, per docs/REQUIREMENTS.md §6.1. Same reorderable-list shape as
+ * Merge, since both are "pick several, order matters, produce one PDF." */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MergeScreen(
+fun ImageToPdfScreen(
     onDone: () -> Unit,
-    viewModel: MergeViewModel = viewModel()
+    viewModel: ImageToPdfViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val pickFilesLauncher = rememberLauncherForActivityResult(
+    val pickImagesLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.openMultipleDocuments
-    ) { uris ->
-        viewModel.onFilesPicked(uris)
-    }
+    ) { uris -> viewModel.onImagesPicked(uris) }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.createDocument
-    ) { destination ->
-        viewModel.onSaveLocationChosen(destination)
-    }
+    ) { destination -> viewModel.onSaveLocationChosen(destination) }
 
-    // As soon as the merge finishes, prompt the user for a save location (§3.5).
     LaunchedEffect(uiState.readyToSave) {
         if (uiState.readyToSave) {
             saveLauncher.launch(uiState.defaultSaveName)
@@ -93,18 +80,17 @@ fun MergeScreen(
         return
     }
 
-    val validFiles = uiState.files.filter { it.error == null }
-    val totalPages = validFiles.sumOf { it.pageCount }
+    val validCount = uiState.images.count { it.error == null }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Merge PDFs")
-                        if (uiState.files.isNotEmpty()) {
+                        Text("Image(s) → PDF")
+                        if (uiState.images.isNotEmpty()) {
                             Text(
-                                "${uiState.files.size} file${if (uiState.files.size == 1) "" else "s"} selected",
+                                "${uiState.images.size} image${if (uiState.images.size == 1) "" else "s"} selected",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -115,42 +101,32 @@ fun MergeScreen(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             uiState.errorMessage?.let { message ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(message)
-                        Button(onClick = { viewModel.clearError() }) {
-                            Text("Try Again")
-                        }
+                        Button(onClick = { viewModel.clearError() }) { Text("Try Again") }
                     }
                 }
             }
 
-            if (uiState.files.isEmpty()) {
+            if (uiState.images.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Select at least 2 PDFs to merge", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Button(onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }) {
-                            Text("Select PDFs")
-                        }
+                    Button(onClick = { pickImagesLauncher.launch(arrayOf("image/*")) }) {
+                        Text("Select Images")
                     }
                 }
             } else {
-                InfoBanner("Drag or tap the arrows to reorder pages before merging.")
-
                 DashedAddButton(
-                    text = "Add More Documents",
-                    onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }
+                    text = "Add More Images",
+                    onClick = { pickImagesLauncher.launch(arrayOf("image/*")) }
                 )
 
                 Text(
-                    "MERGE QUEUE (${uiState.files.size}) · ${totalPages} pages",
+                    "PAGE ORDER (${uiState.images.size})",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -159,35 +135,28 @@ fun MergeScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.files, key = { it.uri }) { file ->
-                        val index = uiState.files.indexOf(file)
-                        MergeFileRow(
-                            item = file,
+                    items(uiState.images, key = { it.uri }) { image ->
+                        val index = uiState.images.indexOf(image)
+                        ImageRow(
+                            item = image,
                             canMoveUp = index > 0,
-                            canMoveDown = index < uiState.files.lastIndex,
-                            onMoveUp = { viewModel.moveFile(index, -1) },
-                            onMoveDown = { viewModel.moveFile(index, 1) },
-                            onRemove = { viewModel.removeFile(file.uri) }
+                            canMoveDown = index < uiState.images.lastIndex,
+                            onMoveUp = { viewModel.moveImage(index, -1) },
+                            onMoveDown = { viewModel.moveImage(index, 1) },
+                            onRemove = { viewModel.removeImage(image.uri) }
                         )
                     }
                 }
 
-                if (uiState.isMerging) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
+                if (uiState.isCreating) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         CircularProgressIndicator()
                     }
                 } else {
                     GradientButton(
-                        text = if (validFiles.size >= 2) {
-                            "Merge ${validFiles.size} PDFs ($totalPages Pages)"
-                        } else {
-                            "Merge"
-                        },
-                        onClick = { viewModel.startMerge() },
-                        enabled = uiState.canMerge
+                        text = if (validCount > 0) "Create PDF ($validCount image${if (validCount == 1) "" else "s"})" else "Create PDF",
+                        onClick = { viewModel.startCreate() },
+                        enabled = uiState.canCreate
                     )
                 }
             }
@@ -196,8 +165,8 @@ fun MergeScreen(
 }
 
 @Composable
-private fun MergeFileRow(
-    item: MergeFileItem,
+private fun ImageRow(
+    item: ImageItem,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     onMoveUp: () -> Unit,
@@ -211,9 +180,7 @@ private fun MergeFileRow(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -238,11 +205,9 @@ private fun MergeFileRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
-                Text(
-                    item.error ?: "${item.pageCount} page${if (item.pageCount == 1) "" else "s"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (item.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                item.error?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
             }
 
             IconButton(onClick = onMoveUp, enabled = canMoveUp) {
