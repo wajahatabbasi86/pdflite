@@ -7,7 +7,10 @@ import com.easydoc.pdflite.appearance.AccentColor
 import com.easydoc.pdflite.appearance.AppearancePreferences
 import com.easydoc.pdflite.appearance.AppearanceRepository
 import com.easydoc.pdflite.appearance.BackgroundStyle
+import com.easydoc.pdflite.appearance.BorderTint
+import com.easydoc.pdflite.appearance.CardTint
 import com.easydoc.pdflite.appearance.HomeLayout
+import com.easydoc.pdflite.appearance.MutedTint
 import com.easydoc.pdflite.appearance.ThemeMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,5 +36,8 @@ class AppearanceViewModel(application: Application) : AndroidViewModel(applicati
     fun setBackground(background: BackgroundStyle) = viewModelScope.launch { repository.setBackground(background) }
     fun setHomeLayout(layout: HomeLayout) = viewModelScope.launch { repository.setHomeLayout(layout) }
     fun setTheme(theme: ThemeMode) = viewModelScope.launch { repository.setTheme(theme) }
+    fun setCardTint(tint: CardTint) = viewModelScope.launch { repository.setCardTint(tint) }
+    fun setBorderTint(tint: BorderTint) = viewModelScope.launch { repository.setBorderTint(tint) }
+    fun setMutedTint(tint: MutedTint) = viewModelScope.launch { repository.setMutedTint(tint) }
     fun resetToDefaults() = viewModelScope.launch { repository.resetToDefaults() }
 }

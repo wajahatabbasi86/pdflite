@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import com.easydoc.pdflite.appearance.AccentColor
+import com.easydoc.pdflite.appearance.BorderTint
+import com.easydoc.pdflite.appearance.CardTint
+import com.easydoc.pdflite.appearance.MutedTint
 import com.easydoc.pdflite.appearance.ThemeMode
 
 /**
@@ -18,15 +21,21 @@ import com.easydoc.pdflite.appearance.ThemeMode
  * on Android 12+) gives correct dark-mode behavior with no extra work — satisfies
  * docs/REQUIREMENTS.md §8 ("dark mode ... should not be actively broken").
  *
- * [themeMode] and [accent] come from the user's Appearance preferences (see
+ * Every parameter here comes from the user's Appearance preferences (see
  * `appearance.AppearancePreferences`) rather than being fixed at compile time: whichever
- * screen calls this collects the stored preference as a [Flow], so a change re-renders
- * the whole app on the next recomposition, no restart needed.
+ * screen calls this collects the stored preferences as a [Flow], so a change re-renders
+ * the whole app on the next recomposition, no restart needed. [accent]/[cardTint]/
+ * [borderTint]/[mutedTint] are a scoped-down stand-in for a full per-token theme editor —
+ * just the roles that visibly change a card's surface, its edge, and its secondary text —
+ * rather than every M3 color role independently.
  */
 @Composable
 fun EasyDocTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     accent: AccentColor = AccentColor.STAMP_RED,
+    cardTint: CardTint = CardTint.PAPER,
+    borderTint: BorderTint = BorderTint.SOFT,
+    mutedTint: MutedTint = MutedTint.WARM,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -45,16 +54,24 @@ fun EasyDocTheme(
 
     // dynamicColor defaults to off: a user-picked accent (below) and a system-derived
     // wallpaper palette would otherwise fight each other for the same primary/secondary
-    // roles. Layer the chosen accent onto the base scheme's primary/secondary/tertiary —
-    // everything else (surfaces, error colors, etc.) stays M3-default.
+    // roles. Layer the chosen accent/card/border/muted tints onto the base scheme —
+    // everything else (error colors, etc.) stays M3-default.
     val accentColor = accent.color(darkTheme)
     val onAccent = if (accentColor.luminance() > 0.5f) Color(0xFF1E2430) else Color.White
+    val cardColor = cardTint.color(darkTheme)
+    val borderColor = borderTint.color(darkTheme)
+    val mutedColor = mutedTint.color(darkTheme)
     val colorScheme = baseScheme.copy(
         primary = accentColor,
         onPrimary = onAccent,
         secondary = accentColor,
         onSecondary = onAccent,
-        tertiary = accentColor
+        tertiary = accentColor,
+        surface = cardColor,
+        surfaceVariant = cardColor,
+        outline = borderColor,
+        outlineVariant = borderColor.copy(alpha = 0.6f),
+        onSurfaceVariant = mutedColor
     )
 
     MaterialTheme(

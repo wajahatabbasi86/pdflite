@@ -44,17 +44,24 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCrystal(
         listOf(Color(0xFFF7F5EF), Color(0xFFEFECE4), Color(0xFFE6E2D6))
     }
     val paperHighlight = if (style == BackgroundStyle.CRYSTAL_INK) {
-        Color(0xFFEFECE4).copy(alpha = 0.30f)
+        Color(0xFFEFECE4).copy(alpha = 0.16f)
     } else {
-        Color.White.copy(alpha = 0.75f)
+        Color.White.copy(alpha = 0.55f)
     }
-    val accentWash = Color(0xFFC1442D).copy(alpha = if (style == BackgroundStyle.CRYSTAL_INK) 0.20f else 0.10f)
+    val accentWash = Color(0xFFC1442D).copy(alpha = if (style == BackgroundStyle.CRYSTAL_INK) 0.12f else 0.08f)
     val baseWash = if (style == BackgroundStyle.CRYSTAL_INK) {
         Color(0xFF10151C).copy(alpha = 0.42f)
     } else {
         Color(0xFF666B78).copy(alpha = 0.14f)
     }
     val sheenAlpha = if (style == BackgroundStyle.CRYSTAL_INK) 0.14f else 0.42f
+    // Highlight/accent radii are capped by the *shorter* side (typically width, on a phone):
+    // a phone screen is much taller than it is wide, so a radius sized off width alone (as a
+    // large multiple) still reads as "localized" horizontally but washes out everything near
+    // the top third vertically — exactly where content (an app bar, the first row of tiles)
+    // actually lives. Keeping these below ~0.7x the short side keeps them a corner highlight
+    // rather than a wash.
+    val shortSide = minOf(width, height)
 
     // Base diagonal gradient — the calm ground everything else sits on.
     drawRect(brush = Brush.linearGradient(colors = ink))
@@ -63,24 +70,24 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCrystal(
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(paperHighlight, Color.Transparent),
-            center = Offset(width * 0.08f, -height * 0.12f),
-            radius = width * 1.3f
+            center = Offset(width * 0.08f, -height * 0.04f),
+            radius = shortSide * 0.7f
         )
     )
     // A hint of the accent, top-right.
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(accentWash, Color.Transparent),
-            center = Offset(width * 1.08f, -height * 0.08f),
-            radius = width * 0.9f
+            center = Offset(width * 1.02f, -height * 0.02f),
+            radius = shortSide * 0.55f
         )
     )
     // Deeper wash pooling toward the bottom.
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(baseWash, Color.Transparent),
-            center = Offset(width * 0.5f, height * 1.28f),
-            radius = height * 1.1f
+            center = Offset(width * 0.5f, height * 1.05f),
+            radius = shortSide * 0.9f
         )
     )
 

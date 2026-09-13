@@ -30,7 +30,13 @@ class MainActivity : ComponentActivity() {
             val appearanceViewModel: AppearanceViewModel = viewModel()
             val prefs by appearanceViewModel.preferences.collectAsState()
 
-            EasyDocTheme(themeMode = prefs.theme, accent = prefs.accent) {
+            EasyDocTheme(
+                themeMode = prefs.theme,
+                accent = prefs.accent,
+                cardTint = prefs.cardTint,
+                borderTint = prefs.borderTint,
+                mutedTint = prefs.mutedTint
+            ) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     EasyDocNavHost()
                 }

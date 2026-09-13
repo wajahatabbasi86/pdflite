@@ -22,6 +22,36 @@ enum class AccentColor(val label: String, val light: Color, val dark: Color) {
 enum class BackgroundStyle { PLAIN, CRYSTAL_LIGHT, CRYSTAL_INK }
 
 /**
+ * The three additional color roles a user can tune independently of [AccentColor] — a
+ * scoped-down version of a full per-token theme editor (Background/Foreground/Primary/
+ * Secondary/Muted/Accent/Card/Border/Input), covering just the roles that visibly change
+ * a card's surface, its edge, and its secondary/disabled text.
+ */
+enum class CardTint(val label: String, val light: Color, val dark: Color) {
+    PAPER("Paper", light = Color(0xFFFFFFFF), dark = Color(0xFF23262E)),
+    IVORY("Ivory", light = Color(0xFFFBF7EE), dark = Color(0xFF2A2620)),
+    SLATE("Slate", light = Color(0xFFF1F3F6), dark = Color(0xFF20242C));
+
+    fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
+}
+
+enum class BorderTint(val label: String, val light: Color, val dark: Color) {
+    SOFT("Soft", light = Color(0xFFE3DFD5), dark = Color(0xFF333947)),
+    CRISP("Crisp", light = Color(0xFFC7C2B4), dark = Color(0xFF4A5262)),
+    INK("Ink", light = Color(0xFF8A8F9B), dark = Color(0xFF6B7280));
+
+    fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
+}
+
+enum class MutedTint(val label: String, val light: Color, val dark: Color) {
+    WARM("Warm", light = Color(0xFF8A8478), dark = Color(0xFFB7BCC6)),
+    COOL("Cool", light = Color(0xFF6B7280), dark = Color(0xFFA4A9B6)),
+    GRAY("Gray", light = Color(0xFF75797F), dark = Color(0xFF9CA3AF));
+
+    fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
+}
+
+/**
  * Home screen tool-card arrangement. Only [BENTO] is implemented today (it's the shipped
  * default); the others are kept here — rather than deleted — because they're already fully
  * specified in the design system and are the natural next slice of this feature, not a
@@ -35,7 +65,10 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
  * changed, re-renders the running app immediately — see [AppearanceRepository]. */
 data class AppearancePreferences(
     val accent: AccentColor = AccentColor.STAMP_RED,
-    val background: BackgroundStyle = BackgroundStyle.CRYSTAL_INK,
-    val homeLayout: HomeLayout = HomeLayout.BENTO,
-    val theme: ThemeMode = ThemeMode.SYSTEM
+    val background: BackgroundStyle = BackgroundStyle.PLAIN,
+    val homeLayout: HomeLayout = HomeLayout.LIST,
+    val theme: ThemeMode = ThemeMode.SYSTEM,
+    val cardTint: CardTint = CardTint.PAPER,
+    val borderTint: BorderTint = BorderTint.SOFT,
+    val mutedTint: MutedTint = MutedTint.WARM
 )

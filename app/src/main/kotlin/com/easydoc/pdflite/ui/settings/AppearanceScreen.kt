@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,15 +45,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.easydoc.pdflite.appearance.AccentColor
 import com.easydoc.pdflite.appearance.BackgroundStyle
+import com.easydoc.pdflite.appearance.BorderTint
+import com.easydoc.pdflite.appearance.CardTint
 import com.easydoc.pdflite.appearance.CrystalSurface
 import com.easydoc.pdflite.appearance.HomeLayout
+import com.easydoc.pdflite.appearance.MutedTint
 import com.easydoc.pdflite.appearance.ThemeMode
 
 /**
- * Lets the user pick an accent color, a Home background style, a Home layout, and light/
- * dark/system — the four choices from the design system's Appearance mockup. Every control
- * writes straight to [AppearanceViewModel], which persists via DataStore, so the rest of the
- * app (starting with [com.easydoc.pdflite.ui.home.HomeScreen]) reflects a change immediately.
+ * Lets the user pick an accent color, three secondary color roles (Card/Border/Muted — a
+ * scoped-down stand-in for a full per-token theme editor), a Home background style, a Home
+ * layout, and light/dark/system. Every control writes straight to [AppearanceViewModel],
+ * which persists via DataStore, so the rest of the app (starting with
+ * [com.easydoc.pdflite.ui.home.HomeScreen]) reflects a change immediately.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +81,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
@@ -85,6 +92,42 @@ fun AppearanceScreen(onBack: () -> Unit) {
                             color = accent.color(darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK),
                             selected = accent == prefs.accent,
                             onClick = { viewModel.setAccent(accent) }
+                        )
+                    }
+                }
+
+                SectionLabel("Card")
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
+                    CardTint.entries.forEach { tint ->
+                        ColorDot(
+                            color = tint.color(darkTheme),
+                            selected = tint == prefs.cardTint,
+                            onClick = { viewModel.setCardTint(tint) }
+                        )
+                    }
+                }
+
+                SectionLabel("Border")
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
+                    BorderTint.entries.forEach { tint ->
+                        ColorDot(
+                            color = tint.color(darkTheme),
+                            selected = tint == prefs.borderTint,
+                            onClick = { viewModel.setBorderTint(tint) }
+                        )
+                    }
+                }
+
+                SectionLabel("Muted")
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
+                    MutedTint.entries.forEach { tint ->
+                        ColorDot(
+                            color = tint.color(darkTheme),
+                            selected = tint == prefs.mutedTint,
+                            onClick = { viewModel.setMutedTint(tint) }
                         )
                     }
                 }
@@ -108,10 +151,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
                         LayoutTile(
                             layout = layout,
                             selected = layout == prefs.homeLayout,
-                            // Only Bento is built today (see HomeScreen) — the rest are kept
-                            // as real, selectable-later options rather than deleted, since
-                            // they're already fully specified in the design system.
-                            enabled = layout == HomeLayout.BENTO,
+                            // Bento and List are both built (see HomeScreen). Featured/
+                            // Carousel are kept as real, selectable-later options rather
+                            // than deleted, since they're already fully specified in the
+                            // design system — just not implemented yet.
+                            enabled = layout == HomeLayout.BENTO || layout == HomeLayout.LIST,
                             modifier = Modifier.weight(1f),
                             onClick = { viewModel.setHomeLayout(layout) }
                         )

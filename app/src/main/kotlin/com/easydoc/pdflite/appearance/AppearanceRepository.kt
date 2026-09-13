@@ -23,14 +23,20 @@ class AppearanceRepository(private val context: Context) {
         val BACKGROUND = stringPreferencesKey("background")
         val HOME_LAYOUT = stringPreferencesKey("home_layout")
         val THEME = stringPreferencesKey("theme")
+        val CARD_TINT = stringPreferencesKey("card_tint")
+        val BORDER_TINT = stringPreferencesKey("border_tint")
+        val MUTED_TINT = stringPreferencesKey("muted_tint")
     }
 
     val preferences: Flow<AppearancePreferences> = context.appearanceDataStore.data.map { prefs ->
         AppearancePreferences(
             accent = prefs.enumOrDefault(Keys.ACCENT, AccentColor.STAMP_RED),
-            background = prefs.enumOrDefault(Keys.BACKGROUND, BackgroundStyle.CRYSTAL_INK),
-            homeLayout = prefs.enumOrDefault(Keys.HOME_LAYOUT, HomeLayout.BENTO),
-            theme = prefs.enumOrDefault(Keys.THEME, ThemeMode.SYSTEM)
+            background = prefs.enumOrDefault(Keys.BACKGROUND, BackgroundStyle.PLAIN),
+            homeLayout = prefs.enumOrDefault(Keys.HOME_LAYOUT, HomeLayout.LIST),
+            theme = prefs.enumOrDefault(Keys.THEME, ThemeMode.SYSTEM),
+            cardTint = prefs.enumOrDefault(Keys.CARD_TINT, CardTint.PAPER),
+            borderTint = prefs.enumOrDefault(Keys.BORDER_TINT, BorderTint.SOFT),
+            mutedTint = prefs.enumOrDefault(Keys.MUTED_TINT, MutedTint.WARM)
         )
     }
 
@@ -38,6 +44,9 @@ class AppearanceRepository(private val context: Context) {
     suspend fun setBackground(background: BackgroundStyle) = write(Keys.BACKGROUND, background.name)
     suspend fun setHomeLayout(layout: HomeLayout) = write(Keys.HOME_LAYOUT, layout.name)
     suspend fun setTheme(theme: ThemeMode) = write(Keys.THEME, theme.name)
+    suspend fun setCardTint(tint: CardTint) = write(Keys.CARD_TINT, tint.name)
+    suspend fun setBorderTint(tint: BorderTint) = write(Keys.BORDER_TINT, tint.name)
+    suspend fun setMutedTint(tint: MutedTint) = write(Keys.MUTED_TINT, tint.name)
 
     suspend fun resetToDefaults() {
         context.appearanceDataStore.edit { it.clear() }
