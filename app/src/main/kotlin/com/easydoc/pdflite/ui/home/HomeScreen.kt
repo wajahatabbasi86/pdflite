@@ -67,11 +67,11 @@ private val bigTool = ToolCard(
 )
 private val medTools = listOf(
     ToolCard("Split", "Extract specific pages or burst all", "Custom range", "split", Color(0xFF4C5FD5)),
-    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "picker", Color(0xFF2F8F82)),
+    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "compress", Color(0xFF2F8F82)),
 )
 private val smallTools = listOf(
-    ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "picker", Color(0xFFC98A2E)),
-    ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "picker", Color(0xFF7A4B8A)),
+    ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "image_to_pdf", Color(0xFFC98A2E)),
+    ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "pdf_to_image", Color(0xFF7A4B8A)),
 )
 private val allTools = listOf(bigTool) + medTools + smallTools
 

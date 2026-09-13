@@ -4,8 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.easydoc.pdflite.ui.compress.CompressScreen
 import com.easydoc.pdflite.ui.home.HomeScreen
+import com.easydoc.pdflite.ui.imagetopdf.ImageToPdfScreen
 import com.easydoc.pdflite.ui.merge.MergeScreen
+import com.easydoc.pdflite.ui.pdftoimage.PdfToImageScreen
 import com.easydoc.pdflite.ui.picker.PdfPickerScreen
 import com.easydoc.pdflite.ui.settings.AppearanceScreen
 import com.easydoc.pdflite.ui.split.SplitScreen
@@ -22,6 +25,9 @@ object Routes {
     const val PICKER_DEMO = "picker"
     const val MERGE = "merge"
     const val SPLIT = "split"
+    const val COMPRESS = "compress"
+    const val IMAGE_TO_PDF = "image_to_pdf"
+    const val PDF_TO_IMAGE = "pdf_to_image"
     const val APPEARANCE = "appearance"
 }
 
@@ -49,6 +55,21 @@ fun EasyDocNavHost() {
         }
         composable(Routes.SPLIT) {
             SplitScreen(onDone = {
+                navController.popBackStack(Routes.HOME, inclusive = false)
+            })
+        }
+        composable(Routes.COMPRESS) {
+            CompressScreen(onDone = {
+                navController.popBackStack(Routes.HOME, inclusive = false)
+            })
+        }
+        composable(Routes.IMAGE_TO_PDF) {
+            ImageToPdfScreen(onDone = {
+                navController.popBackStack(Routes.HOME, inclusive = false)
+            })
+        }
+        composable(Routes.PDF_TO_IMAGE) {
+            PdfToImageScreen(onDone = {
                 navController.popBackStack(Routes.HOME, inclusive = false)
             })
         }
