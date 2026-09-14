@@ -71,7 +71,10 @@ Full requirements and screen-by-screen flows are documented in [`docs/REQUIREMEN
 
 ### In progress
 - 🚧 Step 9 — Polish, error handling, Play Console listing (hand-drawn per-tool icons on
-  Home landed; Play Console listing assets and a broader error-handling pass still open)
+  Home, an error-handling consistency pass, and Play Console listing assets — see
+  [`store-listing/`](store-listing/README.md) — are all done; content rating, data-safety
+  form, and privacy policy still need doing directly in Play Console once a real developer
+  account exists)
 
 ### Documented, not yet built
 Two additional features have full requirements written in `docs/REQUIREMENTS.md` but are
