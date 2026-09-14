@@ -72,6 +72,9 @@ private val medTools = listOf(
 private val smallTools = listOf(
     ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "image_to_pdf", Color(0xFFC98A2E)),
     ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "pdf_to_image", Color(0xFF7A4B8A)),
+    // Read-only, no SAF save dialog at the end — also the landing screen when EasyDoc is
+    // opened via the system "Open with" chooser for a PDF (see PendingPdfIntent).
+    ToolCard("View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5)),
 )
 private val allTools = listOf(bigTool) + medTools + smallTools
 

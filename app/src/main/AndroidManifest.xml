@@ -18,10 +18,23 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.EasyDoc">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Lets EasyDoc appear in the system "Open with" chooser for any PDF —
+                 tapping a PDF in Files, Downloads, an email attachment, etc. can open
+                 straight into View PDF. android:launchMode="singleTask" above means a
+                 PDF opened while the app is already running reuses the same instance
+                 (via onNewIntent) instead of stacking a second one. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
 

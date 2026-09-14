@@ -1,6 +1,9 @@
 package com.easydoc.pdflite.nav
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -12,6 +15,7 @@ import com.easydoc.pdflite.ui.pdftoimage.PdfToImageScreen
 import com.easydoc.pdflite.ui.picker.PdfPickerScreen
 import com.easydoc.pdflite.ui.settings.AppearanceScreen
 import com.easydoc.pdflite.ui.split.SplitScreen
+import com.easydoc.pdflite.ui.view.ViewPdfScreen
 
 /**
  * Single NavHost for the whole app. Per docs/REQUIREMENTS.md §1.3, navigation stays
@@ -28,12 +32,22 @@ object Routes {
     const val COMPRESS = "compress"
     const val IMAGE_TO_PDF = "image_to_pdf"
     const val PDF_TO_IMAGE = "pdf_to_image"
+    const val VIEW_PDF = "view_pdf"
     const val APPEARANCE = "appearance"
 }
 
 @Composable
 fun EasyDocNavHost() {
     val navController = rememberNavController()
+    val pendingUri by PendingPdfIntent.uri.collectAsState()
+
+    // Opened via the system "Open with" chooser for a PDF (see PendingPdfIntent) — jump
+    // straight to View PDF instead of leaving the user on Home to find it themselves.
+    LaunchedEffect(pendingUri) {
+        if (pendingUri != null) {
+            navController.navigate(Routes.VIEW_PDF)
+        }
+    }
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
@@ -72,6 +86,12 @@ fun EasyDocNavHost() {
             PdfToImageScreen(onDone = {
                 navController.popBackStack(Routes.HOME, inclusive = false)
             })
+        }
+        composable(Routes.VIEW_PDF) {
+            ViewPdfScreen(
+                initialUri = PendingPdfIntent.consume(),
+                onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+            )
         }
     }
 }
