@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,13 +65,10 @@ class ViewPdfViewModel(application: Application) : AndroidViewModel(application)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = when (error) {
-                                is PermissionDeniedException ->
-                                    "EasyDoc wasn't given permission to open this file. Try again from the app that shared it, or select it from within EasyDoc instead."
-                                is SecurityException ->
-                                    "This PDF is password-protected. Remove the password and try again."
-                                else ->
-                                    "This file couldn't be read. It may be corrupted or password-protected."
+                            errorMessage = if (error is PermissionDeniedException) {
+                                "EasyDoc wasn't given permission to open this file. Try again from the app that shared it, or select it from within EasyDoc instead."
+                            } else {
+                                PdfErrorMessages.forOpenFailure(error)
                             }
                         )
                     }

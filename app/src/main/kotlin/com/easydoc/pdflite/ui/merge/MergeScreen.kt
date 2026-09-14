@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.easydoc.pdflite.ui.common.DashedAddButton
+import com.easydoc.pdflite.ui.common.ErrorCard
 import com.easydoc.pdflite.ui.common.GradientButton
 import com.easydoc.pdflite.ui.common.InfoBanner
 import com.easydoc.pdflite.ui.common.ResultScreen
@@ -122,14 +123,7 @@ fun MergeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             uiState.errorMessage?.let { message ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(message)
-                        Button(onClick = { viewModel.clearError() }) {
-                            Text("Try Again")
-                        }
-                    }
-                }
+                ErrorCard(message = message, onRetry = { viewModel.clearError() })
             }
 
             if (uiState.files.isEmpty()) {

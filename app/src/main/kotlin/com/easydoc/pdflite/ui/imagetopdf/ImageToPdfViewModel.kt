@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
@@ -208,7 +209,7 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
                 }
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = "Not enough space to save this file.")
+                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
                 }
             }
         }

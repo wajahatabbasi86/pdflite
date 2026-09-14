@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.easydoc.pdflite.ui.common.ErrorCard
 import com.easydoc.pdflite.util.SafFileUtils
 
 /**
@@ -91,12 +92,7 @@ fun ViewPdfScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             uiState.errorMessage?.let { message ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(message)
-                        Button(onClick = { viewModel.clearError() }) { Text("Try Again") }
-                    }
-                }
+                ErrorCard(message = message, onRetry = { viewModel.clearError() })
             }
 
             if (uiState.isLoading) {

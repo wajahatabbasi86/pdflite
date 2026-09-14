@@ -7,10 +7,10 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import com.tom_roush.pdfbox.multipdf.PDFMergerUtility
-import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -180,7 +180,7 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isMerging = false, errorMessage = errorMessageFor(error))
+                        it.copy(isMerging = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -216,14 +216,6 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Per §1.4: distinguishes password-protected PDFs from generically corrupted/unreadable ones. */
-    private fun errorMessageFor(error: Throwable): String = when (error) {
-        is InvalidPasswordException ->
-            "This PDF is password-protected. Remove the password and try again."
-        else ->
-            "This file couldn't be read. It may be corrupted or password-protected."
-    }
-
     /** Called once the user picks where to save via ACTION_CREATE_DOCUMENT. */
     fun onSaveLocationChosen(destination: Uri?) {
         val tempFile = pendingMergedFile
@@ -257,7 +249,7 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update {
                     it.copy(
                         readyToSave = false,
-                        errorMessage = "Not enough space to save this file."
+                        errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE
                     )
                 }
             }

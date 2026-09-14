@@ -4,11 +4,11 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.cos.COSDictionary
 import com.tom_roush.pdfbox.cos.COSName
 import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import kotlinx.coroutines.Dispatchers
@@ -81,14 +81,7 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(
-                            isLoadingFile = false,
-                            errorMessage = if (error is InvalidPasswordException) {
-                                "This PDF is password-protected. Remove the password and try again."
-                            } else {
-                                "This file couldn't be read. It may be corrupted or password-protected."
-                            }
-                        )
+                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -127,12 +120,9 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
                         it.copy(isCompressing = false, readyToSave = true, compressedSizeBytes = file.length())
                     }
                 },
-                onFailure = {
+                onFailure = { error ->
                     _uiState.update {
-                        it.copy(
-                            isCompressing = false,
-                            errorMessage = "This file couldn't be read. It may be corrupted or password-protected."
-                        )
+                        it.copy(isCompressing = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -224,7 +214,7 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
                 }
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = "Not enough space to save this file.")
+                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
                 }
             }
         }

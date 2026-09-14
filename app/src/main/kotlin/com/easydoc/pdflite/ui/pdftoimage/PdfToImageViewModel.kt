@@ -8,6 +8,7 @@ import android.os.ParcelFileDescriptor
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,14 +77,7 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(
-                            isLoadingFile = false,
-                            errorMessage = if (error is SecurityException) {
-                                "This PDF is password-protected. Remove the password and try again."
-                            } else {
-                                "This file couldn't be read. It may be corrupted or password-protected."
-                            }
-                        )
+                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -176,8 +170,11 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
                     _uiState.update { it.copy(isConverting = false, savedResultUris = uris) }
                 },
                 onFailure = {
+                    // The source PDF was already validated to open in onDocumentPicked, so a
+                    // failure here is far more likely to be an output problem (destination
+                    // folder permission revoked, disk full) than the source file itself.
                     _uiState.update {
-                        it.copy(isConverting = false, errorMessage = "Couldn't convert this file. It may be corrupted.")
+                        it.copy(isConverting = false, errorMessage = PdfErrorMessages.SAVE_FAILED_OUTPUT_FOLDER)
                     }
                 }
             )

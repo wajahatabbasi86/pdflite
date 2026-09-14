@@ -7,10 +7,10 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.multipdf.Splitter
 import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,17 +96,8 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 },
                 onFailure = { error ->
-                    // renderAllPages uses Android's PdfRenderer, which throws SecurityException
-                    // (not PdfBox's InvalidPasswordException) for a password-protected file.
                     _uiState.update {
-                        it.copy(
-                            isLoadingFile = false,
-                            errorMessage = if (error is SecurityException) {
-                                "This PDF is password-protected. Remove the password and try again."
-                            } else {
-                                "This file couldn't be read. It may be corrupted or password-protected."
-                            }
-                        )
+                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -228,7 +219,7 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isProcessing = false, errorMessage = errorMessageFor(error))
+                        it.copy(isProcessing = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -254,7 +245,7 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isProcessing = false, errorMessage = errorMessageFor(error))
+                        it.copy(isProcessing = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
@@ -309,14 +300,6 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Per §1.4: distinguishes password-protected PDFs from generically corrupted/unreadable ones. */
-    private fun errorMessageFor(error: Throwable): String = when (error) {
-        is InvalidPasswordException ->
-            "This PDF is password-protected. Remove the password and try again."
-        else ->
-            "This file couldn't be read. It may be corrupted or password-protected."
-    }
-
     /** Called once the user picks where to save (Extract mode: single CreateDocument result). */
     fun onSaveLocationChosen(destination: Uri?) {
         val tempFile = pendingSingleOutput
@@ -343,7 +326,7 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = "Not enough space to save this file.")
+                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
                 }
             }
         }
@@ -386,7 +369,7 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = "Not enough space to save these files.")
+                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_PLURAL)
                 }
             }
         }

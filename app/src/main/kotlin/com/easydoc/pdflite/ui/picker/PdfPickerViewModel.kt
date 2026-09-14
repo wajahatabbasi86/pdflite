@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.easydoc.pdflite.util.PdfErrorMessages
 import com.easydoc.pdflite.util.SafFileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,20 +69,11 @@ class PdfPickerViewModel(application: Application) : AndroidViewModel(applicatio
                     // Per §1.4: plain-language error, never a raw stack trace — and a
                     // distinct message when the cause is specifically a password-protected PDF.
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = errorMessageFor(error))
+                        it.copy(isLoading = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
                     }
                 }
             )
         }
-    }
-
-    private fun errorMessageFor(error: Throwable): String = when (error) {
-        // Android's PdfRenderer (used here, unlike the PdfBox-backed tool screens) throws
-        // SecurityException specifically for password-protected documents.
-        is SecurityException ->
-            "This PDF is password-protected. Remove the password and try again."
-        else ->
-            "This file couldn't be read. It may be corrupted or password-protected."
     }
 
     /** Runs on Dispatchers.IO — renders every page of the PDF at [uri] to a bitmap. */
