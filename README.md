@@ -48,8 +48,8 @@ Full architecture rationale is in [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
 
 ## Project Status
 
-🚧 In development — **4 of 9 build-order steps complete** (see below). See the
-[`easydoc` GitHub Project board](../../projects) for granular task tracking.
+🚧 In development — **8 of 9 build-order steps complete**, step 9 (polish) underway (see
+below). See the [`easydoc` GitHub Project board](../../projects) for granular task tracking.
 
 Full requirements and screen-by-screen flows are documented in [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
@@ -60,15 +60,18 @@ Full requirements and screen-by-screen flows are documented in [`docs/REQUIREMEN
   file detection, save via SAF)
 - ✅ Step 4 — Split / Extract pages (page selection grid, extract-selected and
   split-by-ranges modes, inline range validation)
+- ✅ Step 5 — Image(s) → PDF (reorderable image list, fit-to-image page sizing)
+- ✅ Step 6 — PDF → Image(s) (JPG/PNG, quality presets, per-page progress)
+- ✅ Step 7 — Compress PDF (JPEG re-encode + downscale, honest before/after size)
+- ✅ Step 8 — Monetization (AdMob banner + Play Billing one-time "Remove Ads")
 - ✅ Supporting infrastructure: shared `ResultScreen` (Open/Share/Done), `EasyDocApplication`
-  (PdfBox-Android resource loader init), launcher icon, `gradle.properties` JVM heap config
+  (PdfBox-Android resource loader init), launcher icon, `gradle.properties` JVM heap config,
+  a flat/light card-based design system with user-selectable accent/tint/background/layout,
+  a read-only View PDF tool + system "Open with" PDF handler support
 
-### Remaining
-- ⬜ Step 5 — Image(s) → PDF
-- ⬜ Step 6 — PDF → Image(s)
-- ⬜ Step 7 — Compress PDF
-- ⬜ Step 8 — Monetization (AdMob banner + Play Billing IAP)
-- ⬜ Step 9 — Polish, error handling, Play Console listing
+### In progress
+- 🚧 Step 9 — Polish, error handling, Play Console listing (hand-drawn per-tool icons on
+  Home landed; Play Console listing assets and a broader error-handling pass still open)
 
 ### Documented, not yet built
 Two additional features have full requirements written in `docs/REQUIREMENTS.md` but are
@@ -82,11 +85,11 @@ explicitly deferred — not part of the build order above unless prioritized in:
 2. ✅ Home screen + navigation
 3. ✅ Merge PDFs
 4. ✅ Split / Extract pages
-5. ⬜ Image(s) → PDF
-6. ⬜ PDF → Image(s)
-7. ⬜ Compress PDF
-8. ⬜ Monetization (AdMob banner + Play Billing IAP)
-9. ⬜ Polish, error handling, Play Console listing
+5. ✅ Image(s) → PDF
+6. ✅ PDF → Image(s)
+7. ✅ Compress PDF
+8. ✅ Monetization (AdMob banner + Play Billing IAP)
+9. 🚧 Polish, error handling, Play Console listing
 
 ## License
 

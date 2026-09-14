@@ -41,6 +41,8 @@ import com.easydoc.pdflite.appearance.CrystalSurface
 import com.easydoc.pdflite.appearance.HomeLayout
 import com.easydoc.pdflite.billing.EntitlementRepository
 import com.easydoc.pdflite.ui.common.AdBanner
+import com.easydoc.pdflite.ui.common.ToolAvatar
+import com.easydoc.pdflite.ui.common.ToolGlyphType
 import com.easydoc.pdflite.ui.settings.AppearanceViewModel
 
 /** One entry in the Home screen's tool list (§2 / design system "Home layout" section). */
@@ -49,7 +51,8 @@ private data class ToolCard(
     val description: String,
     val badge: String,
     val route: String,
-    val tint: Color
+    val tint: Color,
+    val glyph: ToolGlyphType
 )
 
 /**
@@ -67,18 +70,18 @@ private data class ToolCard(
  * (step 3) and Split (step 4) route to the real features.
  */
 private val bigTool = ToolCard(
-    "Merge PDFs", "Combine multiple documents into one", "Multi-file", "merge", Color(0xFFC1442D)
+    "Merge PDFs", "Combine multiple documents into one", "Multi-file", "merge", Color(0xFFC1442D), ToolGlyphType.MERGE
 )
 private val medTools = listOf(
-    ToolCard("Split", "Extract specific pages or burst all", "Custom range", "split", Color(0xFF4C5FD5)),
-    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "compress", Color(0xFF2F8F82)),
+    ToolCard("Split", "Extract specific pages or burst all", "Custom range", "split", Color(0xFF4C5FD5), ToolGlyphType.SPLIT),
+    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "compress", Color(0xFF2F8F82), ToolGlyphType.COMPRESS),
 )
 private val smallTools = listOf(
-    ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "image_to_pdf", Color(0xFFC98A2E)),
-    ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "pdf_to_image", Color(0xFF7A4B8A)),
+    ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "image_to_pdf", Color(0xFFC98A2E), ToolGlyphType.IMAGE_TO_PDF),
+    ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "pdf_to_image", Color(0xFF7A4B8A), ToolGlyphType.PDF_TO_IMAGE),
     // Read-only, no SAF save dialog at the end — also the landing screen when EasyDoc is
     // opened via the system "Open with" chooser for a PDF (see PendingPdfIntent).
-    ToolCard("View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5)),
+    ToolCard("View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF),
 )
 private val allTools = listOf(bigTool) + medTools + smallTools
 
@@ -206,8 +209,9 @@ private fun BentoTile(
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            ToolAvatar(type = tool.glyph, tint = if (onCrystal) contentColor else tool.tint, size = 28.dp)
             Text(tool.label, style = MaterialTheme.typography.titleSmall, color = contentColor)
             if (!compact) {
                 Text(tool.description, style = MaterialTheme.typography.bodySmall, color = descColor)
@@ -237,15 +241,7 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(tool.tint.copy(alpha = 0.16f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(4.dp)).background(tool.tint))
-            }
+            ToolAvatar(type = tool.glyph, tint = tool.tint, size = 44.dp)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
