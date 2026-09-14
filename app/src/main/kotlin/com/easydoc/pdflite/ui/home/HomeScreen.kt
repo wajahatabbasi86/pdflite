@@ -28,15 +28,19 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.easydoc.pdflite.appearance.BackgroundStyle
 import com.easydoc.pdflite.appearance.CrystalSurface
 import com.easydoc.pdflite.appearance.HomeLayout
+import com.easydoc.pdflite.billing.EntitlementRepository
+import com.easydoc.pdflite.ui.common.AdBanner
 import com.easydoc.pdflite.ui.settings.AppearanceViewModel
 
 /** One entry in the Home screen's tool list (§2 / design system "Home layout" section). */
@@ -80,10 +84,14 @@ private val allTools = listOf(bigTool) + medTools + smallTools
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit) {
+fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, onOpenBilling: () -> Unit) {
     val appearanceViewModel: AppearanceViewModel = viewModel()
     val prefs by appearanceViewModel.preferences.collectAsState()
     val darkGround = prefs.background == BackgroundStyle.CRYSTAL_INK
+
+    val context = LocalContext.current
+    val entitlementRepository = remember { EntitlementRepository(context) }
+    val adsRemoved by entitlementRepository.adsRemoved.collectAsState(initial = false)
 
     Scaffold(
         topBar = {
@@ -91,18 +99,30 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit) {
                 title = { Text("EasyDoc") },
                 actions = {
                     // §7: "Remove Ads" stays a persistent, non-modal top-bar action —
-                    // Appearance is a separate entry point, not a replacement for it.
-                    TextButton(onClick = { /* Billing screen — build step 8 */ }) {
-                        Text("Remove Ads")
+                    // Appearance is a separate entry point, not a replacement for it. Once
+                    // purchased it becomes a plain, non-clickable "Ad-free" indicator instead.
+                    if (adsRemoved) {
+                        Text(
+                            "Ad-free",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+                    } else {
+                        TextButton(onClick = onOpenBilling) {
+                            Text("Remove Ads")
+                        }
                     }
                     IconButton(onClick = onOpenAppearance) {
                         Icon(Icons.Filled.Settings, contentDescription = "Appearance")
                     }
                 }
             )
-        }
-        // AdMob banner (§1.5, §7) is added in build step 8 — Home screen only, not on
-        // tool/processing screens.
+        },
+        // AdMob banner (§1.5, §7) — Home screen only, not on tool/processing screens. Not
+        // composed at all once ads are removed, so the ad SDK never even loads a banner for
+        // that view, per §7's "removed entirely (not just hidden)."
+        bottomBar = { if (!adsRemoved) AdBanner() }
     ) { innerPadding ->
         CrystalSurface(
             style = prefs.background,

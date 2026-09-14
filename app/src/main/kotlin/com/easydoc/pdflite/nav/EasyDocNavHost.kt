@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.easydoc.pdflite.ui.billing.BillingScreen
 import com.easydoc.pdflite.ui.compress.CompressScreen
 import com.easydoc.pdflite.ui.home.HomeScreen
 import com.easydoc.pdflite.ui.imagetopdf.ImageToPdfScreen
@@ -34,6 +35,7 @@ object Routes {
     const val PDF_TO_IMAGE = "pdf_to_image"
     const val VIEW_PDF = "view_pdf"
     const val APPEARANCE = "appearance"
+    const val BILLING = "billing"
 }
 
 @Composable
@@ -53,8 +55,12 @@ fun EasyDocNavHost() {
         composable(Routes.HOME) {
             HomeScreen(
                 onToolSelected = { route -> navController.navigate(route) },
-                onOpenAppearance = { navController.navigate(Routes.APPEARANCE) }
+                onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
+                onOpenBilling = { navController.navigate(Routes.BILLING) }
             )
+        }
+        composable(Routes.BILLING) {
+            BillingScreen(onDone = { navController.popBackStack() })
         }
         composable(Routes.APPEARANCE) {
             AppearanceScreen(onBack = { navController.popBackStack() })

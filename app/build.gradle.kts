@@ -74,6 +74,11 @@ dependencies {
     // PDF manipulation (merge/split/compress/create) — see docs/TECH_STACK.md
     implementation(libs.pdfbox.android)
 
+    // Monetization (build step 8, docs/REQUIREMENTS.md §7) — AdMob banner + one-time
+    // "Remove Ads" purchase via Play Billing.
+    implementation(libs.play.services.ads)
+    implementation(libs.billing.ktx)
+
     testImplementation(libs.junit)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
