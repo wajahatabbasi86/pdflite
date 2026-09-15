@@ -1,0 +1,533 @@
+<title>EasyDoc Privacy Policy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+  :root {
+    --bg: #fbf6fa;
+    --surface: #ffffff;
+    --border: #e8dfe4;
+    --text: #241f1d;
+    --text-muted: #6f665f;
+    --text-faint: #9a9096;
+    --accent: #b23d28;
+    --accent-ink: #7a2a1c;
+    --accent-2: #4c5fd5;
+    --mono-bg: #f2ecf0;
+    --toc-active: #b23d28;
+    --rule: #efe7ea;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17151b;
+      --surface: #201c22;
+      --border: #362f36;
+      --text: #f1ebee;
+      --text-muted: #b3a8ae;
+      --text-faint: #837880;
+      --accent: #e8927e;
+      --accent-ink: #f3b5a6;
+      --accent-2: #97a3f2;
+      --mono-bg: #262129;
+      --toc-active: #e8927e;
+      --rule: #2c2730;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17151b;
+    --surface: #201c22;
+    --border: #362f36;
+    --text: #f1ebee;
+    --text-muted: #b3a8ae;
+    --text-faint: #837880;
+    --accent: #e8927e;
+    --accent-ink: #f3b5a6;
+    --accent-2: #97a3f2;
+    --mono-bg: #262129;
+    --toc-active: #e8927e;
+    --rule: #2c2730;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset: 2px; }
+  a:hover { text-decoration-color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; border-radius: 2px; }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 64px 32px 120px;
+  }
+
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 8px;
+  }
+
+  .glyph {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .glyph svg { width: 22px; height: 22px; }
+
+  .masthead-text .app-name {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .masthead-text .app-sub {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  h1.title {
+    font-family: 'Newsreader', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2.1rem, 4vw, 3rem);
+    text-wrap: balance;
+    margin: 40px 0 10px;
+    letter-spacing: -0.015em;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+  }
+  .meta-row b { color: var(--text); font-weight: 600; }
+
+  .lede {
+    max-width: 62ch;
+    color: var(--text-muted);
+    font-size: 1.08rem;
+    margin: 22px 0 0;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 700px);
+    gap: 64px;
+    margin-top: 56px;
+    align-items: start;
+  }
+
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; gap: 8px; }
+    nav.toc { display: none; }
+  }
+
+  nav.toc {
+    position: sticky;
+    top: 40px;
+    font-size: 0.88rem;
+  }
+  nav.toc .toc-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  nav.toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1.5px solid var(--rule);
+  }
+  nav.toc li { margin: 0; }
+  nav.toc a {
+    display: block;
+    padding: 7px 0 7px 16px;
+    margin-left: -1.5px;
+    border-left: 1.5px solid transparent;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color .15s, border-color .15s;
+  }
+  nav.toc a:hover { color: var(--text); }
+  nav.toc a.active { color: var(--toc-active); border-left-color: var(--toc-active); font-weight: 500; }
+  nav.toc .num { font-family: 'IBM Plex Mono', monospace; font-size: 0.78em; color: var(--text-faint); margin-right: 8px; }
+
+  main.doc section {
+    padding-bottom: 40px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--rule);
+  }
+  main.doc section:last-of-type { border-bottom: none; }
+
+  h2 {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 16px;
+    text-wrap: balance;
+    scroll-margin-top: 32px;
+  }
+  h2 .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 6px;
+    padding: 3px 8px;
+  }
+
+  h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 24px 0 8px;
+  }
+
+  p { margin: 0 0 14px; max-width: 66ch; }
+  p:last-child { margin-bottom: 0; }
+  ul, ol.plain { margin: 0 0 14px; padding-left: 22px; max-width: 66ch; }
+  li { margin-bottom: 8px; }
+  li:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; }
+
+  code, .mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.86em;
+    background: var(--mono-bg);
+    padding: 1px 6px;
+    border-radius: 5px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 18px 0;
+  }
+  .card + .card { margin-top: 12px; }
+  .card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.none { background: #3f9a6e; }
+  .dot.local { background: var(--accent-2); }
+  .dot.third { background: var(--accent); }
+  .card p { margin: 0; color: var(--text-muted); font-size: 0.93rem; }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 0.92rem;
+  }
+  table.data-table th, table.data-table td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  table.data-table th {
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  table.data-table tr:last-child td { border-bottom: none; }
+  .overflow-wrap { overflow-x: auto; }
+
+  .callout {
+    border-left: 3px solid var(--accent-2);
+    background: color-mix(in srgb, var(--accent-2) 7%, var(--surface));
+    padding: 14px 18px;
+    border-radius: 0 10px 10px 0;
+    margin: 18px 0;
+    font-size: 0.94rem;
+  }
+  .callout p { color: var(--text); }
+
+  footer.doc-footer {
+    margin-top: 8px;
+    color: var(--text-faint);
+    font-size: 0.85rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    nav.toc a, a { transition: color .15s ease, border-color .15s ease; }
+  }
+</style>
+
+<div class="page">
+  <div class="masthead">
+    <div class="glyph">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8">
+        <rect x="4" y="2.5" width="12" height="17" rx="1.6"/>
+        <line x1="7.2" y1="7.5" x2="12.8" y2="7.5"/>
+        <line x1="7.2" y1="10.5" x2="12.8" y2="10.5"/>
+        <line x1="7.2" y1="13.5" x2="10.5" y2="13.5"/>
+      </svg>
+    </div>
+    <div class="masthead-text">
+      <div class="app-name">EasyDoc</div>
+      <div class="app-sub">Offline PDF toolkit for Android</div>
+    </div>
+  </div>
+
+  <h1 class="title">Privacy Policy</h1>
+  <div class="meta-row">
+    <span>Effective <b>September 15, 2026</b></span>
+    <span>Applies to package <span class="mono">com.easydoc.pdflite</span></span>
+  </div>
+  <p class="lede">
+    EasyDoc merges, splits, compresses, and converts PDFs entirely on your device. This
+    page explains, plainly, what that means for your data — most of which is that there
+    isn't any to explain, since your files never leave your phone.
+  </p>
+
+  <div class="layout">
+    <nav class="toc" id="toc">
+      <div class="toc-label">On this page</div>
+      <ol>
+        <li><a href="#summary"><span class="num">01</span>The short version</a></li>
+        <li><a href="#files"><span class="num">02</span>Your documents &amp; photos</a></li>
+        <li><a href="#permissions"><span class="num">03</span>App permissions</a></li>
+        <li><a href="#local-storage"><span class="num">04</span>What's stored on your device</a></li>
+        <li><a href="#ads"><span class="num">05</span>Advertising (Google AdMob)</a></li>
+        <li><a href="#billing"><span class="num">06</span>Purchases (Google Play Billing)</a></li>
+        <li><a href="#sharing"><span class="num">07</span>Data we share</a></li>
+        <li><a href="#children"><span class="num">08</span>Children's privacy</a></li>
+        <li><a href="#choices"><span class="num">09</span>Your choices</a></li>
+        <li><a href="#changes"><span class="num">10</span>Changes to this policy</a></li>
+        <li><a href="#contact"><span class="num">11</span>Contact</a></li>
+      </ol>
+    </nav>
+
+    <main class="doc">
+      <section id="summary">
+        <h2><span class="section-num">01</span>The short version</h2>
+        <p>
+          EasyDoc does not have a server, an account system, or a database of user files.
+          Every merge, split, compression, and conversion happens in memory on your own
+          device using Android's built-in PDF renderer and the open-source PdfBox-Android
+          library, and the output stays exactly where you tell it to be saved.
+        </p>
+        <div class="card">
+          <div class="card-title"><span class="dot none"></span>Never collected</div>
+          <p>The content of your PDFs or photos, their file names, or anything about what you do with them.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="dot local"></span>Stored only on your device</div>
+          <p>Your Appearance preferences (accent color, theme) and whether you've purchased Remove Ads — both in local app storage, never transmitted anywhere.</p>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="dot third"></span>Handled by Google, not EasyDoc</div>
+          <p>Advertising identifiers (AdMob) and purchase records (Play Billing) — see sections 5 and 6.</p>
+        </div>
+      </section>
+
+      <section id="files">
+        <h2><span class="section-num">02</span>Your documents &amp; photos</h2>
+        <p>
+          EasyDoc opens files exclusively through Android's <strong>Storage Access
+          Framework</strong> (SAF) — the system file picker you already use for Google
+          Drive, Files, or any other app. When you pick a file, Android grants EasyDoc a
+          one-time handle to <em>that specific file</em>; EasyDoc never requests broad
+          storage access, never scans your device for other files, and never learns your
+          folder structure.
+        </p>
+        <p>
+          Processing (merging, splitting, compressing, rendering, converting) happens
+          entirely in the app's own memory and temporary cache. The result is written back
+          out only through another SAF picker — a location you choose, every time. At no
+          point does a file, a thumbnail, or any text extracted from a PDF get sent over
+          the network. EasyDoc's <span class="mono">INTERNET</span> permission (see §3) is
+          used solely by the advertising and billing SDKs described below — the file-processing
+          code itself never calls it.
+        </p>
+      </section>
+
+      <section id="permissions">
+        <h2><span class="section-num">03</span>App permissions</h2>
+        <p>EasyDoc requests only two Android permissions, both declared in its manifest:</p>
+        <div class="overflow-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Permission</th><th>Used for</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="mono">INTERNET</span></td>
+                <td>Fetching the AdMob banner ad and communicating with Google Play Billing. Not used by any PDF/image processing code.</td>
+              </tr>
+              <tr>
+                <td><span class="mono">ACCESS_NETWORK_STATE</span></td>
+                <td>Letting the AdMob SDK check connectivity before requesting an ad, so it can fail quietly rather than hang.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          EasyDoc does <strong>not</strong> request <span class="mono">READ_EXTERNAL_STORAGE</span>,
+          <span class="mono">MANAGE_EXTERNAL_STORAGE</span>, camera, microphone, contacts,
+          location, or any other sensitive runtime permission.
+        </p>
+      </section>
+
+      <section id="local-storage">
+        <h2><span class="section-num">04</span>What's stored on your device</h2>
+        <p>
+          EasyDoc keeps a small amount of app preference data in local, private app storage
+          (Android Jetpack DataStore) — the same mechanism any app uses to remember a
+          setting. None of it is synced to a server, an account, or any other device.
+        </p>
+        <div class="overflow-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Stored value</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Accent color, card/border/muted tint, background style, Home layout, theme (light/dark/system)</td>
+                <td>Remembers your Appearance choices between launches.</td>
+              </tr>
+              <tr>
+                <td>Whether "Remove Ads" has been purchased</td>
+                <td>Lets EasyDoc skip the ad banner without re-checking Google Play every time the app opens.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Uninstalling EasyDoc deletes all of it, along with everything in the app's temporary processing cache.</p>
+      </section>
+
+      <section id="ads">
+        <h2><span class="section-num">05</span>Advertising (Google AdMob)</h2>
+        <p>
+          EasyDoc shows a single small banner ad on the Home screen, served by
+          <strong>Google AdMob</strong>. To do this, the AdMob SDK running inside EasyDoc
+          communicates with Google's ad servers and may collect an advertising identifier,
+          coarse device and app information, and general engagement signals (for example,
+          whether an ad was shown or tapped), governed by
+          <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google's own privacy policy</a>.
+          EasyDoc itself never sees or stores this data — it passes directly between your
+          device and Google.
+        </p>
+        <p>No ad is shown anywhere except the Home screen; there are no interstitial or rewarded ads in EasyDoc.</p>
+      </section>
+
+      <section id="billing">
+        <h2><span class="section-num">06</span>Purchases (Google Play Billing)</h2>
+        <p>
+          The optional, one-time "Remove Ads" purchase is processed entirely by
+          <strong>Google Play's billing system</strong> — EasyDoc never collects or sees
+          your payment method, card details, or billing address. Google shares back only a
+          purchase confirmation, which EasyDoc uses to flip the local "ads removed" flag
+          described in §4. Refunds, payment history, and receipts are managed through your
+          Google Play account, not through EasyDoc.
+        </p>
+      </section>
+
+      <section id="sharing">
+        <h2><span class="section-num">07</span>Data we share</h2>
+        <p>
+          EasyDoc has no analytics SDK, no crash-reporting service, and no advertising
+          network of its own. The only data that leaves your device is what's described in
+          §5 and §6 above — traffic between your device and Google's AdMob / Play Billing
+          services, governed by Google's policies, not EasyDoc's. EasyDoc does not sell
+          data, because it does not collect any to sell.
+        </p>
+      </section>
+
+      <section id="children">
+        <h2><span class="section-num">08</span>Children's privacy</h2>
+        <p>
+          EasyDoc is a general-audience utility app not directed at children, and it does
+          not knowingly collect personal information from anyone. If you believe a child
+          has provided personal information through the app, contact us using the details
+          in §11 and we'll address it.
+        </p>
+      </section>
+
+      <section id="choices">
+        <h2><span class="section-num">09</span>Your choices</h2>
+        <ul>
+          <li><strong>Remove the ad banner entirely</strong> via the one-time "Remove Ads" purchase on Home — this also stops the AdMob SDK from requesting ads at all.</li>
+          <li><strong>Opt out of personalized advertising</strong> at the OS level in <span class="mono">Settings → Privacy → Ads</span> on your Android device, which limits what Google's ad network can use your advertising ID for, independent of EasyDoc.</li>
+          <li><strong>Revoke a file's access</strong> at any time — since EasyDoc only ever holds a one-time SAF grant, there is nothing broader to revoke in Android's permission settings.</li>
+        </ul>
+      </section>
+
+      <section id="changes">
+        <h2><span class="section-num">10</span>Changes to this policy</h2>
+        <p>
+          If EasyDoc's data practices change — for example, if a future version adds a
+          new feature that touches the network — this page will be updated and the
+          "Effective" date at the top will change accordingly. Continued use of the app
+          after an update constitutes acceptance of the revised policy.
+        </p>
+      </section>
+
+      <section id="contact">
+        <h2><span class="section-num">11</span>Contact</h2>
+        <p>
+          Questions about this policy or EasyDoc's data practices can be sent to:
+        </p>
+        <div class="callout">
+          <p><span class="mono">[email protected]</span> — replace with your real support address before publishing this page or submitting the Play Console listing.</p>
+        </div>
+        <footer class="doc-footer">EasyDoc is an independent app; this policy is not affiliated with or endorsed by Google.</footer>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+    var sections = links.map(function (a) {
+      return document.querySelector(a.getAttribute('href'));
+    });
+    function onScroll() {
+      var y = window.scrollY + 120;
+      var activeIdx = 0;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i] && sections[i].offsetTop <= y) activeIdx = i;
+      }
+      links.forEach(function (a, i) {
+        a.classList.toggle('active', i === activeIdx);
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
