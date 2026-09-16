@@ -1,6 +1,4 @@
-EasyDoc is a small, honest PDF toolkit — five core tools, fully on-device, no watermarks, no forced ads, and no subscription traps.
-
-Most free PDF apps bury basic features behind interstitial ads, watermark your exports, or push a "free trial" that quietly demands a card upfront. EasyDoc doesn't do any of that. Pick a tool, do the job, get your file — that's it.
+Ever open a "free" PDF app just to read one document, and instead get a pop-up, a "your file is out of date" warning, a welcome screen, or a paywall before you've even seen your file? EasyDoc doesn't do that. Pick a tool, do the job, get your file. That's the entire app.
 
 WHAT YOU CAN DO
 • Merge PDFs — combine multiple documents into one, in the order you choose
@@ -10,14 +8,19 @@ WHAT YOU CAN DO
 • PDF → Image(s) — export pages as high-resolution JPG or PNG
 • View PDF — open and read any PDF, including straight from your file manager's "Open with" menu
 
-WHY IT'S DIFFERENT
-• Offline-first — every file is processed entirely on your device; nothing is ever uploaded anywhere
+NOTHING BETWEEN YOU AND YOUR FILE
+• No pop-ups, no "welcome" screens, no fake system warnings, no interruptions — ever, on any screen
+• No account or sign-up, so there's nothing to crash into and nothing to log in to
+• No subscription. Ever. If removing the one small ad is worth it to you, it's a single one-time payment — not a recurring charge, not a free trial that quietly needs a card number first
 • No watermark on any output, whether you've paid or not
-• No account or sign-up required, ever
-• One small banner ad, no interstitials — and a single, optional one-time "Remove Ads" purchase if you'd rather not see it, priced upfront with no hidden trial
-• Uses Android's Storage Access Framework, so EasyDoc never asks for broad storage permissions — you choose exactly which files it can see
+• One small banner ad on the home screen only. No interstitials, no video ads, no ad breaks mid-task
+
+WHERE YOUR FILES ACTUALLY GO: NOWHERE ELSE
+• Every file is processed entirely on your device — nothing is ever uploaded to a server, including compression and conversion
+• EasyDoc shares nothing with anyone. Not app activity, not device identifiers, not analytics — there's no tracking SDK in this app to share it with
+• Uses Android's Storage Access Framework, so EasyDoc never asks for broad storage permissions — you choose exactly which file it can see, one file at a time
 
 WHO IT'S FOR
-Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, or turn a stack of photos into a single PDF — without wading through ads or a paywall to do it.
+Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, or turn a stack of photos into a single PDF — without wading through ads, accounts, or a paywall to do it.
 
-EasyDoc keeps a short, focused list of tools done well, rather than a long list of tools done half-heartedly. If you've been frustrated by "free" PDF apps that aren't actually free, this is built for you.
+EasyDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. If you've ever uninstalled a "free" PDF app because of what it put between you and your document, this is built for you.

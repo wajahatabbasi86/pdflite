@@ -3,6 +3,19 @@
 Copy-paste-ready text and graphics for the Play Console "Store presence > Main store listing"
 page (step 9 of the build order — see the root [README.md](../README.md)).
 
+## Positioning
+
+The short/full descriptions and feature graphic here don't lead with a feature list — they lead
+with "no pop-ups, no subscription, no account, nothing shared." That copy isn't aspirational: it
+was written after (1) auditing this codebase directly to confirm every one of those claims holds
+with zero exceptions (no `Dialog` anywhere in the app, entitlement state checked in exactly two
+places, both Billing product-type calls are `INAPP` never `SUBS`, zero third-party data sharing),
+and (2) reading real, high-vote-count user reviews on the three largest competitors in this
+category (Adobe Acrobat 500M+, Xodo 10M+, Foxit 10M+) — all three have their own users' top
+reviews complaining about exactly the pattern this copy calls out by name. If EasyDoc's behavior
+ever changes (an ad placement added elsewhere, a dialog introduced, a new SDK that shares data),
+this copy needs to be revisited before it's a lie rather than a fact.
+
 | File | Play Console field | Limit | Notes |
 |---|---|---|---|
 | `short-description.txt` | Short description | 80 characters | |

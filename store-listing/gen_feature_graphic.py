@@ -57,8 +57,8 @@ for w_frac in (0.62, 0.62, 0.4):
 # --- title + tagline ---
 text_x = icon_x + icon_size + 44
 draw.text((text_x, 148), "EasyDoc", font=title_font, fill=(255, 255, 255, 255))
-draw.text((text_x, 232), "Merge, split, compress & convert PDFs —", font=tagline_font, fill=(255, 255, 255, 235))
-draw.text((text_x, 270), "fully offline, no watermarks, no forced ads.", font=tagline_font, fill=(255, 255, 255, 235))
+draw.text((text_x, 232), "Merge, split & compress PDFs —", font=tagline_font, fill=(255, 255, 255, 235))
+draw.text((text_x, 270), "no pop-ups, no subscription, no account.", font=tagline_font, fill=(255, 255, 255, 235))
 
 # --- pill badges ---
 def pill(x, y, label):
@@ -75,7 +75,7 @@ def pill(x, y, label):
 
 px_cursor = text_x
 py = 372
-for label in ("Offline-first", "No watermark", "One-time unlock"):
+for label in ("No pop-ups", "No subscription", "Nothing shared"):
     px_cursor = pill(px_cursor, py, label) + 14
 
 import os
