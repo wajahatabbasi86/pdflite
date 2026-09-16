@@ -45,6 +45,15 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+
+            // Bouncy Castle (pulled in transitively by PdfBox-Android, for its standard
+            // PDF encryption support — RC4/AES password handlers) bundles algorithm data
+            // for every scheme it implements, including post-quantum ones EasyDoc has no
+            // path to ever reach: PdfBox-Android only exercises BC's conventional
+            // symmetric/RSA primitives for PDF passwords, never Picnic or SIKE. These
+            // four property files alone account for ~7.5MB of dead weight in the APK.
+            excludes += "org/bouncycastle/pqc/crypto/picnic/lowmc.properties"
+            excludes += "org/bouncycastle/pqc/crypto/sike/*.properties"
         }
     }
 
