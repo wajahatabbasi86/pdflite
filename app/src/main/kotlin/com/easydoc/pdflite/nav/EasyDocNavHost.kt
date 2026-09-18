@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.easydoc.pdflite.ui.billing.BillingScreen
 import com.easydoc.pdflite.ui.compress.CompressScreen
+import com.easydoc.pdflite.ui.fillforms.FillFormsScreen
 import com.easydoc.pdflite.ui.home.HomeScreen
 import com.easydoc.pdflite.ui.imagetopdf.ImageToPdfScreen
 import com.easydoc.pdflite.ui.merge.MergeScreen
@@ -34,6 +35,7 @@ object Routes {
     const val IMAGE_TO_PDF = "image_to_pdf"
     const val PDF_TO_IMAGE = "pdf_to_image"
     const val VIEW_PDF = "view_pdf"
+    const val FILL_FORMS = "fill_forms"
     const val APPEARANCE = "appearance"
     const val BILLING = "billing"
 }
@@ -98,6 +100,11 @@ fun EasyDocNavHost() {
                 initialUri = PendingPdfIntent.consume(),
                 onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
             )
+        }
+        composable(Routes.FILL_FORMS) {
+            FillFormsScreen(onDone = {
+                navController.popBackStack(Routes.HOME, inclusive = false)
+            })
         }
     }
 }

@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
  * six pictograms.
  */
 enum class ToolGlyphType {
-    MERGE, SPLIT, COMPRESS, IMAGE_TO_PDF, PDF_TO_IMAGE, VIEW_PDF
+    MERGE, SPLIT, COMPRESS, IMAGE_TO_PDF, PDF_TO_IMAGE, VIEW_PDF, FILL_FORM
 }
 
 /**
@@ -55,6 +55,7 @@ fun ToolAvatar(
                 ToolGlyphType.IMAGE_TO_PDF -> drawImageToPdf(tint)
                 ToolGlyphType.PDF_TO_IMAGE -> drawPdfToImage(tint)
                 ToolGlyphType.VIEW_PDF -> drawViewPdf(tint)
+                ToolGlyphType.FILL_FORM -> drawFillForm(tint)
             }
         }
     }
@@ -151,4 +152,38 @@ private fun DrawScope.drawViewPdf(color: Color) {
         style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx())
     )
     drawCircle(color, radius = 1.8.dp.toPx(), center = eyeCenter)
+}
+
+/** A page with a checked checkbox and a couple of filled-in lines — a form with values
+ * already entered, distinguishing this from Split's blank-page dashed-line glyph. */
+private fun DrawScope.drawFillForm(color: Color) {
+    val pageSize = Size(size.width * 0.66f, size.height * 0.92f)
+    val pageTopLeft = Offset(size.width * 0.17f, size.height * 0.04f)
+    page(pageTopLeft, pageSize, color)
+    val lineX = pageTopLeft.x + pageSize.width * 0.2f
+    var lineY = pageTopLeft.y + pageSize.height * 0.28f
+    for (w in listOf(0.5f, 0.35f)) {
+        drawLine(
+            color,
+            Offset(lineX, lineY),
+            Offset(lineX + pageSize.width * w, lineY),
+            strokeWidth = 1.4.dp.toPx()
+        )
+        lineY += pageSize.height * 0.16f
+    }
+    // A small checked checkbox in the lower-left of the page.
+    val boxSize = pageSize.width * 0.22f
+    val boxTopLeft = Offset(pageTopLeft.x + pageSize.width * 0.14f, lineY + pageSize.height * 0.05f)
+    drawRoundRect(
+        color = color,
+        topLeft = boxTopLeft,
+        size = Size(boxSize, boxSize),
+        cornerRadius = CornerRadius(1.dp.toPx()),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.3.dp.toPx())
+    )
+    val checkStart = Offset(boxTopLeft.x + boxSize * 0.2f, boxTopLeft.y + boxSize * 0.55f)
+    val checkMid = Offset(boxTopLeft.x + boxSize * 0.42f, boxTopLeft.y + boxSize * 0.78f)
+    val checkEnd = Offset(boxTopLeft.x + boxSize * 0.82f, boxTopLeft.y + boxSize * 0.22f)
+    drawLine(color, checkStart, checkMid, strokeWidth = 1.3.dp.toPx())
+    drawLine(color, checkMid, checkEnd, strokeWidth = 1.3.dp.toPx())
 }

@@ -82,6 +82,8 @@ private val smallTools = listOf(
     // Read-only, no SAF save dialog at the end — also the landing screen when EasyDoc is
     // opened via the system "Open with" chooser for a PDF (see PendingPdfIntent).
     ToolCard("View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF),
+    // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
+    ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "fill_forms", Color(0xFF4A8B5C), ToolGlyphType.FILL_FORM),
 )
 private val allTools = listOf(bigTool) + medTools + smallTools
 
