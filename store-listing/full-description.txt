@@ -24,3 +24,5 @@ WHO IT'S FOR
 Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, or turn a stack of photos into a single PDF — without wading through ads, accounts, or a paywall to do it.
 
 TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. If you've ever uninstalled a "free" PDF app because of what it put between you and your document, this is built for you.
+
+TrenDoc is built by TrenBridge IT.

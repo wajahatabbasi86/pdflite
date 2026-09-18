@@ -71,7 +71,10 @@ policy review and a real user complaint would both catch.
 ## Still needed before actually publishing
 
 - A real Play Console developer account and app listing created there (this repo only prepares
-  the assets — nothing here uploads them).
+  the assets — nothing here uploads them). Set the account's public developer name to
+  **TrenBridge IT** — that's the actual "by ___" byline shown under the app name on the Play
+  Store listing page itself; the text assets here (full description, privacy policy masthead)
+  already say "by TrenBridge IT" to match.
 - The real AdMob App ID and ad unit ID, and the real Play Billing product ID for "remove_ads",
   swapping out the test IDs called out in `AndroidManifest.xml` / `AdBanner.kt` /
   `BillingRepository.kt`.
