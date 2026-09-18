@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.easydoc.pdflite"
+    namespace = "com.trendoc.pdflite"
     35.also { compileSdk = it }
 
     defaultConfig {
-        applicationId = "com.easydoc.pdflite"
+        applicationId = "com.trendoc.pdflite"
         minSdk = 21
         targetSdk = 35
         versionCode = 1
@@ -48,7 +48,7 @@ android {
 
             // Bouncy Castle (pulled in transitively by PdfBox-Android, for its standard
             // PDF encryption support — RC4/AES password handlers) bundles algorithm data
-            // for every scheme it implements, including post-quantum ones EasyDoc has no
+            // for every scheme it implements, including post-quantum ones TrenDoc has no
             // path to ever reach: PdfBox-Android only exercises BC's conventional
             // symmetric/RSA primitives for PDF passwords, never Picnic or SIKE. These
             // four property files alone account for ~7.5MB of dead weight in the APK.

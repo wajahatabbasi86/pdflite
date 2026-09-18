@@ -22,6 +22,7 @@ this copy needs to be revisited before it's a lie rather than a fact.
 | `full-description.txt` | Full description | 4000 characters | |
 | `release-notes.txt` | "What's new" for the first release | 500 characters | |
 | `feature-graphic.png` | Feature graphic | exactly 1024×500, JPG/PNG (no alpha) | Generated to spec — see below |
+| `app-icon-512.png` | Hi-res icon | exactly 512×512, 32-bit PNG | Generated alongside the real app icon — see below |
 | `screenshots/*.png` | Phone screenshots | 2–8 images, 320–3840px per side, PNG/JPG | Real on-device captures, 1080×2400 (well within the 16:9–9:21 aspect range) |
 | `privacy-policy.html` | App content > Privacy policy (a public URL) | must be publicly reachable | Publish this file (e.g. as a Claude Artifact, or any static host) and paste its public URL into Play Console — see below |
 
@@ -43,14 +44,23 @@ testing throughout this project renders a blank page, which would look broken in
 listing. Swap in a real, visually rich PDF and recapture that screen before publishing if a
 sixth screenshot is wanted.
 
-## Feature graphic
+## Feature graphic & app icon
 
-`feature-graphic.png` (1024×500) was generated programmatically (Pillow/PIL) rather than
-hand-designed in an image editor, using the same visual language as the in-app design system:
-the Merge-red → GradientButton-indigo gradient, and a glyph in the same "page with lines" style
-as `FileIconAvatar`/`ToolGlyph`. `gen_feature_graphic.py` (kept alongside this file, requires
-`pip install Pillow`) reproduces it exactly — edit the copy/colors there and re-run
-`python gen_feature_graphic.py` from this directory to regenerate.
+`feature-graphic.png` (1024×500) and the app icon (`app/src/main/res/mipmap-*/`,
+`app-icon-512.png` below) are both generated programmatically (Pillow/PIL) rather than
+hand-designed, matching the TrenDoc brand sheet: a navy card with a glowing cyan document glyph
+(folded corner, a "D"-shaped bracket, a dashed connector path with node dots), and the
+"Tren" (navy) + "doc" (cyan) wordmark.
+
+- `../tools/gen_app_icon.py` — regenerates every adaptive/legacy mipmap density under
+  `app/src/main/res/mipmap-*/` plus `app-icon-512.png` (the 512×512 hi-res icon Play Console
+  asks for separately from the APK). Edit the color constants at the top of that file to adjust
+  the brand palette, then re-run `python tools/gen_app_icon.py` from the repo root.
+- `gen_feature_graphic.py` imports the same glyph/color code from `gen_app_icon.py`, so the icon
+  tile shown on the feature graphic always matches the real app icon. Re-run
+  `python gen_feature_graphic.py` from this directory after regenerating the icon.
+
+Both require `pip install Pillow`.
 
 ## Privacy policy
 
