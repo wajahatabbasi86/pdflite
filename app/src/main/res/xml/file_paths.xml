@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scopes the FileProvider (AndroidManifest.xml) to exactly the one subfolder the camera
+     capture flow writes into (Image(s) -> PDF's "Take Photo") — cache-dir/camera_captures/ —
+     not the whole app cache, let alone anything broader. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="camera_captures" path="camera_captures/" />
+</paths>

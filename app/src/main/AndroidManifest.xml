@@ -11,6 +11,14 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Requested only when the user taps "Take Photo" on Image(s) -> PDF — a normal,
+         user-initiated runtime permission, not a broad grant. The photo itself is captured
+         straight into this app's own cache (via the FileProvider below) and immediately fed
+         into the same content:// Uri pipeline every gallery-picked image already goes
+         through — no separate code path, no extra storage access. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:name=".EasyDocApplication"
         android:allowBackup="true"
@@ -50,6 +58,19 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
+
+        <!-- Hands the system camera app a writable content:// Uri for a captured photo,
+             without granting it (or anything else) broader file access — scoped to exactly
+             this one temp file, per the same SAF-first spirit as §1.1. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.easydoc.pdflite.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

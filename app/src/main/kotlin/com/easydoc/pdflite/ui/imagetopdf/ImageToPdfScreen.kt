@@ -1,6 +1,7 @@
 package com.easydoc.pdflite.ui.imagetopdf
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -35,16 +37,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.easydoc.pdflite.ui.common.DashedAddButton
 import com.easydoc.pdflite.ui.common.ErrorCard
 import com.easydoc.pdflite.ui.common.GradientButton
 import com.easydoc.pdflite.ui.common.ResultScreen
+import com.easydoc.pdflite.util.CameraCaptureUtils
 import com.easydoc.pdflite.util.SafFileUtils
 
 /** Image(s) -> PDF screen, per docs/REQUIREMENTS.md §6.1. Same reorderable-list shape as
@@ -56,10 +63,49 @@ fun ImageToPdfScreen(
     viewModel: ImageToPdfViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     val pickImagesLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.openMultipleDocuments
     ) { uris -> viewModel.onImagesPicked(uris) }
+
+    // TakePicture needs the destination Uri decided *before* launch (unlike the gallery
+    // pickers above, which hand one back) — held here so the result callback below can see
+    // which Uri the camera actually wrote to. Must survive process death: launching the
+    // system camera can background (and get killed by) this activity on a memory-constrained
+    // device, and plain `remember` state would come back null when it's recreated, silently
+    // dropping the photo even though the camera reports success.
+    var pendingCaptureUri by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    val takePhotoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        val uri = pendingCaptureUri
+        pendingCaptureUri = null
+        if (success && uri != null) {
+            viewModel.onImagesPicked(listOf(uri))
+        }
+    }
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val uri = CameraCaptureUtils.newCaptureUri(context)
+            pendingCaptureUri = uri
+            takePhotoLauncher.launch(uri)
+        }
+    }
+    val launchCamera: () -> Unit = {
+        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.CAMERA
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (hasPermission) {
+            val uri = CameraCaptureUtils.newCaptureUri(context)
+            pendingCaptureUri = uri
+            takePhotoLauncher.launch(uri)
+        } else {
+            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
+    }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.createDocument
@@ -111,15 +157,26 @@ fun ImageToPdfScreen(
 
             if (uiState.images.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Button(onClick = { pickImagesLauncher.launch(arrayOf("image/*")) }) {
-                        Text("Select Images")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(onClick = { pickImagesLauncher.launch(arrayOf("image/*")) }) {
+                            Text("Select Images")
+                        }
+                        OutlinedButton(onClick = launchCamera) {
+                            Text("Take Photo")
+                        }
                     }
                 }
             } else {
-                DashedAddButton(
-                    text = "Add More Images",
-                    onClick = { pickImagesLauncher.launch(arrayOf("image/*")) }
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    DashedAddButton(
+                        text = "Add More Images",
+                        onClick = { pickImagesLauncher.launch(arrayOf("image/*")) },
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedButton(onClick = launchCamera) {
+                        Text("Camera")
+                    }
+                }
 
                 Text(
                     "PAGE ORDER (${uiState.images.size})",
