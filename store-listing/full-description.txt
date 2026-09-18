@@ -1,4 +1,4 @@
-Ever open a "free" PDF app just to read one document, and instead get a pop-up, a "your file is out of date" warning, a welcome screen, or a paywall before you've even seen your file? EasyDoc doesn't do that. Pick a tool, do the job, get your file. That's the entire app.
+Ever open a "free" PDF app just to read one document, and instead get a pop-up, a "your file is out of date" warning, a welcome screen, or a paywall before you've even seen your file? TrenDoc doesn't do that. Pick a tool, do the job, get your file. That's the entire app.
 
 WHAT YOU CAN DO
 • Merge PDFs — combine multiple documents into one, in the order you choose
@@ -17,10 +17,10 @@ NOTHING BETWEEN YOU AND YOUR FILE
 
 WHERE YOUR FILES ACTUALLY GO: NOWHERE ELSE
 • Every file is processed entirely on your device — nothing is ever uploaded to a server, including compression and conversion
-• EasyDoc shares nothing with anyone. Not app activity, not device identifiers, not analytics — there's no tracking SDK in this app to share it with
-• Uses Android's Storage Access Framework, so EasyDoc never asks for broad storage permissions — you choose exactly which file it can see, one file at a time
+• TrenDoc shares nothing with anyone. Not app activity, not device identifiers, not analytics — there's no tracking SDK in this app to share it with
+• Uses Android's Storage Access Framework, so TrenDoc never asks for broad storage permissions — you choose exactly which file it can see, one file at a time
 
 WHO IT'S FOR
 Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, or turn a stack of photos into a single PDF — without wading through ads, accounts, or a paywall to do it.
 
-EasyDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. If you've ever uninstalled a "free" PDF app because of what it put between you and your document, this is built for you.
+TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. If you've ever uninstalled a "free" PDF app because of what it put between you and your document, this is built for you.

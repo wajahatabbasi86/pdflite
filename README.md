@@ -1,4 +1,4 @@
-# EasyDoc (repo: pdflite)
+# TrenDoc (repo: pdflite)
 
 **Offline Android PDF toolkit — merge, split, compress, convert. No watermarks, no hidden paywalls, no subscriptions.**
 
@@ -6,7 +6,7 @@
 
 Most free PDF apps on the Play Store bury basic features behind ads, fake trials, and paywalled exports. Research into competitor reviews turned up the same complaints again and again: forced interstitial ads before opening a single document, watermarks on "free" exports, and subscription flows that demand payment info upfront.
 
-EasyDoc is a small, honest alternative: five core PDF tools, fully on-device, one fair price to remove a single non-intrusive ad — nothing else.
+TrenDoc is a small, honest alternative: five core PDF tools, fully on-device, one fair price to remove a single non-intrusive ad — nothing else.
 
 ## Features (v1)
 
@@ -49,7 +49,7 @@ Full architecture rationale is in [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
 ## Project Status
 
 🚧 In development — **8 of 9 build-order steps complete**, step 9 (polish) underway (see
-below). See the [`easydoc` GitHub Project board](../../projects) for granular task tracking.
+below). See the [`trendoc` GitHub Project board](../../projects) for granular task tracking.
 
 Full requirements and screen-by-screen flows are documented in [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
@@ -64,7 +64,7 @@ Full requirements and screen-by-screen flows are documented in [`docs/REQUIREMEN
 - ✅ Step 6 — PDF → Image(s) (JPG/PNG, quality presets, per-page progress)
 - ✅ Step 7 — Compress PDF (JPEG re-encode + downscale, honest before/after size)
 - ✅ Step 8 — Monetization (AdMob banner + Play Billing one-time "Remove Ads")
-- ✅ Supporting infrastructure: shared `ResultScreen` (Open/Share/Done), `EasyDocApplication`
+- ✅ Supporting infrastructure: shared `ResultScreen` (Open/Share/Done), `TrenDocApplication`
   (PdfBox-Android resource loader init), launcher icon, `gradle.properties` JVM heap config,
   a flat/light card-based design system with user-selectable accent/tint/background/layout,
   a read-only View PDF tool + system "Open with" PDF handler support

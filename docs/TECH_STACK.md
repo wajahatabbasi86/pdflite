@@ -1,4 +1,4 @@
-# EasyDoc (pdflite) — Tech Stack & Architecture Decisions
+# TrenDoc (pdflite) — Tech Stack & Architecture Decisions
 
 This document expands on the summary table in the root `README.md`. It records *why* each
 choice was made, not just what was chosen, so future contributors (or future us) don't
@@ -47,7 +47,7 @@ re-litigate these decisions per screen.
 | IDE | Android Studio (built on IntelliJ Platform — same keymap/theme importable from IntelliJ IDEA) |
 | Min SDK | API 21 (Android 5.0), per README |
 | Target/Compile SDK | Latest stable at time of each dependency bump |
-| Package name | `com.easydoc.pdflite` |
+| Package name | `com.trendoc.pdflite` |
 
 ---
 

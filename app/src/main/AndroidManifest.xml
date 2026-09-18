@@ -20,12 +20,12 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
-        android:name=".EasyDocApplication"
+        android:name=".TrenDocApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.EasyDoc">
+        android:theme="@style/Theme.TrenDoc">
 
         <!--
           Google's published TEST AdMob App ID — safe to ship in debug/dev builds, never
@@ -40,13 +40,13 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.EasyDoc">
+            android:theme="@style/Theme.TrenDoc">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Lets EasyDoc appear in the system "Open with" chooser for any PDF —
+            <!-- Lets TrenDoc appear in the system "Open with" chooser for any PDF —
                  tapping a PDF in Files, Downloads, an email attachment, etc. can open
                  straight into View PDF. android:launchMode="singleTask" above means a
                  PDF opened while the app is already running reuses the same instance
@@ -64,7 +64,7 @@
              this one temp file, per the same SAF-first spirit as §1.1. -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.easydoc.pdflite.fileprovider"
+            android:authorities="com.trendoc.pdflite.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

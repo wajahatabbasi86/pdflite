@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "EasyDoc"
+rootProject.name = "TrenDoc"
 include(":app")

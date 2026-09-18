@@ -5,5 +5,5 @@
       docs/TECH_STACK.md — this XML theme only needs to exist for the manifest
       and avoid a flash of the wrong system theme before Compose takes over.
     -->
-    <style name="Theme.EasyDoc" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.TrenDoc" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

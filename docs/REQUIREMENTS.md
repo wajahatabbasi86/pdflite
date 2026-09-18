@@ -1,4 +1,4 @@
-# EasyDoc (pdflite) — Requirements
+# TrenDoc (pdflite) — Requirements
 
 This document defines screen-by-screen flows for v1. It expands on the feature list in the root `README.md`.
 

@@ -1,4 +1,4 @@
-First release of EasyDoc:
+First release of TrenDoc:
 • Merge PDFs, Split/Extract pages, Compress, Image(s) → PDF, PDF → Image(s), and a read-only PDF viewer
 • Open any PDF directly from your file manager's "Open with" menu
 • Pick your own accent color and background style in Appearance

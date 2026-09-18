@@ -1,4 +1,4 @@
-<title>EasyDoc Privacy Policy</title>
+<title>TrenDoc Privacy Policy</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 
@@ -298,7 +298,7 @@
       </svg>
     </div>
     <div class="masthead-text">
-      <div class="app-name">EasyDoc</div>
+      <div class="app-name">TrenDoc</div>
       <div class="app-sub">Offline PDF toolkit for Android</div>
     </div>
   </div>
@@ -306,10 +306,10 @@
   <h1 class="title">Privacy Policy</h1>
   <div class="meta-row">
     <span>Effective <b>September 15, 2026</b></span>
-    <span>Applies to package <span class="mono">com.easydoc.pdflite</span></span>
+    <span>Applies to package <span class="mono">com.trendoc.pdflite</span></span>
   </div>
   <p class="lede">
-    EasyDoc merges, splits, compresses, and converts PDFs entirely on your device. This
+    TrenDoc merges, splits, compresses, and converts PDFs entirely on your device. This
     page explains, plainly, what that means for your data — most of which is that there
     isn't any to explain, since your files never leave your phone.
   </p>
@@ -336,7 +336,7 @@
       <section id="summary">
         <h2><span class="section-num">01</span>The short version</h2>
         <p>
-          EasyDoc does not have a server, an account system, or a database of user files.
+          TrenDoc does not have a server, an account system, or a database of user files.
           Every merge, split, compression, and conversion happens in memory on your own
           device using Android's built-in PDF renderer and the open-source PdfBox-Android
           library, and the output stays exactly where you tell it to be saved.
@@ -350,7 +350,7 @@
           <p>Your Appearance preferences (accent color, theme) and whether you've purchased Remove Ads — both in local app storage, never transmitted anywhere.</p>
         </div>
         <div class="card">
-          <div class="card-title"><span class="dot third"></span>Handled by Google, not EasyDoc</div>
+          <div class="card-title"><span class="dot third"></span>Handled by Google, not TrenDoc</div>
           <p>Advertising identifiers (AdMob) and purchase records (Play Billing) — see sections 5 and 6.</p>
         </div>
       </section>
@@ -358,10 +358,10 @@
       <section id="files">
         <h2><span class="section-num">02</span>Your documents &amp; photos</h2>
         <p>
-          EasyDoc opens files exclusively through Android's <strong>Storage Access
+          TrenDoc opens files exclusively through Android's <strong>Storage Access
           Framework</strong> (SAF) — the system file picker you already use for Google
-          Drive, Files, or any other app. When you pick a file, Android grants EasyDoc a
-          one-time handle to <em>that specific file</em>; EasyDoc never requests broad
+          Drive, Files, or any other app. When you pick a file, Android grants TrenDoc a
+          one-time handle to <em>that specific file</em>; TrenDoc never requests broad
           storage access, never scans your device for other files, and never learns your
           folder structure.
         </p>
@@ -370,7 +370,7 @@
           entirely in the app's own memory and temporary cache. The result is written back
           out only through another SAF picker — a location you choose, every time. At no
           point does a file, a thumbnail, or any text extracted from a PDF get sent over
-          the network. EasyDoc's <span class="mono">INTERNET</span> permission (see §3) is
+          the network. TrenDoc's <span class="mono">INTERNET</span> permission (see §3) is
           used solely by the advertising and billing SDKs described below — the file-processing
           code itself never calls it.
         </p>
@@ -378,7 +378,7 @@
 
       <section id="permissions">
         <h2><span class="section-num">03</span>App permissions</h2>
-        <p>EasyDoc requests only two Android permissions, both declared in its manifest:</p>
+        <p>TrenDoc requests only two Android permissions, both declared in its manifest:</p>
         <div class="overflow-wrap">
           <table class="data-table">
             <thead>
@@ -397,7 +397,7 @@
           </table>
         </div>
         <p>
-          EasyDoc does <strong>not</strong> request <span class="mono">READ_EXTERNAL_STORAGE</span>,
+          TrenDoc does <strong>not</strong> request <span class="mono">READ_EXTERNAL_STORAGE</span>,
           <span class="mono">MANAGE_EXTERNAL_STORAGE</span>, camera, microphone, contacts,
           location, or any other sensitive runtime permission.
         </p>
@@ -406,7 +406,7 @@
       <section id="local-storage">
         <h2><span class="section-num">04</span>What's stored on your device</h2>
         <p>
-          EasyDoc keeps a small amount of app preference data in local, private app storage
+          TrenDoc keeps a small amount of app preference data in local, private app storage
           (Android Jetpack DataStore) — the same mechanism any app uses to remember a
           setting. None of it is synced to a server, an account, or any other device.
         </p>
@@ -422,48 +422,48 @@
               </tr>
               <tr>
                 <td>Whether "Remove Ads" has been purchased</td>
-                <td>Lets EasyDoc skip the ad banner without re-checking Google Play every time the app opens.</td>
+                <td>Lets TrenDoc skip the ad banner without re-checking Google Play every time the app opens.</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p>Uninstalling EasyDoc deletes all of it, along with everything in the app's temporary processing cache.</p>
+        <p>Uninstalling TrenDoc deletes all of it, along with everything in the app's temporary processing cache.</p>
       </section>
 
       <section id="ads">
         <h2><span class="section-num">05</span>Advertising (Google AdMob)</h2>
         <p>
-          EasyDoc shows a single small banner ad on the Home screen, served by
-          <strong>Google AdMob</strong>. To do this, the AdMob SDK running inside EasyDoc
+          TrenDoc shows a single small banner ad on the Home screen, served by
+          <strong>Google AdMob</strong>. To do this, the AdMob SDK running inside TrenDoc
           communicates with Google's ad servers and may collect an advertising identifier,
           coarse device and app information, and general engagement signals (for example,
           whether an ad was shown or tapped), governed by
           <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google's own privacy policy</a>.
-          EasyDoc itself never sees or stores this data — it passes directly between your
+          TrenDoc itself never sees or stores this data — it passes directly between your
           device and Google.
         </p>
-        <p>No ad is shown anywhere except the Home screen; there are no interstitial or rewarded ads in EasyDoc.</p>
+        <p>No ad is shown anywhere except the Home screen; there are no interstitial or rewarded ads in TrenDoc.</p>
       </section>
 
       <section id="billing">
         <h2><span class="section-num">06</span>Purchases (Google Play Billing)</h2>
         <p>
           The optional, one-time "Remove Ads" purchase is processed entirely by
-          <strong>Google Play's billing system</strong> — EasyDoc never collects or sees
+          <strong>Google Play's billing system</strong> — TrenDoc never collects or sees
           your payment method, card details, or billing address. Google shares back only a
-          purchase confirmation, which EasyDoc uses to flip the local "ads removed" flag
+          purchase confirmation, which TrenDoc uses to flip the local "ads removed" flag
           described in §4. Refunds, payment history, and receipts are managed through your
-          Google Play account, not through EasyDoc.
+          Google Play account, not through TrenDoc.
         </p>
       </section>
 
       <section id="sharing">
         <h2><span class="section-num">07</span>Data we share</h2>
         <p>
-          EasyDoc has no analytics SDK, no crash-reporting service, and no advertising
+          TrenDoc has no analytics SDK, no crash-reporting service, and no advertising
           network of its own. The only data that leaves your device is what's described in
           §5 and §6 above — traffic between your device and Google's AdMob / Play Billing
-          services, governed by Google's policies, not EasyDoc's. EasyDoc does not sell
+          services, governed by Google's policies, not TrenDoc's. TrenDoc does not sell
           data, because it does not collect any to sell.
         </p>
       </section>
@@ -471,7 +471,7 @@
       <section id="children">
         <h2><span class="section-num">08</span>Children's privacy</h2>
         <p>
-          EasyDoc is a general-audience utility app not directed at children, and it does
+          TrenDoc is a general-audience utility app not directed at children, and it does
           not knowingly collect personal information from anyone. If you believe a child
           has provided personal information through the app, contact us using the details
           in §11 and we'll address it.
@@ -482,15 +482,15 @@
         <h2><span class="section-num">09</span>Your choices</h2>
         <ul>
           <li><strong>Remove the ad banner entirely</strong> via the one-time "Remove Ads" purchase on Home — this also stops the AdMob SDK from requesting ads at all.</li>
-          <li><strong>Opt out of personalized advertising</strong> at the OS level in <span class="mono">Settings → Privacy → Ads</span> on your Android device, which limits what Google's ad network can use your advertising ID for, independent of EasyDoc.</li>
-          <li><strong>Revoke a file's access</strong> at any time — since EasyDoc only ever holds a one-time SAF grant, there is nothing broader to revoke in Android's permission settings.</li>
+          <li><strong>Opt out of personalized advertising</strong> at the OS level in <span class="mono">Settings → Privacy → Ads</span> on your Android device, which limits what Google's ad network can use your advertising ID for, independent of TrenDoc.</li>
+          <li><strong>Revoke a file's access</strong> at any time — since TrenDoc only ever holds a one-time SAF grant, there is nothing broader to revoke in Android's permission settings.</li>
         </ul>
       </section>
 
       <section id="changes">
         <h2><span class="section-num">10</span>Changes to this policy</h2>
         <p>
-          If EasyDoc's data practices change — for example, if a future version adds a
+          If TrenDoc's data practices change — for example, if a future version adds a
           new feature that touches the network — this page will be updated and the
           "Effective" date at the top will change accordingly. Continued use of the app
           after an update constitutes acceptance of the revised policy.
@@ -500,12 +500,12 @@
       <section id="contact">
         <h2><span class="section-num">11</span>Contact</h2>
         <p>
-          Questions about this policy or EasyDoc's data practices can be sent to:
+          Questions about this policy or TrenDoc's data practices can be sent to:
         </p>
         <div class="callout">
           <p><span class="mono">[email protected]</span> — replace with your real support address before publishing this page or submitting the Play Console listing.</p>
         </div>
-        <footer class="doc-footer">EasyDoc is an independent app; this policy is not affiliated with or endorsed by Google.</footer>
+        <footer class="doc-footer">TrenDoc is an independent app; this policy is not affiliated with or endorsed by Google.</footer>
       </section>
     </main>
   </div>

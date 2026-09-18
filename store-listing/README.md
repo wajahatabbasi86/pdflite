@@ -12,7 +12,7 @@ with zero exceptions (no `Dialog` anywhere in the app, entitlement state checked
 places, both Billing product-type calls are `INAPP` never `SUBS`, zero third-party data sharing),
 and (2) reading real, high-vote-count user reviews on the three largest competitors in this
 category (Adobe Acrobat 500M+, Xodo 10M+, Foxit 10M+) — all three have their own users' top
-reviews complaining about exactly the pattern this copy calls out by name. If EasyDoc's behavior
+reviews complaining about exactly the pattern this copy calls out by name. If TrenDoc's behavior
 ever changes (an ad placement added elsewhere, a dialog introduced, a new SDK that shares data),
 this copy needs to be revisited before it's a lie rather than a fact.
 
