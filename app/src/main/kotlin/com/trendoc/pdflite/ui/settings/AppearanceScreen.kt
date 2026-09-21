@@ -61,7 +61,7 @@ import com.trendoc.pdflite.appearance.ThemeMode
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppearanceScreen(onBack: () -> Unit) {
+fun AppearanceScreen(onBack: () -> Unit, onOpenDonate: () -> Unit) {
     val viewModel: AppearanceViewModel = viewModel()
     val prefs by viewModel.preferences.collectAsState()
 
@@ -173,6 +173,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
                             Text(mode.name.lowercase().replaceFirstChar { it.uppercase() })
                         }
                     }
+                }
+
+                SectionLabel("Support")
+                TextButton(onClick = onOpenDonate) {
+                    Text("Support TrenDoc — one-time donation")
                 }
 
                 TextButton(onClick = { viewModel.resetToDefaults() }) {

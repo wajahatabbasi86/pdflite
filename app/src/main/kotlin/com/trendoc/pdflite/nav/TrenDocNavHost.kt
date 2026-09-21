@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.trendoc.pdflite.ui.billing.BillingScreen
 import com.trendoc.pdflite.ui.compress.CompressScreen
+import com.trendoc.pdflite.ui.donate.DonateScreen
 import com.trendoc.pdflite.ui.fillforms.FillFormsScreen
 import com.trendoc.pdflite.ui.home.HomeScreen
 import com.trendoc.pdflite.ui.imagetopdf.ImageToPdfScreen
@@ -38,6 +39,7 @@ object Routes {
     const val FILL_FORMS = "fill_forms"
     const val APPEARANCE = "appearance"
     const val BILLING = "billing"
+    const val DONATE = "donate"
 }
 
 @Composable
@@ -65,7 +67,13 @@ fun TrenDocNavHost() {
             BillingScreen(onDone = { navController.popBackStack() })
         }
         composable(Routes.APPEARANCE) {
-            AppearanceScreen(onBack = { navController.popBackStack() })
+            AppearanceScreen(
+                onBack = { navController.popBackStack() },
+                onOpenDonate = { navController.navigate(Routes.DONATE) }
+            )
+        }
+        composable(Routes.DONATE) {
+            DonateScreen(onDone = { navController.popBackStack() })
         }
         composable(Routes.PICKER_DEMO) {
             PdfPickerScreen()
