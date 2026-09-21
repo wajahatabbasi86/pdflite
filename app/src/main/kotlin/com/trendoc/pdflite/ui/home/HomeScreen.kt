@@ -145,6 +145,7 @@ private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        OfflineBadgeStrip(darkGround)
         BentoTile(
             tool = bigTool,
             onClick = { onToolSelected(bigTool.route) },
@@ -161,6 +162,7 @@ private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
                 )
             }
         }
+        SectionHeader("Document Utilities", darkGround)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             smallTools.forEach { tool ->
                 BentoTile(
@@ -175,12 +177,53 @@ private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
     }
 }
 
+/** "100% Offline & Private" pill plus the three-point trust strip under the app name,
+ * matching the design reference's header treatment. Purely presentational — no new
+ * capability, just surfacing what the app already does (no cloud upload, ever). */
+@Composable
+private fun OfflineBadgeStrip(darkGround: Boolean) {
+    val contentColor = if (darkGround) Color(0xFFD7D3C8) else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        listOf("No Cloud Upload", "Zero Watermark", "No Interstitial Ads").forEach { label ->
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(contentColor.copy(alpha = 0.10f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor)
+            }
+        }
+    }
+}
+
+/** A small section label with a trailing "Local Execution" pill, echoing the header's
+ * offline-first framing right above the tool grid it introduces. */
+@Composable
+private fun SectionHeader(title: String, darkGround: Boolean) {
+    val titleColor = if (darkGround) Color(0xFFF4F2EC) else MaterialTheme.colorScheme.onSurface
+    val accent = MaterialTheme.colorScheme.primary
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.titleSmall, color = titleColor)
+        Text("Local Execution", style = MaterialTheme.typography.labelSmall, color = accent)
+    }
+}
+
 @Composable
 private fun HomeList(onToolSelected: (String) -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        OfflineBadgeStrip(darkGround = false)
+        SectionHeader("Document Utilities", darkGround = false)
         allTools.forEach { tool ->
             ListRow(tool = tool, onClick = { onToolSelected(tool.route) })
         }
@@ -204,14 +247,44 @@ private fun BentoTile(
         colors = CardDefaults.cardColors(containerColor = tool.tint.copy(alpha = if (onCrystal) 0.30f else 0.14f)),
         border = BorderStroke(1.dp, tool.tint.copy(alpha = 0.35f))
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            ToolAvatar(type = tool.glyph, tint = if (onCrystal) contentColor else tool.tint, size = 28.dp)
-            Text(tool.label, style = MaterialTheme.typography.titleSmall, color = contentColor)
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                ToolAvatar(
+                    type = tool.glyph,
+                    tint = if (onCrystal) contentColor else tool.tint,
+                    size = 28.dp,
+                    shape = RoundedCornerShape(9.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(tool.tint.copy(alpha = if (onCrystal) 0.35f else 0.16f))
+                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        tool.badge,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (onCrystal) contentColor else tool.tint
+                    )
+                }
+            }
+            Text(
+                tool.label,
+                style = MaterialTheme.typography.titleSmall,
+                color = contentColor,
+                modifier = Modifier.padding(top = 6.dp)
+            )
             if (!compact) {
-                Text(tool.description, style = MaterialTheme.typography.bodySmall, color = descColor)
+                Text(
+                    tool.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = descColor,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
         }
     }
@@ -229,7 +302,7 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -238,7 +311,7 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ToolAvatar(type = tool.glyph, tint = tool.tint, size = 44.dp)
+            ToolAvatar(type = tool.glyph, tint = tool.tint, size = 44.dp, shape = RoundedCornerShape(12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(

@@ -167,6 +167,8 @@ fun ImageToPdfScreen(
                     }
                 }
             } else {
+                ImageToPdfStatusStrip(imageCount = uiState.images.size)
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     DashedAddButton(
                         text = "Add More Images",
@@ -217,6 +219,31 @@ fun ImageToPdfScreen(
     }
 }
 
+/** "100% Offline" status pill plus the number of images queued, echoing the same
+ * offline-first framing used on Home/View PDF — purely presentational. */
+@Composable
+private fun ImageToPdfStatusStrip(imageCount: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "100% Offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            "$imageCount image${if (imageCount == 1) "" else "s"} queued",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
 @Composable
 private fun ImageRow(
     item: ImageItem,
@@ -228,8 +255,9 @@ private fun ImageRow(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

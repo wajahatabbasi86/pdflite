@@ -123,6 +123,8 @@ fun SplitScreen(
                     }
                 }
             } else {
+            SplitStatusStrip(pageCount = uiState.pages.size)
+
             SourceDocumentCard(
                 fileName = uiState.fileName ?: "",
                 pageCount = uiState.pages.size,
@@ -243,12 +245,38 @@ fun SplitScreen(
     }
 }
 
+/** "100% Offline" status pill plus the loaded document's page count, echoing the same
+ * offline-first framing used on Home/View PDF — purely presentational. */
+@Composable
+private fun SplitStatusStrip(pageCount: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "100% Offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            "$pageCount page${if (pageCount == 1) "" else "s"}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
 @Composable
 private fun SourceDocumentCard(fileName: String, pageCount: Int, onChange: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(

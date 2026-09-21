@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -121,6 +122,7 @@ fun FillFormsScreen(
                     }
                 }
                 else -> {
+                    FillFormsStatusStrip(fieldCount = uiState.widgets.size, pageCount = uiState.pages.size)
                     Text(
                         uiState.fileName ?: "",
                         style = MaterialTheme.typography.titleSmall,
@@ -157,6 +159,31 @@ fun FillFormsScreen(
                 }
             }
         }
+    }
+}
+
+/** "100% Offline" status pill plus the number of form fields found, echoing the same
+ * offline-first framing used on Home/View PDF — purely presentational. */
+@Composable
+private fun FillFormsStatusStrip(fieldCount: Int, pageCount: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "100% Offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            "$fieldCount field${if (fieldCount == 1) "" else "s"} · $pageCount page${if (pageCount == 1) "" else "s"}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
 

@@ -136,6 +136,8 @@ fun MergeScreen(
                     }
                 }
             } else {
+                MergeStatusStrip(fileCount = uiState.files.size)
+
                 InfoBanner("Drag or tap the arrows to reorder pages before merging.")
 
                 DashedAddButton(
@@ -189,6 +191,31 @@ fun MergeScreen(
     }
 }
 
+/** "100% Offline" status pill plus the number of files queued, echoing the same
+ * offline-first framing used on Home/View PDF — purely presentational. */
+@Composable
+private fun MergeStatusStrip(fileCount: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            "100% Offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            "$fileCount file${if (fileCount == 1) "" else "s"} queued",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+}
+
 @Composable
 private fun MergeFileRow(
     item: MergeFileItem,
@@ -200,8 +227,9 @@ private fun MergeFileRow(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
