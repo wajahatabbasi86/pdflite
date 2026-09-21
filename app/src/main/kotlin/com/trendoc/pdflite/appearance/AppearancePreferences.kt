@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
  * choice and light/dark theme stay independent of each other.
  */
 enum class AccentColor(val label: String, val light: Color, val dark: Color) {
-    STAMP_RED("Stamp Red", light = Color(0xFFC1442D), dark = Color(0xFFE2593F)),
+    STAMP_RED("Stamp Red", light = Color(0xFFB7091B), dark = Color(0xFFFFB3AD)),
     INDIGO("Indigo", light = Color(0xFF4C5FD5), dark = Color(0xFF7C89E0)),
     TEAL("Teal", light = Color(0xFF2F8F82), dark = Color(0xFF5FB3A6)),
     AMBER("Amber", light = Color(0xFFC98A2E), dark = Color(0xFFE0A94F)),
@@ -36,7 +36,7 @@ enum class CardTint(val label: String, val light: Color, val dark: Color) {
 }
 
 enum class BorderTint(val label: String, val light: Color, val dark: Color) {
-    SOFT("Soft", light = Color(0xFFE3DFD5), dark = Color(0xFF333947)),
+    SOFT("Soft", light = Color(0xFFE2E8F0), dark = Color(0xFF333947)),
     CRISP("Crisp", light = Color(0xFFC7C2B4), dark = Color(0xFF4A5262)),
     INK("Ink", light = Color(0xFF8A8F9B), dark = Color(0xFF6B7280));
 
@@ -44,7 +44,7 @@ enum class BorderTint(val label: String, val light: Color, val dark: Color) {
 }
 
 enum class MutedTint(val label: String, val light: Color, val dark: Color) {
-    WARM("Warm", light = Color(0xFF8A8478), dark = Color(0xFFB7BCC6)),
+    WARM("Warm", light = Color(0xFF64748B), dark = Color(0xFFB7BCC6)),
     COOL("Cool", light = Color(0xFF6B7280), dark = Color(0xFFA4A9B6)),
     GRAY("Gray", light = Color(0xFF75797F), dark = Color(0xFF9CA3AF));
 

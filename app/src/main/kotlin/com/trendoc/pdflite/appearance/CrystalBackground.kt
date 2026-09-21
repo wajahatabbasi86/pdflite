@@ -48,7 +48,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCrystal(
     } else {
         Color.White.copy(alpha = 0.55f)
     }
-    val accentWash = Color(0xFFC1442D).copy(alpha = if (style == BackgroundStyle.CRYSTAL_INK) 0.12f else 0.08f)
+    val accentWash = Color(0xFFB7091B).copy(alpha = if (style == BackgroundStyle.CRYSTAL_INK) 0.12f else 0.08f)
     val baseWash = if (style == BackgroundStyle.CRYSTAL_INK) {
         Color(0xFF10151C).copy(alpha = 0.42f)
     } else {
