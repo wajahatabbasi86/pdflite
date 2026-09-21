@@ -14,3 +14,8 @@ local.properties
 *.ap_
 *.aab
 __pycache__/
+
+# Release signing — never commit the keystore or its real credentials.
+*.jks
+*.keystore
+keystore.properties
