@@ -3,25 +3,31 @@ package com.trendoc.pdflite.ui.compress
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -79,7 +85,50 @@ fun CompressScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Compress PDF") }) }
+        topBar = { TopAppBar(title = { Text("Compress PDF") }) },
+        bottomBar = {
+            if (uiState.fileName != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column(
+                        modifier = Modifier.navigationBarsPadding().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (uiState.isCompressing) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                CircularProgressIndicator()
+                            }
+                        } else {
+                            GradientButton(
+                                text = "Compress (${uiState.level.label})",
+                                onClick = { viewModel.startCompress() },
+                                enabled = uiState.canCompress
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                "  Processed entirely on this device",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
@@ -124,33 +173,54 @@ fun CompressScreen(
                 }
 
                 Text(
-                    "COMPRESSION LEVEL",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    "Compression Preset",
+                    style = MaterialTheme.typography.titleSmall
                 )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    CompressionLevel.entries.forEachIndexed { index, level ->
-                        SegmentedButton(
-                            selected = level == uiState.level,
-                            onClick = { viewModel.setLevel(level) },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = CompressionLevel.entries.size)
-                        ) { Text(level.label) }
-                    }
-                }
 
-                Box(modifier = Modifier.weight(1f))
-
-                if (uiState.isCompressing) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    GradientButton(
-                        text = "Compress",
-                        onClick = { viewModel.startCompress() },
-                        enabled = uiState.canCompress
+                CompressionLevel.entries.forEach { level ->
+                    CompressionPresetCard(
+                        level = level,
+                        selected = level == uiState.level,
+                        onClick = { viewModel.setLevel(level) }
                     )
                 }
+            }
+        }
+    }
+}
+
+/** One selectable preset row, replacing the earlier segmented-button row with the design
+ * reference's vertical radio-card list. The description text is derived from the level's
+ * real jpegQuality/downscale fields — never a fabricated size-reduction percentage, since
+ * the actual reduction depends on the source file and is only known after compressing. */
+@Composable
+private fun CompressionPresetCard(level: CompressionLevel, selected: Boolean, onClick: () -> Unit) {
+    val downscalePct = (level.downscale * 100).roundToInt()
+    val qualityPct = (level.jpegQuality * 100).roundToInt()
+    val description = if (downscalePct >= 100) {
+        "$qualityPct% JPEG quality · original resolution"
+    } else {
+        "$qualityPct% JPEG quality · downscaled to $downscalePct%"
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else androidx.compose.ui.graphics.Color(0x14191C1E)
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RadioButton(selected = selected, onClick = onClick, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
+            Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+                Text(level.label, style = MaterialTheme.typography.titleSmall)
+                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

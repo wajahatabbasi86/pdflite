@@ -15,7 +15,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -31,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.filled.Lock
@@ -44,10 +48,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.trendoc.pdflite.ui.common.DashedAddButton
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.GradientButton
-import com.trendoc.pdflite.ui.common.InfoBanner
 import com.trendoc.pdflite.ui.common.ResultScreen
 
 import com.trendoc.pdflite.util.SafFileUtils
@@ -105,14 +107,12 @@ fun MergeScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Merge PDFs")
-                        if (uiState.files.isNotEmpty()) {
-                            Text(
-                                "${uiState.files.size} file${if (uiState.files.size == 1) "" else "s"} selected",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text("Merge Documents")
+                        Text(
+                            "Combine multiple PDFs into a unified file",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             )
@@ -212,20 +212,32 @@ fun MergeScreen(
                     }
                 }
             } else {
-                MergeStatusStrip(fileCount = uiState.files.size)
+                SandboxIsolationBanner()
 
-                InfoBanner("Drag or tap the arrows to reorder pages before merging.")
-
-                DashedAddButton(
-                    text = "Add More Documents",
-                    onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }
-                )
-
-                Text(
-                    "MERGE QUEUE (${uiState.files.size}) · ${totalPages} pages",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Queue Order", style = MaterialTheme.typography.titleSmall)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                "${uiState.files.size} Document${if (uiState.files.size == 1) "" else "s"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    TextButton(onClick = { viewModel.clearAll() }) {
+                        Text("Clear All", color = MaterialTheme.colorScheme.error)
+                    }
+                }
 
                 LazyColumn(
                     modifier = Modifier.weight(1f),
@@ -242,34 +254,117 @@ fun MergeScreen(
                             onRemove = { viewModel.removeFile(file.uri) }
                         )
                     }
+                    item {
+                        AddMoreDocumentsCard(
+                            onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-/** "100% Offline" status pill plus the number of files queued, echoing the same
- * offline-first framing used on Home/View PDF — purely presentational. */
+/** The "LOCAL SANDBOX ISOLATION" banner from the design reference — a stronger-styled
+ * restatement of the same offline-first fact every other status pill already surfaces,
+ * purely presentational (no new capability). */
 @Composable
-private fun MergeStatusStrip(fileCount: Int) {
+private fun SandboxIsolationBanner() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            "100% Offline",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onTertiaryContainer
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Filled.Lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "LOCAL SANDBOX ISOLATION",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Text(
+                "Zero cloud upload • 100% on-device merge",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
+            )
+        }
+        Icon(
+            Icons.Filled.Check,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onTertiaryContainer
         )
-        Text(
-            "$fileCount file${if (fileCount == 1) "" else "s"} queued",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onTertiaryContainer
-        )
+    }
+}
+
+/** The bigger "Add More PDF Documents" card from the design reference — same SAF picker
+ * action as before, just styled as its own card with a subtitle and info chips instead
+ * of a plain dashed button. */
+@Composable
+private fun AddMoreDocumentsCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
+            Text(
+                "Add More PDF Documents",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Text(
+                "Choose files from device storage, Downloads, or SD card",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Row(
+                modifier = Modifier.padding(top = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf("SAF Native Picker", "Multi-select").forEach { label ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
     }
 }
 

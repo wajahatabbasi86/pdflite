@@ -21,13 +21,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -106,8 +111,62 @@ fun SplitScreen(
         return
     }
 
+    val selectedCount = uiState.pages.count { it.isSelected }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Split / Extract Pages") }) }
+        topBar = { TopAppBar(title = { Text("Split / Extract Pages") }) },
+        bottomBar = {
+            if (uiState.pages.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column(
+                        modifier = Modifier.navigationBarsPadding().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (uiState.isProcessing) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                CircularProgressIndicator()
+                            }
+                        } else {
+                            GradientButton(
+                                text = when (uiState.mode) {
+                                    SplitMode.EXTRACT_SELECTED -> "Extract $selectedCount Page${if (selectedCount == 1) "" else "s"}"
+                                    SplitMode.SPLIT_BY_RANGES -> "Split"
+                                },
+                                onClick = {
+                                    if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
+                                        viewModel.startExtract()
+                                    } else {
+                                        viewModel.startSplit()
+                                    }
+                                },
+                                enabled = if (uiState.mode == SplitMode.EXTRACT_SELECTED) uiState.canExtract else uiState.canSplit
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                "  Processed entirely on this device",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -174,6 +233,21 @@ fun SplitScreen(
                     }
                 }
 
+                if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Tap pages to select", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "$selectedCount / ${uiState.pages.size} chosen",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier.weight(1f),
@@ -204,40 +278,36 @@ fun SplitScreen(
                                             .alpha(if (uiState.mode == SplitMode.EXTRACT_SELECTED) 1f else 0.6f)
                                     )
                                 }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
-                                        Checkbox(
-                                            checked = page.isSelected,
-                                            onCheckedChange = { viewModel.togglePage(page.index) }
+                                Text(
+                                    "Page ${page.index + 1}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                                )
+                            }
+                            if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (page.isSelected) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.surfaceVariant
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (page.isSelected) {
+                                        Icon(
+                                            Icons.Filled.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(12.dp)
                                         )
                                     }
-                                    Text("Page ${page.index + 1}")
                                 }
                             }
                         }
                     }
-                }
-
-                if (uiState.isProcessing) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    val selectedCount = uiState.pages.count { it.isSelected }
-                    GradientButton(
-                        text = when (uiState.mode) {
-                            SplitMode.EXTRACT_SELECTED -> "Extract $selectedCount Page${if (selectedCount == 1) "" else "s"}"
-                            SplitMode.SPLIT_BY_RANGES -> "Split"
-                        },
-                        onClick = {
-                            if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
-                                viewModel.startExtract()
-                            } else {
-                                viewModel.startSplit()
-                            }
-                        },
-                        enabled = if (uiState.mode == SplitMode.EXTRACT_SELECTED) uiState.canExtract else uiState.canSplit
-                    )
                 }
             }
             }

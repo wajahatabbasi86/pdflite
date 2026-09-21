@@ -141,6 +141,10 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { state -> state.copy(files = state.files.filterNot { it.uri == uri }) }
     }
 
+    fun clearAll() {
+        _uiState.update { state -> state.copy(files = emptyList()) }
+    }
+
     /** Swaps the item at [index] with the one above/below it. Reordering matters — merge
      * output follows this in-memory list order (§3.5). */
     fun moveFile(index: Int, delta: Int) {
