@@ -1,7 +1,8 @@
 """Generates TrenDoc's app icon assets (adaptive foreground/background + legacy
-mipmap PNGs), matching the brand artwork: a dark navy card with a glowing cyan
-document glyph (folded corner, a "D"-shaped bracket accenting three lines, and a
-dashed connector path with two node dots).
+mipmap PNGs): a red card — the color universally associated with PDF — with a
+crisp white document glyph (rounded corners, a folded top-right dog-ear, and a
+bold red "b" mark: a stem plus a "D"-shaped bracket with a donut node dot),
+plus a dashed connector path on the red background behind it.
 
 Run: python tools/gen_app_icon.py
 Regenerate whenever the brand artwork in this file's color constants changes.
@@ -15,12 +16,14 @@ from PIL import Image, ImageDraw, ImageFilter
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES_DIR = os.path.join(REPO_ROOT, "app", "src", "main", "res")
 
-# --- brand colors, sampled from the TrenDoc icon artwork ---
-NAVY_DARK = (10, 20, 38)      # #0A1426 — bottom-right of the background gradient
-NAVY_LIGHT = (16, 33, 61)     # #10213D — top-left of the background gradient
-CYAN = (56, 217, 255)         # #38D9FF — glyph glow color
-BLUE = (43, 118, 240)         # #2B76F0 — glyph edge/outline color
-DASH = (58, 92, 130)          # muted steel-blue for the dashed connector path
+# --- brand colors: PDF red, not the earlier navy/cyan treatment ---
+BG_DARK = (140, 16, 22)       # #8C1016 — bottom-right of the background gradient (deep red, not brown)
+BG_LIGHT = (209, 34, 41)      # #D12229 — top-left of the background gradient (PDF red)
+GLOW = (255, 240, 232)        # #FFF0E8 — warm near-white, reused for pill/label text on dark backgrounds
+EDGE = (255, 255, 255)        # the page card itself — pure white, max contrast against the red fill
+FOLD = (253, 226, 226)        # #FDE2E2 — pale pink for the folded dog-ear corner
+DASH = (222, 140, 132)        # muted rose for the dashed connector path, on the red background
+ACCENT = (213, 33, 40)        # #D52128 — bold red for the "b" glyph mark and for text on light backgrounds
 
 DENSITIES = {
     "mdpi": 1.0,
@@ -35,20 +38,20 @@ SUPERSAMPLE = 8           # render this many times larger, then downscale for AA
 
 
 def radial_navy_background(size):
-    """Diagonal navy gradient, light at top-left, dark at bottom-right."""
+    """Diagonal PDF-red gradient, light at top-left, dark at bottom-right."""
     img = Image.new("RGB", (size, size))
     px = img.load()
     for y in range(size):
         for x in range(size):
             t = (x + y) / (2 * (size - 1))
-            r = int(NAVY_LIGHT[0] + (NAVY_DARK[0] - NAVY_LIGHT[0]) * t)
-            g = int(NAVY_LIGHT[1] + (NAVY_DARK[1] - NAVY_LIGHT[1]) * t)
-            b = int(NAVY_LIGHT[2] + (NAVY_DARK[2] - NAVY_LIGHT[2]) * t)
+            r = int(BG_LIGHT[0] + (BG_DARK[0] - BG_LIGHT[0]) * t)
+            g = int(BG_LIGHT[1] + (BG_DARK[1] - BG_LIGHT[1]) * t)
+            b = int(BG_LIGHT[2] + (BG_DARK[2] - BG_LIGHT[2]) * t)
             px[x, y] = (r, g, b)
     return img
 
 
-def draw_glyph(size, glow=True):
+def draw_glyph(size, glow=False):
     """The document + dashed-path glyph, on a transparent canvas of `size`.
 
     Drawn at 1000x1000 internal coordinates then resized, so proportions stay
@@ -92,45 +95,42 @@ def draw_glyph(size, glow=True):
 
     dashed_rounded_path()
 
-    # the page: rounded rect with a folded top-right corner
+    # the page: a plain white card, rounded on all four corners, with a folded
+    # (dog-eared) top-right corner — a flat, crisp file glyph, not the glowing
+    # wireframe of the earlier draft
     page_l, page_t, page_r, page_b = 280, 210, 700, 790
     fold = 90
-    outline_w = 16
+    corner_r = 46
 
-    page = [
-        (page_l + 40, page_t),
-        (page_r - fold, page_t),
-        (page_r, page_t + fold),
-        (page_r, page_b - 40),
-        (page_r - 40, page_b),
-        (page_l + 40, page_b),
-        (page_l, page_b - 40),
-        (page_l, page_t + 40),
-    ]
-    draw.polygon(page, fill=NAVY_DARK + (255,))
-    draw.line(page + [page[0]], fill=BLUE + (255,), width=outline_w, joint="curve")
-    # folded-corner triangle accent
+    draw.rounded_rectangle([page_l, page_t, page_r, page_b], radius=corner_r, fill=EDGE + (255,))
+    # the fold cut replaces that corner's rounding with a diagonal dog-ear
     draw.polygon(
-        [(page_r - fold, page_t), (page_r, page_t + fold), (page_r - fold, page_t + fold)],
-        fill=BLUE + (255,),
+        [(page_r - fold, page_t), (page_r, page_t), (page_r, page_t + fold)],
+        fill=FOLD + (255,),
+    )
+    # small inward curve where the fold's point meets the page, matching a real dog-ear
+    notch_r = 22
+    draw.pieslice(
+        [page_r - fold - notch_r, page_t + fold - notch_r, page_r - fold + notch_r, page_t + fold + notch_r],
+        start=0, end=90, fill=EDGE + (255,),
     )
 
-    # three accent lines + the "D" bracket to their right
-    line_x0, line_x1 = 410, 560
-    for i, ly in enumerate((470, 540, 610)):
-        w = line_x1 - (i * 40) - line_x0
-        draw.line([(line_x0, ly), (line_x0 + max(w, 60), ly)], fill=CYAN + (255,), width=12)
+    # bold "b" glyph: a vertical stem + a "D"-shaped bracket, in solid ACCENT red
+    stem_x, stem_top, stem_bottom = 430, 350, 690
+    stroke_w = 34
+    draw.line([(stem_x, stem_top), (stem_x, stem_bottom)], fill=ACCENT + (255,), width=stroke_w)
 
-    cx, cy, r = 585, 540, 110
+    cx, cy, r = 460, 540, 130
     draw.arc(
-        [cx - r, cy - r, cx + r, cy + r], start=-95, end=95,
-        fill=CYAN + (255,), width=22,
+        [cx - r, cy - r, cx + r, cy + r], start=-90, end=90,
+        fill=ACCENT + (255,), width=stroke_w,
     )
 
-    # node dots
-    draw.ellipse([cx + r - 24, cy - 24, cx + r + 24, cy + 24], fill=CYAN + (255,))
-    draw.ellipse([page_l - 18, page_b - 18, page_l + 18, page_b + 18], fill=BLUE + (255,))
-    draw.ellipse([page_r - 18, page_b - 18, page_r + 18, page_b + 18], fill=CYAN + (255,))
+    # donut node dot where the bracket's tip meets the (implied) connector path
+    dot_x, dot_y, dot_r = cx + r, cy, 34
+    draw.ellipse([dot_x - dot_r, dot_y - dot_r, dot_x + dot_r, dot_y + dot_r], fill=(163, 18, 24, 255))
+    hole_r = 15
+    draw.ellipse([dot_x - hole_r, dot_y - hole_r, dot_x + hole_r, dot_y + hole_r], fill=EDGE + (255,))
 
     if glow:
         glow_layer = layer.filter(ImageFilter.GaussianBlur(14))

@@ -4,7 +4,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
-from gen_app_icon import NAVY_DARK, NAVY_LIGHT, CYAN, radial_navy_background, draw_glyph  # noqa: E402
+from gen_app_icon import BG_DARK, GLOW, ACCENT, radial_navy_background, draw_glyph  # noqa: E402
 
 W, H = 1024, 500
 FONT_DIR = "C:/Windows/Fonts/"
@@ -36,11 +36,11 @@ tile.paste(glyph, ((tile_hi - glyph.width) // 2, (tile_hi - glyph.height) // 2),
 tile = tile.resize((icon_size, icon_size), Image.LANCZOS)
 img.paste(tile, (icon_x, icon_y), tile)
 
-# --- wordmark: "Tren" (dark navy) + "doc" (cyan) ---
+# --- wordmark: "Tren" (near-black) + "doc" (PDF red) ---
 text_x = icon_x + icon_size + 44
 tren_w = draw.textbbox((0, 0), "Tren", font=title_font)[2]
-draw.text((text_x, 118), "Tren", font=title_font, fill=NAVY_DARK)
-draw.text((text_x + tren_w, 118), "doc", font=title_font, fill=CYAN)
+draw.text((text_x, 118), "Tren", font=title_font, fill=(20, 22, 28))
+draw.text((text_x + tren_w, 118), "doc", font=title_font, fill=ACCENT)
 
 draw.text((text_x, 202), "Merge, split & compress PDFs —", font=tagline_font, fill=(60, 60, 68, 255))
 draw.text((text_x, 240), "no pop-ups, no subscription, no account.", font=tagline_font, fill=(60, 60, 68, 255))
@@ -55,8 +55,8 @@ def pill(x, y, label):
     x0, y0 = x, y
     x1, y1 = x + w + padding_x * 2, y + h + padding_y * 2
     draw.rounded_rectangle([x0, y0, x1, y1], radius=(y1 - y0) // 2,
-                            fill=NAVY_DARK + (255,))
-    draw.text((x0 + padding_x, y0 + padding_y - bbox[1]), label, font=pill_font, fill=CYAN + (255,))
+                            fill=BG_DARK + (255,))
+    draw.text((x0 + padding_x, y0 + padding_y - bbox[1]), label, font=pill_font, fill=GLOW + (255,))
     return x1
 
 
