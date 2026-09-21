@@ -87,7 +87,15 @@ policy review and a real user complaint would both catch.
   already say "by TrenBridge IT" to match.
 - The real AdMob App ID and ad unit ID, and the real Play Billing product ID for "remove_ads",
   swapping out the test IDs called out in `AndroidManifest.xml` / `AdBanner.kt` /
-  `BillingRepository.kt`.
+  `BillingRepository.kt`. Set "remove_ads"'s price to **$1.99 USD** (with Play's own local-currency
+  conversion for other regions) when creating it in Play Console — low enough to be an easy
+  impulse buy against one small banner ad, matching the "cheap, no-nonsense" positioning in the
+  full description. The app always fetches this price live from Play (see
+  `BillingRepository.loadProductDetails`), so nothing in the app's own text needs to change when
+  you set it.
+- The three donation tiers ("donate_small", "donate_medium", "donate_large") also need to be
+  created in Play Console before the Donate screen can complete a real purchase — no price
+  recommendation set for these yet.
 - The privacy policy above, published somewhere public, with its placeholder contact address
   replaced.
 - Content rating questionnaire and target audience/data-safety form, filled out in Play Console
