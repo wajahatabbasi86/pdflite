@@ -59,8 +59,8 @@ private data class ToolCard(
 /**
  * Home screen per docs/REQUIREMENTS.md §2. Tool arrangement is a user preference
  * ([HomeLayout], see AppearanceScreen) rather than one fixed layout:
- * - [HomeLayout.BENTO] (default): Merge full-width, Split/Compress medium, Image<->PDF
- *   small — tile size communicates priority.
+ * - [HomeLayout.BENTO] (default): View PDF full-width (the app's core feature), Split/
+ *   Compress medium, everything else small — tile size communicates priority.
  * - [HomeLayout.LIST]: flat rows with a tinted icon avatar, a short badge, and a chevron —
  *   the flat/utilitarian alternative from the design system's Home layout options.
  * Featured/Carousel beyond these two are offered in Appearance but not yet built here
@@ -69,19 +69,19 @@ private data class ToolCard(
  * Every tool card below routes to its real feature screen (see TrenDocNavHost) — Merge,
  * Split, Compress, Image<->PDF, PDF->Image, View PDF, and Fill Forms are all built.
  */
+// View PDF is the core feature (read/zoom/pan/swipe/presentation) — it gets the hero
+// tile; every other tool is secondary and lives in the smaller grid below it.
 private val bigTool = ToolCard(
-    "Merge PDFs", "Combine multiple documents into one", "Multi-file", "merge", Color(0xFFC1442D), ToolGlyphType.MERGE
+    "View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF
 )
 private val medTools = listOf(
     ToolCard("Split", "Extract specific pages or burst all", "Custom range", "split", Color(0xFF4C5FD5), ToolGlyphType.SPLIT),
     ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "compress", Color(0xFF2F8F82), ToolGlyphType.COMPRESS),
 )
 private val smallTools = listOf(
+    ToolCard("Merge PDFs", "Combine multiple documents into one", "Multi-file", "merge", Color(0xFFC1442D), ToolGlyphType.MERGE),
     ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "image_to_pdf", Color(0xFFC98A2E), ToolGlyphType.IMAGE_TO_PDF),
     ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "pdf_to_image", Color(0xFF7A4B8A), ToolGlyphType.PDF_TO_IMAGE),
-    // Read-only, no SAF save dialog at the end — also the landing screen when TrenDoc is
-    // opened via the system "Open with" chooser for a PDF (see PendingPdfIntent).
-    ToolCard("View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF),
     // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
     ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "fill_forms", Color(0xFF4A8B5C), ToolGlyphType.FILL_FORM),
 )
@@ -177,7 +177,7 @@ private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
             tool = bigTool,
             onClick = { onToolSelected(bigTool.route) },
             onCrystal = darkGround,
-            modifier = Modifier.fillMaxWidth().height(96.dp)
+            modifier = Modifier.fillMaxWidth().height(108.dp)
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             medTools.forEach { tool ->
@@ -190,15 +190,17 @@ private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
             }
         }
         SectionHeader("Document Utilities", darkGround)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            smallTools.forEach { tool ->
-                BentoTile(
-                    tool = tool,
-                    onClick = { onToolSelected(tool.route) },
-                    onCrystal = darkGround,
-                    modifier = Modifier.weight(1f).height(64.dp),
-                    compact = true
-                )
+        smallTools.chunked(2).forEach { rowTools ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                rowTools.forEach { tool ->
+                    BentoTile(
+                        tool = tool,
+                        onClick = { onToolSelected(tool.route) },
+                        onCrystal = darkGround,
+                        modifier = Modifier.weight(1f).height(84.dp),
+                        compact = true
+                    )
+                }
             }
         }
     }
@@ -295,7 +297,9 @@ private fun BentoTile(
                     Text(
                         tool.badge,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (onCrystal) contentColor else tool.tint
+                        color = if (onCrystal) contentColor else tool.tint,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }
@@ -303,6 +307,8 @@ private fun BentoTile(
                 tool.label,
                 style = MaterialTheme.typography.titleSmall,
                 color = contentColor,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 6.dp)
             )
             if (!compact) {
