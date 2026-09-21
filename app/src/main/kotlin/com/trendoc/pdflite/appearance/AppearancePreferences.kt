@@ -66,8 +66,8 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
 data class AppearancePreferences(
     val accent: AccentColor = AccentColor.STAMP_RED,
     val background: BackgroundStyle = BackgroundStyle.PLAIN,
-    val homeLayout: HomeLayout = HomeLayout.LIST,
-    val theme: ThemeMode = ThemeMode.SYSTEM,
+    val homeLayout: HomeLayout = HomeLayout.BENTO,
+    val theme: ThemeMode = ThemeMode.LIGHT,
     val cardTint: CardTint = CardTint.PAPER,
     val borderTint: BorderTint = BorderTint.SOFT,
     val mutedTint: MutedTint = MutedTint.WARM

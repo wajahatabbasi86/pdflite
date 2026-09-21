@@ -32,8 +32,8 @@ class AppearanceRepository(private val context: Context) {
         AppearancePreferences(
             accent = prefs.enumOrDefault(Keys.ACCENT, AccentColor.STAMP_RED),
             background = prefs.enumOrDefault(Keys.BACKGROUND, BackgroundStyle.PLAIN),
-            homeLayout = prefs.enumOrDefault(Keys.HOME_LAYOUT, HomeLayout.LIST),
-            theme = prefs.enumOrDefault(Keys.THEME, ThemeMode.SYSTEM),
+            homeLayout = prefs.enumOrDefault(Keys.HOME_LAYOUT, HomeLayout.BENTO),
+            theme = prefs.enumOrDefault(Keys.THEME, ThemeMode.LIGHT),
             cardTint = prefs.enumOrDefault(Keys.CARD_TINT, CardTint.PAPER),
             borderTint = prefs.enumOrDefault(Keys.BORDER_TINT, BorderTint.SOFT),
             mutedTint = prefs.enumOrDefault(Keys.MUTED_TINT, MutedTint.WARM)

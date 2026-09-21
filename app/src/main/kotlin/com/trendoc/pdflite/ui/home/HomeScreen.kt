@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -107,8 +109,33 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, o
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("TrenDoc") },
+                title = {
+                    Column {
+                        Text(
+                            "TrenDoc",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            "BY TRENBRIDGE IT · Offline PDF Toolkit",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
                 actions = {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "100% Offline",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
                     // "Remove Ads" stays a persistent, non-modal top-bar action — Appearance is
                     // a separate entry point, not a replacement for it. Always tappable, even
                     // during an active ad-free window, so the user can check the remaining time
@@ -142,7 +169,7 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, o
 @Composable
 private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OfflineBadgeStrip(darkGround)
@@ -219,7 +246,7 @@ private fun SectionHeader(title: String, darkGround: Boolean) {
 @Composable
 private fun HomeList(onToolSelected: (String) -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         OfflineBadgeStrip(darkGround = false)
