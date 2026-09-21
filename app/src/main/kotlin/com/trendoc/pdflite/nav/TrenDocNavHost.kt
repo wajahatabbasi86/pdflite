@@ -1,15 +1,21 @@
 package com.trendoc.pdflite.nav
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.trendoc.pdflite.billing.EntitlementRepository
 import com.trendoc.pdflite.ui.billing.BillingScreen
+import com.trendoc.pdflite.ui.common.AdBanner
 import com.trendoc.pdflite.ui.compress.CompressScreen
-import com.trendoc.pdflite.ui.donate.DonateScreen
 import com.trendoc.pdflite.ui.fillforms.FillFormsScreen
 import com.trendoc.pdflite.ui.home.HomeScreen
 import com.trendoc.pdflite.ui.imagetopdf.ImageToPdfScreen
@@ -39,7 +45,6 @@ object Routes {
     const val FILL_FORMS = "fill_forms"
     const val APPEARANCE = "appearance"
     const val BILLING = "billing"
-    const val DONATE = "donate"
 }
 
 @Composable
@@ -55,64 +60,76 @@ fun TrenDocNavHost() {
         }
     }
 
-    NavHost(navController = navController, startDestination = Routes.HOME) {
-        composable(Routes.HOME) {
-            HomeScreen(
-                onToolSelected = { route -> navController.navigate(route) },
-                onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
-                onOpenBilling = { navController.navigate(Routes.BILLING) }
-            )
+    // The banner lives here, below the NavHost on every single screen (not just Home) — one
+    // shared instance instead of every screen composing its own, and it never eats into a
+    // screen's own layout since it's a sibling below the NavHost's allotted space, not inside
+    // it. Hidden entirely (not just invisible) whenever an ad-free window is active.
+    val context = LocalContext.current
+    val entitlementRepository = remember { EntitlementRepository(context) }
+    val isAdFree by entitlementRepository.isAdFree.collectAsState(initial = false)
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = Routes.HOME,
+            modifier = Modifier.weight(1f)
+        ) {
+            composable(Routes.HOME) {
+                HomeScreen(
+                    onToolSelected = { route -> navController.navigate(route) },
+                    onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
+                    onOpenBilling = { navController.navigate(Routes.BILLING) }
+                )
+            }
+            composable(Routes.BILLING) {
+                BillingScreen(onDone = { navController.popBackStack() })
+            }
+            composable(Routes.APPEARANCE) {
+                AppearanceScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.PICKER_DEMO) {
+                PdfPickerScreen()
+            }
+            composable(Routes.MERGE) {
+                MergeScreen(onDone = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                })
+            }
+            composable(Routes.SPLIT) {
+                SplitScreen(onDone = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                })
+            }
+            composable(Routes.COMPRESS) {
+                CompressScreen(onDone = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                })
+            }
+            composable(Routes.IMAGE_TO_PDF) {
+                ImageToPdfScreen(onDone = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                })
+            }
+            composable(Routes.PDF_TO_IMAGE) {
+                PdfToImageScreen(onDone = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                })
+            }
+            composable(Routes.VIEW_PDF) {
+                ViewPdfScreen(
+                    initialUri = PendingPdfIntent.consume(),
+                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+                )
+            }
+            composable(Routes.FILL_FORMS) {
+                FillFormsScreen(onDone = {
+                    navController.popBackStack(Routes.HOME, inclusive = false)
+                })
+            }
         }
-        composable(Routes.BILLING) {
-            BillingScreen(onDone = { navController.popBackStack() })
-        }
-        composable(Routes.APPEARANCE) {
-            AppearanceScreen(
-                onBack = { navController.popBackStack() },
-                onOpenDonate = { navController.navigate(Routes.DONATE) }
-            )
-        }
-        composable(Routes.DONATE) {
-            DonateScreen(onDone = { navController.popBackStack() })
-        }
-        composable(Routes.PICKER_DEMO) {
-            PdfPickerScreen()
-        }
-        composable(Routes.MERGE) {
-            MergeScreen(onDone = {
-                navController.popBackStack(Routes.HOME, inclusive = false)
-            })
-        }
-        composable(Routes.SPLIT) {
-            SplitScreen(onDone = {
-                navController.popBackStack(Routes.HOME, inclusive = false)
-            })
-        }
-        composable(Routes.COMPRESS) {
-            CompressScreen(onDone = {
-                navController.popBackStack(Routes.HOME, inclusive = false)
-            })
-        }
-        composable(Routes.IMAGE_TO_PDF) {
-            ImageToPdfScreen(onDone = {
-                navController.popBackStack(Routes.HOME, inclusive = false)
-            })
-        }
-        composable(Routes.PDF_TO_IMAGE) {
-            PdfToImageScreen(onDone = {
-                navController.popBackStack(Routes.HOME, inclusive = false)
-            })
-        }
-        composable(Routes.VIEW_PDF) {
-            ViewPdfScreen(
-                initialUri = PendingPdfIntent.consume(),
-                onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
-            )
-        }
-        composable(Routes.FILL_FORMS) {
-            FillFormsScreen(onDone = {
-                navController.popBackStack(Routes.HOME, inclusive = false)
-            })
+
+        if (!isAdFree) {
+            AdBanner()
         }
     }
 }

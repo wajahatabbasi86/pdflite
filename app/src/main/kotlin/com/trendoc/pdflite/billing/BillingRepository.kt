@@ -2,17 +2,16 @@ package com.trendoc.pdflite.billing
 
 import android.app.Activity
 import android.content.Context
-import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.ConsumeParams
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
-import com.android.billingclient.api.QueryPurchasesParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,25 +21,26 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** The one-time, non-consumable "Remove Ads" product — must be created in Play Console's
- * Monetization > Products > In-app products with this exact ID before purchases can succeed
- * on a real listing (see docs/REQUIREMENTS.md §7). */
+/** The "Remove Ads" product — must be created in Play Console's Monetization > Products >
+ * In-app products with this exact ID before purchases can succeed on a real listing (see
+ * docs/REQUIREMENTS.md §7). Consumable rather than a one-time forever unlock: each purchase
+ * grants [PAID_REMOVAL_DURATION_MILLIS] of ad-free time and can be bought again once that
+ * window runs out, the same shape as the rewarded-video path in [RewardedAdRepository]. */
 const val REMOVE_ADS_PRODUCT_ID = "remove_ads"
 
-/** UI-facing state for the Billing screen. [priceText] is only populated once
- * [BillingClient.ProductDetails] has actually been fetched from Play, per §7 ("price...
- * fetched live from Play Billing") — never hardcoded. */
+/** UI-facing state for the Remove Ads screen. [priceText] is only populated once
+ * [BillingClient.ProductDetails] has actually been fetched from Play — never hardcoded. */
 data class BillingUiState(
     val isConnecting: Boolean = true,
     val priceText: String? = null,
-    val isPurchased: Boolean = false,
     val isPurchasing: Boolean = false,
+    val justGranted: Boolean = false,
     val billingUnavailable: Boolean = false,
     val errorMessage: String? = null
 )
 
 /**
- * Wraps the Play Billing Library for the single "Remove Ads" non-consumable product. Owned by
+ * Wraps the Play Billing Library for the single "Remove Ads" consumable product. Owned by
  * [com.trendoc.pdflite.ui.billing.BillingViewModel], which forwards its own [viewModelScope]
  * lifetime via [start]/[close].
  *
@@ -80,25 +80,24 @@ class BillingRepository(
         )
         .build()
 
-    /** Opens the connection, then loads the product's live price and any existing purchase. */
+    /** Opens the connection, then loads the product's live price. No purchase-history query on
+     * start — a consumable has nothing standing to restore once its window has been consumed,
+     * unlike the old non-consumable model. */
     fun start() {
         _uiState.update { it.copy(isConnecting = true, billingUnavailable = false, errorMessage = null) }
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     loadProductDetails()
-                    queryExistingPurchases(showLoadingOnEmpty = false)
                 } else {
-                    _uiState.update {
-                        it.copy(isConnecting = false, billingUnavailable = true)
-                    }
+                    _uiState.update { it.copy(isConnecting = false, billingUnavailable = true) }
                 }
             }
 
             override fun onBillingServiceDisconnected() {
                 // The library retries reconnection internally on the next call; surfacing this
-                // here would just flash an error during a transient drop, so only user-triggered
-                // actions (buy/restore) that fail against a disconnected client report an error.
+                // here would just flash an error during a transient drop, so only a
+                // user-triggered buy() against a disconnected client reports an error.
             }
         })
     }
@@ -131,40 +130,13 @@ class BillingRepository(
         }
     }
 
-    /** Re-queries Play's purchase history — the "Restore Purchases" action (§7 point 4), also
-     * run once silently on [start] so a reinstall or new device picks up an existing purchase
-     * without the user needing to tap anything. */
-    fun queryExistingPurchases(showLoadingOnEmpty: Boolean = true) {
-        val params = QueryPurchasesParams.newBuilder()
-            .setProductType(BillingClient.ProductType.INAPP)
-            .build()
-
-        billingClient.queryPurchasesAsync(params) { result, purchases ->
-            if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                if (showLoadingOnEmpty) {
-                    _uiState.update { it.copy(errorMessage = "Couldn't check past purchases. Please try again.") }
-                }
-                return@queryPurchasesAsync
-            }
-            val owned = purchases.any { purchase ->
-                purchase.products.contains(REMOVE_ADS_PRODUCT_ID) &&
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED
-            }
-            if (owned) {
-                purchases.forEach { handlePurchase(it) }
-            } else if (showLoadingOnEmpty) {
-                _uiState.update { it.copy(errorMessage = "No previous purchase found for this account.") }
-            }
-        }
-    }
-
     fun launchPurchaseFlow(activity: Activity) {
         val details = productDetails
         if (details == null) {
             _uiState.update { it.copy(billingUnavailable = true) }
             return
         }
-        _uiState.update { it.copy(isPurchasing = true, errorMessage = null) }
+        _uiState.update { it.copy(isPurchasing = true, errorMessage = null, justGranted = false) }
         val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
             .build()
@@ -176,19 +148,18 @@ class BillingRepository(
 
     private fun handlePurchase(purchase: Purchase) {
         if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
+        if (!purchase.products.contains(REMOVE_ADS_PRODUCT_ID)) return
 
-        scope.launch { entitlementRepository.setAdsRemoved(true) }
-        _uiState.update { it.copy(isPurchasing = false, isPurchased = true, errorMessage = null) }
+        scope.launch { entitlementRepository.grantAdFreeFor(PAID_REMOVAL_DURATION_MILLIS) }
+        _uiState.update { it.copy(isPurchasing = false, justGranted = true, errorMessage = null) }
 
-        // Play requires every purchase to be acknowledged within 3 days or it's auto-refunded —
-        // this is a non-consumable "own it forever" product, so acknowledge rather than consume.
-        if (!purchase.isAcknowledged) {
-            val ackParams = AcknowledgePurchaseParams.newBuilder()
-                .setPurchaseToken(purchase.purchaseToken)
-                .build()
-            billingClient.acknowledgePurchase(ackParams) { /* best-effort; entitlement is
-                already persisted locally above regardless of ack result */ }
-        }
+        // Consumable, not acknowledge-only: consuming immediately is what lets the same
+        // product be bought again once this window runs out.
+        val consumeParams = ConsumeParams.newBuilder()
+            .setPurchaseToken(purchase.purchaseToken)
+            .build()
+        billingClient.consumeAsync(consumeParams) { _, _ -> /* entitlement already granted above
+            regardless of the consume call's own result */ }
     }
 
     fun clearError() {
@@ -199,3 +170,6 @@ class BillingRepository(
         billingClient.endConnection()
     }
 }
+
+/** How long a single paid "Remove Ads" purchase removes the banner for. */
+const val PAID_REMOVAL_DURATION_MILLIS = 24L * 60 * 60 * 1000 // 1 day

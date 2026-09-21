@@ -5,23 +5,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,86 +25,65 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.billing.DonationTier
 
 /**
- * "Support TrenDoc" — a purely optional, one-time donation screen with three fixed Play
- * Billing tiers (Play doesn't support an arbitrary/open amount on a single product). Reached
- * from Appearance rather than Home's top bar, which is already occupied by the persistent
- * "Remove Ads" action (§7) — this is goodwill, not a purchase that changes anything the app
- * does, so it doesn't need the same permanent visibility.
+ * "Support TrenDoc" — a purely optional donation section with three fixed Play Billing tiers
+ * (Play doesn't support an arbitrary/open amount on a single product), embedded at the bottom
+ * of the Remove Ads screen rather than as its own destination — goodwill sitting alongside the
+ * other two ways of dealing with the banner, not a purchase that changes anything the app does.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DonateScreen(onDone: () -> Unit, viewModel: DonationViewModel = viewModel()) {
+fun DonationSection(viewModel: DonationViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Support TrenDoc") },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Support TrenDoc", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Nothing here is paywalled. If the app's been useful, a one-time donation helps " +
+                "keep it that way — entirely optional, and it doesn't unlock or change anything.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        if (uiState.thankYouVisible) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Text(
+                    "Thank you!",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                "TrenDoc has no subscription and nothing paywalled. If it's been useful, a " +
-                    "one-time donation helps keep it that way — entirely optional, and it " +
-                    "doesn't unlock or change anything in the app.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
-            if (uiState.thankYouVisible) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Text(
-                        "Thank you!",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+        when {
+            uiState.billingUnavailable -> BillingUnavailableCard()
+            uiState.isConnecting -> LoadingIndicator()
+            else -> {
+                uiState.tiers.forEach { tier ->
+                    DonationTierCard(
+                        tier = tier,
+                        isPurchasing = uiState.purchasingProductId == tier.productId,
+                        onDonate = {
+                            (context as? Activity)?.let { activity -> viewModel.donate(activity, tier.productId) }
+                        }
                     )
                 }
             }
+        }
 
-            when {
-                uiState.billingUnavailable -> BillingUnavailableCard()
-                uiState.isConnecting -> LoadingIndicator()
-                else -> {
-                    uiState.tiers.forEach { tier ->
-                        DonationTierCard(
-                            tier = tier,
-                            isPurchasing = uiState.purchasingProductId == tier.productId,
-                            onDonate = {
-                                (context as? Activity)?.let { activity -> viewModel.donate(activity, tier.productId) }
-                            }
-                        )
-                    }
-                }
-            }
-
-            uiState.errorMessage?.let { message ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) {
-                    Text(
-                        message,
-                        modifier = Modifier.padding(12.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
+        uiState.errorMessage?.let { message ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Text(
+                    message,
+                    modifier = Modifier.padding(12.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
             }
         }
     }

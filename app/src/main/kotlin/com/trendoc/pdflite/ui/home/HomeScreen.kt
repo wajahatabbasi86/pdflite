@@ -40,7 +40,6 @@ import com.trendoc.pdflite.appearance.BackgroundStyle
 import com.trendoc.pdflite.appearance.CrystalSurface
 import com.trendoc.pdflite.appearance.HomeLayout
 import com.trendoc.pdflite.billing.EntitlementRepository
-import com.trendoc.pdflite.ui.common.AdBanner
 import com.trendoc.pdflite.ui.common.ToolAvatar
 import com.trendoc.pdflite.ui.common.ToolGlyphType
 import com.trendoc.pdflite.ui.settings.AppearanceViewModel
@@ -86,6 +85,14 @@ private val smallTools = listOf(
 )
 private val allTools = listOf(bigTool) + medTools + smallTools
 
+/** "2h 14m" / "38m" for the top bar's "Ad-free (...)" label. */
+private fun formatRemaining(millis: Long): String {
+    val totalMinutes = millis / 60_000
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, onOpenBilling: () -> Unit) {
@@ -95,38 +102,27 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, o
 
     val context = LocalContext.current
     val entitlementRepository = remember { EntitlementRepository(context) }
-    val adsRemoved by entitlementRepository.adsRemoved.collectAsState(initial = false)
+    val remainingMillis by entitlementRepository.remainingMillis.collectAsState(initial = 0L)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("TrenDoc") },
                 actions = {
-                    // §7: "Remove Ads" stays a persistent, non-modal top-bar action —
-                    // Appearance is a separate entry point, not a replacement for it. Once
-                    // purchased it becomes a plain, non-clickable "Ad-free" indicator instead.
-                    if (adsRemoved) {
-                        Text(
-                            "Ad-free",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        )
-                    } else {
-                        TextButton(onClick = onOpenBilling) {
-                            Text("Remove Ads")
-                        }
+                    // "Remove Ads" stays a persistent, non-modal top-bar action — Appearance is
+                    // a separate entry point, not a replacement for it. Always tappable, even
+                    // during an active ad-free window, so the user can check the remaining time
+                    // or extend it. The banner itself is global now (see TrenDocNavHost), not
+                    // owned by this screen.
+                    TextButton(onClick = onOpenBilling) {
+                        Text(if (remainingMillis > 0) "Ad-free (${formatRemaining(remainingMillis)})" else "Remove Ads")
                     }
                     IconButton(onClick = onOpenAppearance) {
                         Icon(Icons.Filled.Settings, contentDescription = "Appearance")
                     }
                 }
             )
-        },
-        // AdMob banner (§1.5, §7) — Home screen only, not on tool/processing screens. Not
-        // composed at all once ads are removed, so the ad SDK never even loads a banner for
-        // that view, per §7's "removed entirely (not just hidden)."
-        bottomBar = { if (!adsRemoved) AdBanner() }
+        }
     ) { innerPadding ->
         CrystalSurface(
             style = prefs.background,
