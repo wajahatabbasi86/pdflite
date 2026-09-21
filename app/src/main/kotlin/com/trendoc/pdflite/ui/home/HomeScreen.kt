@@ -2,6 +2,7 @@ package com.trendoc.pdflite.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -249,18 +253,26 @@ private fun HeroToolCard(tool: ToolCard, onClick: () -> Unit, onCrystal: Boolean
 @Composable
 private fun OfflineBadgeStrip(darkGround: Boolean) {
     val contentColor = if (darkGround) Color(0xFFD7D3C8) else MaterialTheme.colorScheme.onSurfaceVariant
+    val badges = listOf(
+        Icons.Filled.CloudOff to "No Cloud Upload",
+        Icons.Filled.Bookmark to "Zero Watermark",
+        Icons.Filled.Block to "No Interstitial Ads"
+    )
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        listOf("No Cloud Upload", "Zero Watermark", "No Interstitial Ads").forEach { label ->
-            Box(
+        badges.forEach { (icon, label) ->
+            Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .background(contentColor.copy(alpha = 0.10f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor)
+                Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(12.dp))
+                Text(label, style = MaterialTheme.typography.labelSmall, color = contentColor, maxLines = 1)
             }
         }
     }
@@ -359,12 +371,18 @@ private fun DocumentUtilityCard(
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 2.dp)
             )
-            Text(
-                tool.linkText,
-                style = MaterialTheme.typography.labelMedium,
-                color = tool.tint,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 8.dp)
-            )
+            ) {
+                Text(tool.linkText, style = MaterialTheme.typography.labelMedium, color = tool.tint)
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = tool.tint,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }

@@ -128,6 +128,11 @@ fun ViewPdfScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onDone) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 title = { Text(uiState.fileName ?: "View PDF") },
                 actions = {
                     uiState.sourceUri?.let { uri ->
