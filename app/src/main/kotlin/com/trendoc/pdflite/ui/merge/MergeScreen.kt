@@ -29,8 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -113,6 +116,79 @@ fun MergeScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            if (uiState.files.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Manifest summary row, matching the design reference's sticky
+                        // bottom-bar treatment — same file/page counts already shown
+                        // above the queue, restated here next to the primary action.
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "Manifest",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "${uiState.files.size} file${if (uiState.files.size == 1) "" else "s"} • $totalPages page${if (totalPages == 1) "" else "s"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        if (uiState.isMerging) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                CircularProgressIndicator()
+                            }
+                        } else {
+                            GradientButton(
+                                text = if (validFiles.size >= 2) {
+                                    "Merge ${validFiles.size} PDFs ($totalPages Pages)"
+                                } else {
+                                    "Merge"
+                                },
+                                onClick = { viewModel.startMerge() },
+                                enabled = uiState.canMerge
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Lock,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                "  Processed entirely on this device",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -166,25 +242,6 @@ fun MergeScreen(
                             onRemove = { viewModel.removeFile(file.uri) }
                         )
                     }
-                }
-
-                if (uiState.isMerging) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    GradientButton(
-                        text = if (validFiles.size >= 2) {
-                            "Merge ${validFiles.size} PDFs ($totalPages Pages)"
-                        } else {
-                            "Merge"
-                        },
-                        onClick = { viewModel.startMerge() },
-                        enabled = uiState.canMerge
-                    )
                 }
             }
         }
