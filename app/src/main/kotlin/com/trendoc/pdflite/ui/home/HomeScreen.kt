@@ -62,12 +62,11 @@ private data class ToolCard(
  *   small — tile size communicates priority.
  * - [HomeLayout.LIST]: flat rows with a tinted icon avatar, a short badge, and a chevron —
  *   the flat/utilitarian alternative from the design system's Home layout options.
- * List/Featured/Carousel beyond these two are offered in Appearance but not yet built here
+ * Featured/Carousel beyond these two are offered in Appearance but not yet built here
  * (disabled there) — see AppearanceScreen.
  *
- * Compress/Convert routes are still placeholders until their respective build steps (5-7)
- * land; tapping one of those just navigates to the picker demo screen for now. Merge
- * (step 3) and Split (step 4) route to the real features.
+ * Every tool card below routes to its real feature screen (see TrenDocNavHost) — Merge,
+ * Split, Compress, Image<->PDF, PDF->Image, View PDF, and Fill Forms are all built.
  */
 private val bigTool = ToolCard(
     "Merge PDFs", "Combine multiple documents into one", "Multi-file", "merge", Color(0xFFC1442D), ToolGlyphType.MERGE

@@ -135,7 +135,6 @@ This document defines screen-by-screen flows for v1. It expands on the feature l
 - Password removal/addition on PDFs.
 - Cloud storage integration (Drive, Dropbox, etc.) — SAF covers local + any SAF-exposed provider, but no dedicated cloud UI.
 - Annotation or editing existing PDF content (freehand markup, watermarking, in-place text correction).
-- Form-filling is not out of scope long-term, but is **not being developed now** — see §10 for the planned spec.
 - Dark mode is not required for v1 but should not be actively broken if the system theme is dark (Compose default theming should handle this gracefully).
 - OCR is not out of scope long-term, but is **not being developed now** — see §9 for the planned spec.
 
@@ -188,10 +187,11 @@ the model before first use — inconsistent with the app's own positioning.
 
 ---
 
-## 10. Fill Existing PDF Forms (Planned — Not Yet Built)
+## 10. Fill Existing PDF Forms (Built)
 
-**Status:** Requirements only. No code exists for this feature yet. Do not implement until
-explicitly prioritized into the build order in the root `README.md`.
+**Status:** Built — see `app/src/main/kotlin/com/trendoc/pdflite/ui/fillforms/`
+(`FillFormsScreen.kt`, `FillFormsViewModel.kt`), wired into `TrenDocNavHost` under
+`Routes.FILL_FORMS`. The spec below reflects what was actually implemented.
 
 **Purpose:** let a user open a PDF that already contains interactive form fields (AcroForm) —
 e.g. a government form, HR paperwork, an application — fill in the values on-device, and
