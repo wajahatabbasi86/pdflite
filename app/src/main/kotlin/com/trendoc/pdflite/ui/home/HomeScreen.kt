@@ -42,15 +42,19 @@ import com.trendoc.pdflite.appearance.BackgroundStyle
 import com.trendoc.pdflite.appearance.CrystalSurface
 import com.trendoc.pdflite.appearance.HomeLayout
 import com.trendoc.pdflite.billing.EntitlementRepository
+import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ToolAvatar
 import com.trendoc.pdflite.ui.common.ToolGlyphType
 import com.trendoc.pdflite.ui.settings.AppearanceViewModel
 
-/** One entry in the Home screen's tool list (§2 / design system "Home layout" section). */
+/** One entry in the Home screen's tool list (§2 / design system "Home layout" section).
+ * [linkText] is the short colored CTA line at the bottom of a Document Utilities card
+ * (e.g. "Organize", "Select Pages"), matching the design reference's card footer. */
 private data class ToolCard(
     val label: String,
     val description: String,
     val badge: String,
+    val linkText: String,
     val route: String,
     val tint: Color,
     val glyph: ToolGlyphType
@@ -59,8 +63,10 @@ private data class ToolCard(
 /**
  * Home screen per docs/REQUIREMENTS.md §2. Tool arrangement is a user preference
  * ([HomeLayout], see AppearanceScreen) rather than one fixed layout:
- * - [HomeLayout.BENTO] (default): View PDF full-width (the app's core feature), Split/
- *   Compress medium, everything else small — tile size communicates priority.
+ * - [HomeLayout.BENTO] (default): View PDF gets the one hero card (the app's core
+ *   feature); every other tool is a uniform white "Document Utilities" card in a 2-column
+ *   grid below it — icon square + badge + title + description + a colored link line,
+ *   rather than each tool having its own tinted card background.
  * - [HomeLayout.LIST]: flat rows with a tinted icon avatar, a short badge, and a chevron —
  *   the flat/utilitarian alternative from the design system's Home layout options.
  * Featured/Carousel beyond these two are offered in Appearance but not yet built here
@@ -69,23 +75,21 @@ private data class ToolCard(
  * Every tool card below routes to its real feature screen (see TrenDocNavHost) — Merge,
  * Split, Compress, Image<->PDF, PDF->Image, View PDF, and Fill Forms are all built.
  */
-// View PDF is the core feature (read/zoom/pan/swipe/presentation) — it gets the hero
-// tile; every other tool is secondary and lives in the smaller grid below it.
+// View PDF is the core feature (read/zoom/pan/swipe/presentation) — it gets the hero card.
 private val bigTool = ToolCard(
-    "View PDF", "Open and read any PDF, no editing", "Quick view", "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF
+    "View PDF", "Open and read any PDF, no editing", "Quick view", "Open PDF",
+    "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF
 )
-private val medTools = listOf(
-    ToolCard("Split", "Extract specific pages or burst all", "Custom range", "split", Color(0xFF4C5FD5), ToolGlyphType.SPLIT),
-    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "compress", Color(0xFF2F8F82), ToolGlyphType.COMPRESS),
-)
-private val smallTools = listOf(
-    ToolCard("Merge PDFs", "Combine multiple documents into one", "Multi-file", "merge", Color(0xFFC1442D), ToolGlyphType.MERGE),
-    ToolCard("Image → PDF", "Convert photos & gallery scans", "Batch", "image_to_pdf", Color(0xFFC98A2E), ToolGlyphType.IMAGE_TO_PDF),
-    ToolCard("PDF → Image", "Export pages as high-res PNG/JPG", "Export", "pdf_to_image", Color(0xFF7A4B8A), ToolGlyphType.PDF_TO_IMAGE),
+private val documentTools = listOf(
+    ToolCard("Merge PDFs", "Combine multiple files with instant page reorder", "Fast", "Organize", "merge", Color(0xFFB7091B), ToolGlyphType.MERGE),
+    ToolCard("Split & Extract", "Extract specific single pages or custom ranges", "Custom range", "Select Pages", "split", Color(0xFF4C5FD5), ToolGlyphType.SPLIT),
+    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "Reduce Size", "compress", Color(0xFF2F8F82), ToolGlyphType.COMPRESS),
+    ToolCard("Image to PDF", "Convert photo gallery with fit-to-page margins", "JPG/PNG", "Batch Pick", "image_to_pdf", Color(0xFFC98A2E), ToolGlyphType.IMAGE_TO_PDF),
+    ToolCard("PDF to Image", "Export rendered pages as high-resolution PNGs", "300 DPI", "Render", "pdf_to_image", Color(0xFF7A4B8A), ToolGlyphType.PDF_TO_IMAGE),
     // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
-    ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "fill_forms", Color(0xFF4A8B5C), ToolGlyphType.FILL_FORM),
+    ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "Fill Fields", "fill_forms", Color(0xFF4A8B5C), ToolGlyphType.FILL_FORM),
 )
-private val allTools = listOf(bigTool) + medTools + smallTools
+private val allTools = listOf(bigTool) + documentTools
 
 /** "2h 14m" / "38m" for the top bar's "Ad-free (...)" label. */
 private fun formatRemaining(millis: Long): String {
@@ -170,38 +174,71 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, o
 private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         OfflineBadgeStrip(darkGround)
-        BentoTile(
+        HeroToolCard(
             tool = bigTool,
             onClick = { onToolSelected(bigTool.route) },
-            onCrystal = darkGround,
-            modifier = Modifier.fillMaxWidth().height(108.dp)
+            onCrystal = darkGround
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            medTools.forEach { tool ->
-                BentoTile(
-                    tool = tool,
-                    onClick = { onToolSelected(tool.route) },
-                    onCrystal = darkGround,
-                    modifier = Modifier.weight(1f).height(84.dp)
-                )
-            }
-        }
         SectionHeader("Document Utilities", darkGround)
-        smallTools.chunked(2).forEach { rowTools ->
+        documentTools.chunked(2).forEach { rowTools ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 rowTools.forEach { tool ->
-                    BentoTile(
+                    DocumentUtilityCard(
                         tool = tool,
                         onClick = { onToolSelected(tool.route) },
                         onCrystal = darkGround,
-                        modifier = Modifier.weight(1f).height(84.dp),
-                        compact = true
+                        modifier = Modifier.weight(1f)
                     )
                 }
+                if (rowTools.size == 1) {
+                    Box(modifier = Modifier.weight(1f))
+                }
             }
+        }
+    }
+}
+
+/** The single hero card — View PDF, the app's core feature. White/surface card with an
+ * icon-square + badge header, title, description, and a full-width primary button,
+ * matching the design reference's hero-card treatment. */
+@Composable
+private fun HeroToolCard(tool: ToolCard, onClick: () -> Unit, onCrystal: Boolean) {
+    val contentColor = if (onCrystal) Color(0xFFF4F2EC) else MaterialTheme.colorScheme.onSurface
+    val descColor = if (onCrystal) Color(0xFFD7D3C8) else MaterialTheme.colorScheme.onSurfaceVariant
+    val cardColor = if (onCrystal) Color(0xFF23262E) else MaterialTheme.colorScheme.surface
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        border = BorderStroke(1.dp, Color(0x14191C1E)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ToolAvatar(type = tool.glyph, tint = tool.tint, size = 40.dp, shape = RoundedCornerShape(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(tool.label, style = MaterialTheme.typography.titleMedium, color = contentColor)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(tool.tint.copy(alpha = 0.16f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(tool.badge, style = MaterialTheme.typography.labelSmall, color = tool.tint)
+                        }
+                    }
+                    Text(tool.description, style = MaterialTheme.typography.bodySmall, color = descColor)
+                }
+            }
+            GradientButton(
+                text = tool.linkText,
+                onClick = onClick,
+                modifier = Modifier.padding(top = 14.dp)
+            )
         }
     }
 }
@@ -259,22 +296,25 @@ private fun HomeList(onToolSelected: (String) -> Unit) {
     }
 }
 
+/** A uniform white "Document Utilities" card — small colored icon square, a badge chip,
+ * title, description, and a colored link line at the bottom (e.g. "Organize"), matching
+ * the design reference's card footer instead of a full tinted-card background. */
 @Composable
-private fun BentoTile(
+private fun DocumentUtilityCard(
     tool: ToolCard,
     onClick: () -> Unit,
     onCrystal: Boolean,
-    modifier: Modifier = Modifier,
-    compact: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val contentColor = if (onCrystal) Color(0xFFF4F2EC) else MaterialTheme.colorScheme.onSurface
     val descColor = if (onCrystal) Color(0xFFD7D3C8) else MaterialTheme.colorScheme.onSurfaceVariant
+    val cardColor = if (onCrystal) Color(0xFF23262E) else MaterialTheme.colorScheme.surface
     Card(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = tool.tint.copy(alpha = if (onCrystal) 0.30f else 0.14f)),
-        border = BorderStroke(1.dp, if (onCrystal) tool.tint.copy(alpha = 0.15f) else Color(0x14191C1E))
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        border = BorderStroke(1.dp, Color(0x14191C1E))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -284,20 +324,20 @@ private fun BentoTile(
             ) {
                 ToolAvatar(
                     type = tool.glyph,
-                    tint = if (onCrystal) contentColor else tool.tint,
-                    size = 28.dp,
-                    shape = RoundedCornerShape(9.dp)
+                    tint = tool.tint,
+                    size = 32.dp,
+                    shape = RoundedCornerShape(10.dp)
                 )
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .background(tool.tint.copy(alpha = if (onCrystal) 0.35f else 0.16f))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                     Text(
                         tool.badge,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (onCrystal) contentColor else tool.tint,
+                        color = descColor,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
@@ -309,16 +349,22 @@ private fun BentoTile(
                 color = contentColor,
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 6.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
-            if (!compact) {
-                Text(
-                    tool.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = descColor,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
+            Text(
+                tool.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = descColor,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+            Text(
+                tool.linkText,
+                style = MaterialTheme.typography.labelMedium,
+                color = tool.tint,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 }
