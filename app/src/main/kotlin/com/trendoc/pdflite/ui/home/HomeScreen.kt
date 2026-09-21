@@ -272,9 +272,9 @@ private fun BentoTile(
     Card(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = tool.tint.copy(alpha = if (onCrystal) 0.30f else 0.14f)),
-        border = BorderStroke(1.dp, tool.tint.copy(alpha = 0.35f))
+        border = BorderStroke(1.dp, if (onCrystal) tool.tint.copy(alpha = 0.15f) else Color(0x14191C1E))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -335,7 +335,7 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

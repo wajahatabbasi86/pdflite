@@ -99,9 +99,9 @@ fun ResultScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E))
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),

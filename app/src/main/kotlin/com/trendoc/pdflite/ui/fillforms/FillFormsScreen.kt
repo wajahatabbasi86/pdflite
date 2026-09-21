@@ -170,19 +170,19 @@ private fun FillFormsStatusStrip(fieldCount: Int, pageCount: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             "100% Offline",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
             "$fieldCount field${if (fieldCount == 1) "" else "s"} · $pageCount page${if (pageCount == 1) "" else "s"}",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = MaterialTheme.colorScheme.onTertiaryContainer
         )
     }
 }
