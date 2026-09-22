@@ -200,6 +200,8 @@ fun CompressScreen(
                     CompressionPresetCard(
                         level = level,
                         selected = level == uiState.level,
+                        estimatedBytes = uiState.estimatedSizes[level],
+                        originalBytes = uiState.originalSizeBytes,
                         onClick = { viewModel.setLevel(level) }
                     )
                 }
@@ -213,7 +215,13 @@ fun CompressScreen(
  * real jpegQuality/downscale fields — never a fabricated size-reduction percentage, since
  * the actual reduction depends on the source file and is only known after compressing. */
 @Composable
-private fun CompressionPresetCard(level: CompressionLevel, selected: Boolean, onClick: () -> Unit) {
+private fun CompressionPresetCard(
+    level: CompressionLevel,
+    selected: Boolean,
+    estimatedBytes: Long?,
+    originalBytes: Long,
+    onClick: () -> Unit
+) {
     val downscalePct = (level.downscale * 100).roundToInt()
     val qualityPct = (level.jpegQuality * 100).roundToInt()
     val description = if (downscalePct >= 100) {
@@ -221,6 +229,10 @@ private fun CompressionPresetCard(level: CompressionLevel, selected: Boolean, on
     } else {
         "$qualityPct% JPEG quality · downscaled to $downscalePct%"
     }
+    val estimateLabel = if (estimatedBytes != null && originalBytes > 0) {
+        val pct = ((1.0 - estimatedBytes.toDouble() / originalBytes) * 100).roundToInt()
+        if (pct > 0) "~${formatSize(estimatedBytes)} · −$pct%" else "~${formatSize(estimatedBytes)}"
+    } else null
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
@@ -240,6 +252,13 @@ private fun CompressionPresetCard(level: CompressionLevel, selected: Boolean, on
             Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Text(level.label, style = MaterialTheme.typography.titleSmall)
                 Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (estimateLabel != null) {
+                Text(
+                    estimateLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

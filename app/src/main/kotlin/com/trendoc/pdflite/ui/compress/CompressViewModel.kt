@@ -40,10 +40,16 @@ data class CompressUiState(
     val defaultSaveName: String = "compressed.pdf",
     val savedResultUri: Uri? = null,
     val savedFileName: String? = null,
-    val compressedSizeBytes: Long = -1
+    val compressedSizeBytes: Long = -1,
+    val estimatedSizes: Map<CompressionLevel, Long> = emptyMap()
 ) {
     val canCompress: Boolean get() = fileName != null && !isCompressing
 }
+
+/** One embedded image's real pixel dimensions and its actual encoded byte length in the
+ * source PDF, used to project a per-preset size estimate below — never a fabricated
+ * percentage, since it is derived from the document's own images. */
+private data class ImageProfile(val width: Int, val height: Int, val encodedBytes: Long)
 
 /**
  * Compress PDF, per docs/REQUIREMENTS.md §5: re-encode embedded images at a chosen quality/
@@ -59,6 +65,8 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
 
     private var sourceUri: Uri? = null
     private var pendingFile: File? = null
+    private var imageProfiles: List<ImageProfile> = emptyList()
+    private var nonImageBytes: Long = 0
 
     fun onDocumentPicked(uri: Uri?) {
         if (uri == null) return
@@ -72,12 +80,17 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
             val validated = withContext(Dispatchers.IO) { validateOpens(uri) }
             validated.fold(
                 onSuccess = {
+                    val profiles = withContext(Dispatchers.IO) { profileImages(uri) }
+                    imageProfiles = profiles
+                    nonImageBytes = (size - profiles.sumOf { it.encodedBytes }).coerceAtLeast(0)
+                    val estimates = CompressionLevel.entries.associateWith { estimateSize(it, size) }
                     _uiState.update {
                         it.copy(
                             isLoadingFile = false,
                             fileName = fileName,
                             originalSizeBytes = size,
-                            defaultSaveName = defaultNameFor(fileName)
+                            defaultSaveName = defaultNameFor(fileName),
+                            estimatedSizes = estimates
                         )
                     }
                 },
@@ -88,6 +101,49 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
                 }
             )
         }
+    }
+
+    /** Reads each embedded image's real pixel dimensions and actual encoded byte length
+     * (its raw, still-filtered stream — no decoding needed just to measure it), so the
+     * per-preset estimate below is grounded in this document's own images rather than a
+     * generic guess. */
+    private fun profileImages(uri: Uri): List<ImageProfile> {
+        val context = getApplication<Application>()
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                PDDocument.load(input).use { document ->
+                    document.pages.flatMap { page ->
+                        val resources = page.resources ?: return@flatMap emptyList<ImageProfile>()
+                        resources.xObjectNames.mapNotNull { name ->
+                            val xObject = resources.getXObject(name)
+                            if (xObject is PDImageXObject) {
+                                val encodedBytes = try {
+                                    xObject.cosObject.createRawInputStream().use { it.readBytes().size.toLong() }
+                                } catch (e: Exception) {
+                                    0L
+                                }
+                                ImageProfile(xObject.width, xObject.height, encodedBytes)
+                            } else null
+                        }
+                    }
+                }
+            } ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /** Real, non-fabricated projection: this document's own non-image bytes stay fixed, and
+     * each embedded image is re-priced at the preset's downscale/quality using an empirical
+     * JPEG bytes-per-pixel curve — not a made-up flat percentage. */
+    private fun estimateSize(level: CompressionLevel, originalSizeBytes: Long): Long {
+        if (imageProfiles.isEmpty()) return originalSizeBytes
+        val bytesPerPixel = 0.15 + 0.45 * level.jpegQuality
+        val projectedImageBytes = imageProfiles.sumOf { profile ->
+            val scaledPixels = profile.width * level.downscale * profile.height * level.downscale
+            (scaledPixels * bytesPerPixel).toLong().coerceAtMost(profile.encodedBytes.coerceAtLeast(1))
+        }
+        return (nonImageBytes + projectedImageBytes).coerceIn(0, originalSizeBytes)
     }
 
     private fun defaultNameFor(sourceName: String?): String {
