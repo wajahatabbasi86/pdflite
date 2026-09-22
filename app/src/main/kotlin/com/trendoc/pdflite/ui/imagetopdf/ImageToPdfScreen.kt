@@ -12,15 +12,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -48,13 +48,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.DashedAddButton
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
+import com.trendoc.pdflite.ui.common.rememberDragReorderState
 import com.trendoc.pdflite.util.CameraCaptureUtils
 import com.trendoc.pdflite.util.SafFileUtils
 
@@ -259,18 +264,26 @@ fun ImageToPdfScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                val density = LocalDensity.current
+                val rowHeightPx = with(density) { 68.dp.toPx() }
+                val dragState = rememberDragReorderState(
+                    rowHeightPx = { rowHeightPx },
+                    itemCount = { uiState.images.size },
+                    onMove = { from, to -> viewModel.moveImage(from, to - from) }
+                )
+
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.images, key = { it.uri }) { image ->
-                        val index = uiState.images.indexOf(image)
+                    itemsIndexed(uiState.images, key = { _, image -> image.uri }) { index, image ->
                         ImageRow(
                             item = image,
-                            canMoveUp = index > 0,
-                            canMoveDown = index < uiState.images.lastIndex,
-                            onMoveUp = { viewModel.moveImage(index, -1) },
-                            onMoveDown = { viewModel.moveImage(index, 1) },
+                            isDragging = dragState.draggingIndex == index,
+                            dragOffsetPx = if (dragState.draggingIndex == index) dragState.dragOffsetPx else 0f,
+                            onDragStart = { dragState.onDragStart(index) },
+                            onDrag = { deltaY -> dragState.onDrag(deltaY) },
+                            onDragEnd = { dragState.onDragEnd() },
                             onRemove = { viewModel.removeImage(image.uri) }
                         )
                     }
@@ -308,24 +321,43 @@ private fun ImageToPdfStatusStrip(imageCount: Int) {
 @Composable
 private fun ImageRow(
     item: ImageItem,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
+    isDragging: Boolean,
+    dragOffsetPx: Float,
+    onDragStart: () -> Unit,
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit,
     onRemove: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { translationY = dragOffsetPx }
+            .zIndex(if (isDragging) 1f else 0f),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDragging) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+        ),
         border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 6.dp else 2.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            Icon(
+                Icons.Filled.DragHandle,
+                contentDescription = "Drag to reorder",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.pointerInput(Unit) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { onDragStart() },
+                        onDrag = { change, dragAmount -> change.consume(); onDrag(dragAmount.y) },
+                        onDragEnd = { onDragEnd() },
+                        onDragCancel = { onDragEnd() }
+                    )
+                }
+            )
             when {
                 item.error != null -> Box(
                     modifier = Modifier.size(44.dp).clip(CircleShape)
@@ -352,12 +384,6 @@ private fun ImageRow(
                 }
             }
 
-            IconButton(onClick = onMoveUp, enabled = canMoveUp) {
-                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
-            }
-            IconButton(onClick = onMoveDown, enabled = canMoveDown) {
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
-            }
             IconButton(onClick = onRemove) {
                 Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
             }

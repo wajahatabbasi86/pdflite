@@ -11,8 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
@@ -21,8 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -47,11 +47,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.trendoc.pdflite.ui.common.DragReorderState
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
+import com.trendoc.pdflite.ui.common.rememberDragReorderState
 
 import com.trendoc.pdflite.util.SafFileUtils
 
@@ -245,18 +251,26 @@ fun MergeScreen(
                     }
                 }
 
+                val density = LocalDensity.current
+                val rowHeightPx = with(density) { 68.dp.toPx() }
+                val dragState = rememberDragReorderState(
+                    rowHeightPx = { rowHeightPx },
+                    itemCount = { uiState.files.size },
+                    onMove = { from, to -> viewModel.moveFile(from, to - from) }
+                )
+
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.files, key = { it.uri }) { file ->
-                        val index = uiState.files.indexOf(file)
+                    itemsIndexed(uiState.files, key = { _, file -> file.uri }) { index, file ->
                         MergeFileRow(
                             item = file,
-                            canMoveUp = index > 0,
-                            canMoveDown = index < uiState.files.lastIndex,
-                            onMoveUp = { viewModel.moveFile(index, -1) },
-                            onMoveDown = { viewModel.moveFile(index, 1) },
+                            isDragging = dragState.draggingIndex == index,
+                            dragOffsetPx = if (dragState.draggingIndex == index) dragState.dragOffsetPx else 0f,
+                            onDragStart = { dragState.onDragStart(index) },
+                            onDrag = { deltaY -> dragState.onDrag(deltaY) },
+                            onDragEnd = { dragState.onDragEnd() },
                             onRemove = { viewModel.removeFile(file.uri) }
                         )
                     }
@@ -377,18 +391,24 @@ private fun AddMoreDocumentsCard(onClick: () -> Unit) {
 @Composable
 private fun MergeFileRow(
     item: MergeFileItem,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
+    isDragging: Boolean,
+    dragOffsetPx: Float,
+    onDragStart: () -> Unit,
+    onDrag: (Float) -> Unit,
+    onDragEnd: () -> Unit,
     onRemove: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { translationY = dragOffsetPx }
+            .zIndex(if (isDragging) 1f else 0f),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDragging) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
+        ),
         border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDragging) 6.dp else 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -397,6 +417,19 @@ private fun MergeFileRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            Icon(
+                Icons.Filled.DragHandle,
+                contentDescription = "Drag to reorder",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.pointerInput(Unit) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = { onDragStart() },
+                        onDrag = { change, dragAmount -> change.consume(); onDrag(dragAmount.y) },
+                        onDragEnd = { onDragEnd() },
+                        onDragCancel = { onDragEnd() }
+                    )
+                }
+            )
             Box {
                 when {
                     item.error != null -> Box(
@@ -444,12 +477,6 @@ private fun MergeFileRow(
                 )
             }
 
-            IconButton(onClick = onMoveUp, enabled = canMoveUp) {
-                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
-            }
-            IconButton(onClick = onMoveDown, enabled = canMoveDown) {
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
-            }
             IconButton(onClick = onRemove) {
                 Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
             }
