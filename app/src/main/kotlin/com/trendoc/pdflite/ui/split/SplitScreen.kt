@@ -265,6 +265,15 @@ fun SplitScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(text = "Odd (${(uiState.pages.size + 1) / 2})", onClick = { viewModel.selectOdd() })
+                        FilterChip(text = "Even (${uiState.pages.size / 2})", onClick = { viewModel.selectEven() })
+                        FilterChip(text = "Invert", onClick = { viewModel.invertSelection() })
+                        FilterChip(text = "Clear", onClick = { viewModel.clearSelection() })
+                    }
                 }
 
                 LazyVerticalGrid(
@@ -356,6 +365,22 @@ private fun SplitStatusStrip(pageCount: Int) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
+    }
+}
+
+/** A small pill button for the page-parity quick-select row (Odd/Even/Invert/Clear) —
+ * each wired straight to a real [SplitViewModel] selection method, operating on the
+ * document's actual page count, not a fixed/fabricated one. */
+@Composable
+private fun FilterChip(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
     }
 }
 

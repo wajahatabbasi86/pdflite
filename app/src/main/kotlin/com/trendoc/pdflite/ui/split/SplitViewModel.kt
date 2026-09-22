@@ -155,6 +155,25 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Quick-select helpers (§4 page-parity filters) — "Odd"/"Even" refer to the 1-based
+     * page number shown to the user, not the 0-based [SplitPageItem.index]: page 1 (index 0)
+     * is odd, page 2 (index 1) is even. */
+    fun selectOdd() {
+        _uiState.update { state -> state.copy(pages = state.pages.map { it.copy(isSelected = it.index % 2 == 0) }) }
+    }
+
+    fun selectEven() {
+        _uiState.update { state -> state.copy(pages = state.pages.map { it.copy(isSelected = it.index % 2 == 1) }) }
+    }
+
+    fun invertSelection() {
+        _uiState.update { state -> state.copy(pages = state.pages.map { it.copy(isSelected = !it.isSelected) }) }
+    }
+
+    fun clearSelection() {
+        _uiState.update { state -> state.copy(pages = state.pages.map { it.copy(isSelected = false) }) }
+    }
+
     /** Validates as the user types (§4 edge case: reject bad ranges before enabling the action). */
     fun onRangeInputChanged(input: String) {
         val pageCount = _uiState.value.pages.size
