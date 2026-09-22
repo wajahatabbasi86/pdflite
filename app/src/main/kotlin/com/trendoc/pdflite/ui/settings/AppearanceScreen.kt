@@ -151,11 +151,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
                         LayoutTile(
                             layout = layout,
                             selected = layout == prefs.homeLayout,
-                            // Bento and List are both built (see HomeScreen). Featured/
-                            // Carousel are kept as real, selectable-later options rather
-                            // than deleted, since they're already fully specified in the
-                            // design system — just not implemented yet.
-                            enabled = layout == HomeLayout.BENTO || layout == HomeLayout.LIST,
+                            enabled = true,
                             modifier = Modifier.weight(1f),
                             onClick = { viewModel.setHomeLayout(layout) }
                         )

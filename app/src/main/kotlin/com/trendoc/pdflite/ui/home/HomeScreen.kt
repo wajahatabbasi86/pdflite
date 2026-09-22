@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,8 +84,10 @@ private data class ToolCard(
  *   rather than each tool having its own tinted card background.
  * - [HomeLayout.LIST]: flat rows with a tinted icon avatar, a short badge, and a chevron —
  *   the flat/utilitarian alternative from the design system's Home layout options.
- * Featured/Carousel beyond these two are offered in Appearance but not yet built here
- * (disabled there) — see AppearanceScreen.
+ * - [HomeLayout.FEATURED]: each tool keeps its own full-width tinted card (its own [ToolCard.tint]
+ *   as the card background, not a uniform white surface) — the "bold, colorful" alternative.
+ * - [HomeLayout.CAROUSEL]: the hero card, then the rest of the tools in a horizontally
+ *   swipeable row instead of a fixed grid — for a one-handed, thumb-swipe browsing feel.
  *
  * Every tool card below routes to its real feature screen (see TrenDocNavHost) — Merge,
  * Split, Compress, Image<->PDF, PDF->Image, View PDF, and Fill Forms are all built.
@@ -179,10 +184,9 @@ fun HomeScreen(
         ) {
             when (prefs.homeLayout) {
                 HomeLayout.BENTO -> HomeBento(onToolSelected, darkGround, onOpenRecents, onOpenFile)
-                // FEATURED and CAROUSEL aren't built yet (see AppearanceScreen — they're
-                // disabled there); List is the fallback for both, same as the stored
-                // default, so an unbuilt selection never renders a blank screen.
-                else -> HomeList(onToolSelected)
+                HomeLayout.LIST -> HomeList(onToolSelected)
+                HomeLayout.FEATURED -> HomeFeatured(onToolSelected, onOpenRecents, onOpenFile)
+                HomeLayout.CAROUSEL -> HomeCarousel(onToolSelected, darkGround, onOpenRecents, onOpenFile)
             }
         }
     }
@@ -386,11 +390,11 @@ private fun OfflineBadgeStrip(darkGround: Boolean) {
 /** A small section label with a trailing "Local Execution" pill, echoing the header's
  * offline-first framing right above the tool grid it introduces. */
 @Composable
-private fun SectionHeader(title: String, darkGround: Boolean) {
+private fun SectionHeader(title: String, darkGround: Boolean, modifier: Modifier = Modifier) {
     val titleColor = if (darkGround) Color(0xFFF4F2EC) else MaterialTheme.colorScheme.onSurface
     val accent = MaterialTheme.colorScheme.primary
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        modifier = modifier.fillMaxWidth().padding(top = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -409,6 +413,97 @@ private fun HomeList(onToolSelected: (String) -> Unit) {
         SectionHeader("Document Utilities", darkGround = false)
         allTools.forEach { tool ->
             ListRow(tool = tool, onClick = { onToolSelected(tool.route) })
+        }
+    }
+}
+
+/** The "bold, colorful" layout — each tool keeps its own full-width card tinted in its
+ * identity color (design system's per-tool tint), rather than Bento's uniform white
+ * utility cards. View PDF still gets top billing as the hero. */
+@Composable
+private fun HomeFeatured(
+    onToolSelected: (String) -> Unit,
+    onOpenRecents: () -> Unit,
+    onOpenFile: (android.net.Uri) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        OfflineBadgeStrip(darkGround = false)
+        HeroToolCard(tool = bigTool, onClick = { onToolSelected(bigTool.route) }, onCrystal = false)
+        SectionHeader("Document Utilities", darkGround = false)
+        documentTools.forEach { tool -> FeaturedToolCard(tool = tool, onClick = { onToolSelected(tool.route) }) }
+        RecentsPreviewStrip(darkGround = false, onOpenRecents = onOpenRecents, onOpenFile = onOpenFile)
+    }
+}
+
+/** A full-width card in the tool's own identity color — [ToolCard.tint] as the surface,
+ * white text/icon on top, instead of a colored accent line on a white card. */
+@Composable
+private fun FeaturedToolCard(tool: ToolCard, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = tool.tint)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            ToolAvatar(icon = tool.glyph, tint = Color.White.copy(alpha = 0.24f), size = 44.dp, shape = RoundedCornerShape(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(tool.label, style = MaterialTheme.typography.titleSmall, color = Color.White)
+                Text(
+                    tool.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.White)
+        }
+    }
+}
+
+/** The hero card up top, then every other tool in a horizontally swipeable [LazyRow] instead
+ * of a fixed grid — a one-handed, thumb-swipe way to browse tools. */
+@Composable
+private fun HomeCarousel(
+    onToolSelected: (String) -> Unit,
+    darkGround: Boolean,
+    onOpenRecents: () -> Unit,
+    onOpenFile: (android.net.Uri) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            OfflineBadgeStrip(darkGround)
+            Box(modifier = Modifier.padding(top = 12.dp)) {
+                HeroToolCard(tool = bigTool, onClick = { onToolSelected(bigTool.route) }, onCrystal = darkGround)
+            }
+        }
+        SectionHeader("Document Utilities", darkGround, modifier = Modifier.padding(horizontal = 16.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
+        ) {
+            items(documentTools) { tool ->
+                DocumentUtilityCard(
+                    tool = tool,
+                    onClick = { onToolSelected(tool.route) },
+                    onCrystal = darkGround,
+                    modifier = Modifier.width(180.dp)
+                )
+            }
+        }
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            RecentsPreviewStrip(darkGround = darkGround, onOpenRecents = onOpenRecents, onOpenFile = onOpenFile)
         }
     }
 }

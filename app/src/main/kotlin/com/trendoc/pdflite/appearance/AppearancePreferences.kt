@@ -51,12 +51,7 @@ enum class MutedTint(val label: String, val light: Color, val dark: Color) {
     fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
 }
 
-/**
- * Home screen tool-card arrangement. Only [BENTO] is implemented today (it's the shipped
- * default); the others are kept here — rather than deleted — because they're already fully
- * specified in the design system and are the natural next slice of this feature, not a
- * hypothetical one.
- */
+/** Home screen tool-card arrangement — all four are real, selectable layouts (see HomeScreen). */
 enum class HomeLayout { BENTO, LIST, FEATURED, CAROUSEL }
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
