@@ -16,6 +16,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -24,6 +26,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.trendoc.pdflite.billing.EntitlementRepository
+import com.trendoc.pdflite.onboarding.OnboardingRepository
+import com.trendoc.pdflite.onboarding.OnboardingScreen
 import com.trendoc.pdflite.ui.billing.BillingScreen
 import com.trendoc.pdflite.ui.common.AdBanner
 import com.trendoc.pdflite.ui.compress.CompressScreen
@@ -60,10 +64,19 @@ object Routes {
     const val BILLING = "billing"
     const val FILES = "files"
     const val RECENTS = "recents"
+    const val ONBOARDING = "onboarding"
 }
 
 @Composable
 fun TrenDocNavHost() {
+    val context = LocalContext.current
+    val onboardingRepository = remember { OnboardingRepository(context) }
+    // null = "still loading from DataStore" — the NavHost's startDestination must be known
+    // before its first composition, so nothing renders (a beat shorter than the fastest
+    // human blink) until we know whether onboarding has already been completed.
+    val hasCompletedOnboarding by onboardingRepository.hasCompletedOnboarding.collectAsState(initial = null)
+    val completed = hasCompletedOnboarding ?: return
+
     val navController = rememberNavController()
     val pendingUri by PendingPdfIntent.uri.collectAsState()
 
@@ -79,16 +92,22 @@ fun TrenDocNavHost() {
     // shared instance instead of every screen composing its own, and it never eats into a
     // screen's own layout since it's a sibling below the NavHost's allotted space, not inside
     // it. Hidden entirely (not just invisible) whenever an ad-free window is active.
-    val context = LocalContext.current
     val entitlementRepository = remember { EntitlementRepository(context) }
     val isAdFree by entitlementRepository.isAdFree.collectAsState(initial = false)
 
     Column(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
-            startDestination = Routes.HOME,
+            startDestination = if (completed) Routes.HOME else Routes.ONBOARDING,
             modifier = Modifier.weight(1f)
         ) {
+            composable(Routes.ONBOARDING) {
+                val scope = rememberCoroutineScope()
+                OnboardingScreen(onDone = {
+                    scope.launch { onboardingRepository.setCompleted() }
+                    navController.navigate(Routes.HOME) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+                })
+            }
             composable(Routes.HOME) {
                 HomeScreen(
                     onToolSelected = { route -> navController.navigate(route) },
@@ -161,22 +180,24 @@ fun TrenDocNavHost() {
             }
         }
 
-        if (!isAdFree) {
-            AdBanner()
-        }
-
         val currentBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = currentBackStackEntry?.destination?.route
-        BottomNavBar(
-            currentRoute = currentRoute,
-            onTabSelected = { route ->
-                navController.navigate(route) {
-                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true
-                    restoreState = true
-                }
+
+        if (currentRoute != Routes.ONBOARDING) {
+            if (!isAdFree) {
+                AdBanner()
             }
-        )
+            BottomNavBar(
+                currentRoute = currentRoute,
+                onTabSelected = { route ->
+                    navController.navigate(route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
     }
 }
 
