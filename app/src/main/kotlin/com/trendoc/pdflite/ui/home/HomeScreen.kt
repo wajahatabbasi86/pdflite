@@ -2,6 +2,7 @@ package com.trendoc.pdflite.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -112,7 +113,13 @@ private fun formatRemaining(millis: Long): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, onOpenBilling: () -> Unit) {
+fun HomeScreen(
+    onToolSelected: (String) -> Unit,
+    onOpenAppearance: () -> Unit,
+    onOpenBilling: () -> Unit,
+    onOpenRecents: () -> Unit,
+    onOpenFile: (android.net.Uri) -> Unit
+) {
     val appearanceViewModel: AppearanceViewModel = viewModel()
     val prefs by appearanceViewModel.preferences.collectAsState()
     val darkGround = prefs.background == BackgroundStyle.CRYSTAL_INK
@@ -171,7 +178,7 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, o
             modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
             when (prefs.homeLayout) {
-                HomeLayout.BENTO -> HomeBento(onToolSelected, darkGround)
+                HomeLayout.BENTO -> HomeBento(onToolSelected, darkGround, onOpenRecents, onOpenFile)
                 // FEATURED and CAROUSEL aren't built yet (see AppearanceScreen — they're
                 // disabled there); List is the fallback for both, same as the stored
                 // default, so an unbuilt selection never renders a blank screen.
@@ -182,7 +189,12 @@ fun HomeScreen(onToolSelected: (String) -> Unit, onOpenAppearance: () -> Unit, o
 }
 
 @Composable
-private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
+private fun HomeBento(
+    onToolSelected: (String) -> Unit,
+    darkGround: Boolean,
+    onOpenRecents: () -> Unit,
+    onOpenFile: (android.net.Uri) -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -209,7 +221,93 @@ private fun HomeBento(onToolSelected: (String) -> Unit, darkGround: Boolean) {
                 }
             }
         }
+        RecentsPreviewStrip(darkGround = darkGround, onOpenRecents = onOpenRecents, onOpenFile = onOpenFile)
     }
+}
+
+/** "On-Device Recents" preview — the 3 most recent files this app has opened or produced,
+ * with a "View All" link to the Recents tab. Reuses [com.trendoc.pdflite.recents.RecentsRepository]
+ * directly (no separate ViewModel) since Home only needs a read-only, capped-length peek. */
+@Composable
+private fun RecentsPreviewStrip(
+    darkGround: Boolean,
+    onOpenRecents: () -> Unit,
+    onOpenFile: (android.net.Uri) -> Unit
+) {
+    val context = LocalContext.current
+    val recentsRepository = remember { com.trendoc.pdflite.recents.RecentsRepository(context) }
+    val recents by recentsRepository.recents.collectAsState(initial = emptyList())
+    if (recents.isEmpty()) return
+
+    val titleColor = if (darkGround) Color(0xFFF4F2EC) else MaterialTheme.colorScheme.onSurface
+    val accent = MaterialTheme.colorScheme.primary
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("On-Device Recents", style = MaterialTheme.typography.titleSmall, color = titleColor)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 7.dp, vertical = 1.dp)
+                ) {
+                    Text("${recents.size}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClick = onOpenRecents)
+                    .padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("View All", style = MaterialTheme.typography.labelMedium, color = accent)
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+            }
+        }
+        Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            recents.take(3).forEach { entry ->
+                Card(
+                    onClick = { onOpenFile(entry.uri) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = if (darkGround) Color(0xFF23262E) else MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, Color(0x14191C1E))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        com.trendoc.pdflite.ui.common.FileIconAvatar()
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(entry.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                            Text(
+                                buildString {
+                                    if (entry.sizeBytes >= 0) append(formatBytes(entry.sizeBytes))
+                                    if (entry.pageCount > 0) append(" • ${entry.pageCount} Page${if (entry.pageCount == 1) "" else "s"}")
+                                    append(" • Local")
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatBytes(bytes: Long): String {
+    val mb = bytes / (1024.0 * 1024.0)
+    return if (mb >= 0.1) "%.1f MB".format(mb) else "${bytes / 1024} KB"
 }
 
 /** The single hero card — View PDF, the app's core feature. White/surface card with an

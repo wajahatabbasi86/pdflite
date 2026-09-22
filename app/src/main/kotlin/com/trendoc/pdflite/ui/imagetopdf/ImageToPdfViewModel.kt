@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.pdmodel.PDDocument
@@ -52,6 +53,7 @@ data class ImageToPdfUiState(
  */
 class ImageToPdfViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(ImageToPdfUiState())
     val uiState: StateFlow<ImageToPdfUiState> = _uiState.asStateFlow()
 
@@ -203,10 +205,18 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
             }
             if (success) {
                 val fileName = SafFileUtils.displayName(context, destination)
+                val imageCount = _uiState.value.images.count { it.error == null }
                 pendingFile = null
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                recentsRepository.record(
+                    uri = destination,
+                    displayName = fileName,
+                    sizeBytes = SafFileUtils.fileSize(context, destination),
+                    pageCount = imageCount,
+                    sourceLabel = "Image to PDF"
+                )
             } else {
                 _uiState.update {
                     it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)

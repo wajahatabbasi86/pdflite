@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.multipdf.Splitter
@@ -63,6 +64,7 @@ data class SplitUiState(
 
 class SplitViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(SplitUiState())
     val uiState: StateFlow<SplitUiState> = _uiState.asStateFlow()
 
@@ -320,10 +322,18 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
             }
             if (success) {
                 val fileName = SafFileUtils.displayName(context, destination)
+                val selectedCount = _uiState.value.pages.count { it.isSelected }
                 pendingSingleOutput = null
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                recentsRepository.record(
+                    uri = destination,
+                    displayName = fileName,
+                    sizeBytes = SafFileUtils.fileSize(context, destination),
+                    pageCount = selectedCount,
+                    sourceLabel = "Split"
+                )
             } else {
                 _uiState.update {
                     it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)

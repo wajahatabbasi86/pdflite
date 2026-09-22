@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.cos.COSDictionary
@@ -52,6 +53,7 @@ data class CompressUiState(
  */
 class CompressViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(CompressUiState())
     val uiState: StateFlow<CompressUiState> = _uiState.asStateFlow()
 
@@ -212,6 +214,13 @@ class CompressViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                recentsRepository.record(
+                    uri = destination,
+                    displayName = fileName,
+                    sizeBytes = SafFileUtils.fileSize(context, destination),
+                    pageCount = 0,
+                    sourceLabel = "Compress"
+                )
             } else {
                 _uiState.update {
                     it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)

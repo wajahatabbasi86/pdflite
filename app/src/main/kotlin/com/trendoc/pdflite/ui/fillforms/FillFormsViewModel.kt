@@ -6,6 +6,7 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.pdmodel.PDDocument
@@ -82,6 +83,7 @@ data class FillFormsUiState(
  */
 class FillFormsViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(FillFormsUiState())
     val uiState: StateFlow<FillFormsUiState> = _uiState.asStateFlow()
 
@@ -340,10 +342,18 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
             }
             if (success) {
                 val fileName = SafFileUtils.displayName(context, destination)
+                val pageCount = _uiState.value.pages.size
                 pendingOutput = null
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                recentsRepository.record(
+                    uri = destination,
+                    displayName = fileName,
+                    sizeBytes = SafFileUtils.fileSize(context, destination),
+                    pageCount = pageCount,
+                    sourceLabel = "Fill Forms"
+                )
             } else {
                 _uiState.update {
                     it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)

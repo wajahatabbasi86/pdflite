@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.io.MemoryUsageSetting
@@ -52,6 +53,7 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MergeUiState())
     val uiState: StateFlow<MergeUiState> = _uiState.asStateFlow()
+    private val recentsRepository = RecentsRepository(application)
 
     /** Holds the merged bytes on disk (app cache) until the user picks a save Uri. */
     private var pendingMergedFile: File? = null
@@ -245,10 +247,18 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
 
             if (success) {
                 val fileName = SafFileUtils.displayName(context, destination)
+                val totalPages = _uiState.value.files.filter { it.error == null }.sumOf { it.pageCount }
                 pendingMergedFile = null
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                recentsRepository.record(
+                    uri = destination,
+                    displayName = fileName,
+                    sizeBytes = SafFileUtils.fileSize(context, destination),
+                    pageCount = totalPages,
+                    sourceLabel = "Merge"
+                )
             } else {
                 _uiState.update {
                     it.copy(

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,7 @@ class ViewPdfViewModel(application: Application) : AndroidViewModel(application)
 
     private val _uiState = MutableStateFlow(ViewPdfUiState())
     val uiState: StateFlow<ViewPdfUiState> = _uiState.asStateFlow()
+    private val recentsRepository = RecentsRepository(application)
 
     fun onDocumentPicked(uri: Uri?) {
         if (uri == null) return
@@ -60,6 +62,13 @@ class ViewPdfViewModel(application: Application) : AndroidViewModel(application)
             result.fold(
                 onSuccess = { pages ->
                     _uiState.update { it.copy(isLoading = false, fileName = fileName, pages = pages) }
+                    recentsRepository.record(
+                        uri = uri,
+                        displayName = fileName,
+                        sizeBytes = SafFileUtils.fileSize(context, uri),
+                        pageCount = pages.size,
+                        sourceLabel = "View PDF"
+                    )
                 },
                 onFailure = { error ->
                     _uiState.update {

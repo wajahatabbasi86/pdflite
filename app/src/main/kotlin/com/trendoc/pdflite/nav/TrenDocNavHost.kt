@@ -2,6 +2,15 @@ package com.trendoc.pdflite.nav
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -9,19 +18,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.trendoc.pdflite.billing.EntitlementRepository
 import com.trendoc.pdflite.ui.billing.BillingScreen
 import com.trendoc.pdflite.ui.common.AdBanner
 import com.trendoc.pdflite.ui.compress.CompressScreen
 import com.trendoc.pdflite.ui.fillforms.FillFormsScreen
+import com.trendoc.pdflite.ui.files.FilesScreen
 import com.trendoc.pdflite.ui.home.HomeScreen
 import com.trendoc.pdflite.ui.imagetopdf.ImageToPdfScreen
 import com.trendoc.pdflite.ui.merge.MergeScreen
 import com.trendoc.pdflite.ui.pdftoimage.PdfToImageScreen
 import com.trendoc.pdflite.ui.picker.PdfPickerScreen
+import com.trendoc.pdflite.ui.recents.RecentsScreen
 import com.trendoc.pdflite.ui.settings.AppearanceScreen
 import com.trendoc.pdflite.ui.split.SplitScreen
 import com.trendoc.pdflite.ui.view.ViewPdfScreen
@@ -45,6 +58,8 @@ object Routes {
     const val FILL_FORMS = "fill_forms"
     const val APPEARANCE = "appearance"
     const val BILLING = "billing"
+    const val FILES = "files"
+    const val RECENTS = "recents"
 }
 
 @Composable
@@ -78,7 +93,9 @@ fun TrenDocNavHost() {
                 HomeScreen(
                     onToolSelected = { route -> navController.navigate(route) },
                     onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
-                    onOpenBilling = { navController.navigate(Routes.BILLING) }
+                    onOpenBilling = { navController.navigate(Routes.BILLING) },
+                    onOpenRecents = { navController.navigate(Routes.RECENTS) },
+                    onOpenFile = { uri -> PendingPdfIntent.uri.value = uri }
                 )
             }
             composable(Routes.BILLING) {
@@ -126,10 +143,66 @@ fun TrenDocNavHost() {
                     navController.popBackStack(Routes.HOME, inclusive = false)
                 })
             }
+            composable(Routes.FILES) {
+                FilesScreen(onOpenFile = { uri -> PendingPdfIntent.uri.value = uri })
+            }
+            composable(Routes.RECENTS) {
+                RecentsScreen(onOpenFile = { uri -> PendingPdfIntent.uri.value = uri })
+            }
         }
 
         if (!isAdFree) {
             AdBanner()
         }
+
+        val currentBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = currentBackStackEntry?.destination?.route
+        BottomNavBar(
+            currentRoute = currentRoute,
+            onTabSelected = { route ->
+                navController.navigate(route) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        )
+    }
+}
+
+/** The four persistent bottom-nav tabs, matching the design reference's bar shown on
+ * every screen (tool screens included), not just Home. "Tools" stays highlighted for
+ * any tool route (Merge/Split/etc.), not only Home itself. */
+@Composable
+private fun BottomNavBar(currentRoute: String?, onTabSelected: (String) -> Unit) {
+    val toolRoutes = setOf(
+        Routes.HOME, Routes.MERGE, Routes.SPLIT, Routes.COMPRESS,
+        Routes.IMAGE_TO_PDF, Routes.PDF_TO_IMAGE, Routes.VIEW_PDF, Routes.FILL_FORMS
+    )
+    NavigationBar {
+        NavigationBarItem(
+            selected = currentRoute == Routes.FILES,
+            onClick = { onTabSelected(Routes.FILES) },
+            icon = { Icon(Icons.Filled.Folder, contentDescription = null) },
+            label = { Text("Files") }
+        )
+        NavigationBarItem(
+            selected = currentRoute in toolRoutes,
+            onClick = { onTabSelected(Routes.HOME) },
+            icon = { Icon(Icons.Outlined.Description, contentDescription = null) },
+            label = { Text("Tools") }
+        )
+        NavigationBarItem(
+            selected = currentRoute == Routes.RECENTS,
+            onClick = { onTabSelected(Routes.RECENTS) },
+            icon = { Icon(Icons.Filled.History, contentDescription = null) },
+            label = { Text("Recents") }
+        )
+        NavigationBarItem(
+            selected = currentRoute == Routes.APPEARANCE,
+            onClick = { onTabSelected(Routes.APPEARANCE) },
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+            label = { Text("Settings") }
+        )
     }
 }
