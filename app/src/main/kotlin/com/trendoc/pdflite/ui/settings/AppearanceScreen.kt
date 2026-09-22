@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -174,7 +175,45 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 TextButton(onClick = { viewModel.resetToDefaults() }) {
                     Text("Reset to defaults")
                 }
+
+                SectionLabel("About")
+                val context = androidx.compose.ui.platform.LocalContext.current
+                PrivacyPolicyRow(
+                    onClick = {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(PRIVACY_POLICY_URL))
+                        context.startActivity(intent)
+                    }
+                )
             }
+        }
+    }
+}
+
+/** Set once the privacy policy page (store-listing/privacy-policy.html) is hosted —
+ * see docs on Play Console's "Privacy policy" requirement. */
+private const val PRIVACY_POLICY_URL = "https://trenbridgeit.com/trendoc/privacy-policy.html"
+
+@Composable
+private fun PrivacyPolicyRow(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, Color(0x14191C1E))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Privacy Policy", style = MaterialTheme.typography.titleSmall)
+            Icon(
+                Icons.AutoMirrored.Filled.OpenInNew,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
