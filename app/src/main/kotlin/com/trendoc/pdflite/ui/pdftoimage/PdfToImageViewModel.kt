@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 enum class ImageFormat(val label: String, val mimeType: String, val extension: String) {
     JPG("JPG", "image/jpeg", "jpg"),
@@ -40,7 +43,9 @@ data class PdfToImageUiState(
     val isConverting: Boolean = false,
     val convertedCount: Int = 0,
     val errorMessage: String? = null,
-    val savedResultUris: List<Uri> = emptyList()
+    val savedResultUris: List<Uri> = emptyList(),
+    val exportAsZip: Boolean = false,
+    val defaultZipName: String = "images.zip"
 ) {
     val canConvert: Boolean
         get() = pageCount > 0 && rangeError == null && !isConverting
@@ -71,8 +76,14 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
             val result = withContext(Dispatchers.IO) { readPageCount(uri) }
             result.fold(
                 onSuccess = { count ->
+                    val baseName = (fileName ?: "document").substringBeforeLast(".pdf", "document")
                     _uiState.update {
-                        it.copy(isLoadingFile = false, fileName = fileName, pageCount = count)
+                        it.copy(
+                            isLoadingFile = false,
+                            fileName = fileName,
+                            pageCount = count,
+                            defaultZipName = "${baseName}_images.zip"
+                        )
                     }
                 },
                 onFailure = { error ->
@@ -102,6 +113,7 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
 
     fun setFormat(format: ImageFormat) = _uiState.update { it.copy(format = format) }
     fun setQuality(quality: ImageQuality) = _uiState.update { it.copy(quality = quality) }
+    fun setExportAsZip(zip: Boolean) = _uiState.update { it.copy(exportAsZip = zip) }
 
     fun onRangeInputChanged(input: String) {
         val error = if (input.isBlank()) null else validateRanges(input, _uiState.value.pageCount)
@@ -178,6 +190,95 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
                     }
                 }
             )
+        }
+    }
+
+    fun startConvertZip(zipDestination: Uri?) {
+        val uri = sourceUri ?: return
+        if (zipDestination == null) return
+        val indices = resolvePageIndices()
+        if (indices.isEmpty()) return
+
+        _uiState.update { it.copy(isConverting = true, convertedCount = 0, errorMessage = null) }
+
+        viewModelScope.launch {
+            val context = getApplication<Application>()
+            val format = _uiState.value.format
+            val quality = _uiState.value.quality
+            val baseName = (_uiState.value.fileName ?: "document").substringBeforeLast(".pdf", "document")
+
+            val result = withContext(Dispatchers.IO) {
+                convertPagesToZip(context.applicationContext, uri, indices, zipDestination, baseName, format, quality) { done ->
+                    _uiState.update { it.copy(convertedCount = done) }
+                }
+            }
+
+            result.fold(
+                onSuccess = {
+                    _uiState.update { it.copy(isConverting = false, savedResultUris = listOf(zipDestination)) }
+                },
+                onFailure = {
+                    _uiState.update {
+                        it.copy(isConverting = false, errorMessage = PdfErrorMessages.SAVE_FAILED_OUTPUT_FOLDER)
+                    }
+                }
+            )
+        }
+    }
+
+    private fun convertPagesToZip(
+        context: android.content.Context,
+        uri: Uri,
+        indices: List<Int>,
+        zipDestination: Uri,
+        baseName: String,
+        format: ImageFormat,
+        quality: ImageQuality,
+        onProgress: (Int) -> Unit
+    ): Result<Unit> {
+        var pfd: ParcelFileDescriptor? = null
+        var renderer: PdfRenderer? = null
+        return try {
+            pfd = SafFileUtils.openFileDescriptor(context, uri)
+                ?: return Result.failure(IllegalStateException("Unable to open file descriptor"))
+            renderer = PdfRenderer(pfd)
+
+            context.contentResolver.openOutputStream(zipDestination)?.use { out ->
+                ZipOutputStream(out).use { zip ->
+                    indices.forEachIndexed { i, pageIndex ->
+                        if (pageIndex !in 0 until renderer.pageCount) return@forEachIndexed
+                        renderer.openPage(pageIndex).use { page ->
+                            val width = (page.width * quality.renderScale).toInt().coerceAtLeast(1)
+                            val height = (page.height * quality.renderScale).toInt().coerceAtLeast(1)
+                            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                            bitmap.eraseColor(android.graphics.Color.WHITE)
+                            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+                            val compressFormat = if (format == ImageFormat.PNG) {
+                                Bitmap.CompressFormat.PNG
+                            } else {
+                                Bitmap.CompressFormat.JPEG
+                            }
+                            val bytes = ByteArrayOutputStream().use { buffer ->
+                                bitmap.compress(compressFormat, quality.jpegQuality, buffer)
+                                buffer.toByteArray()
+                            }
+                            bitmap.recycle()
+
+                            zip.putNextEntry(ZipEntry("${baseName}_page${pageIndex + 1}.${format.extension}"))
+                            zip.write(bytes)
+                            zip.closeEntry()
+                        }
+                        onProgress(i + 1)
+                    }
+                }
+            } ?: return Result.failure(IllegalStateException("Unable to open $zipDestination"))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        } finally {
+            renderer?.close()
+            pfd?.close()
         }
     }
 

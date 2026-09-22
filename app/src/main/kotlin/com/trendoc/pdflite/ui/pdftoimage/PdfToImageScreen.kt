@@ -25,6 +25,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -63,12 +64,17 @@ fun PdfToImageScreen(
         contract = SafFileUtils.openDocumentTree
     ) { uri -> viewModel.startConvert(uri) }
 
+    val pickZipLauncher = rememberLauncherForActivityResult(
+        contract = SafFileUtils.createZipDocument
+    ) { uri -> viewModel.startConvertZip(uri) }
+
     if (uiState.savedResultUris.isNotEmpty()) {
+        val isZip = uiState.exportAsZip
         ResultScreen(
-            fileName = "${uiState.savedResultUris.size} image${if (uiState.savedResultUris.size == 1) "" else "s"}",
+            fileName = if (isZip) uiState.defaultZipName else "${uiState.savedResultUris.size} image${if (uiState.savedResultUris.size == 1) "" else "s"}",
             resultUri = uiState.savedResultUris.first(),
-            mimeType = uiState.format.mimeType,
-            subtitle = "${uiState.savedResultUris.size} files saved",
+            mimeType = if (isZip) "application/zip" else uiState.format.mimeType,
+            subtitle = if (isZip) "Zipped ${uiState.convertedCount} images" else "${uiState.savedResultUris.size} files saved",
             onDone = onDone
         )
         return
@@ -108,7 +114,13 @@ fun PdfToImageScreen(
                         } else {
                             com.trendoc.pdflite.ui.common.GradientButton(
                                 text = "Convert ${uiState.pageCount} Page${if (uiState.pageCount == 1) "" else "s"} (${uiState.format.label})",
-                                onClick = { pickDirLauncher.launch(null) },
+                                onClick = {
+                                    if (uiState.exportAsZip) {
+                                        pickZipLauncher.launch(uiState.defaultZipName)
+                                    } else {
+                                        pickDirLauncher.launch(null)
+                                    }
+                                },
                                 enabled = uiState.canConvert
                             )
                         }
@@ -213,6 +225,21 @@ fun PdfToImageScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text("Export as ZIP", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "Bundle all pages into one .zip instead of a folder",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(checked = uiState.exportAsZip, onCheckedChange = { viewModel.setExportAsZip(it) })
+                    }
                 }
             }
         }

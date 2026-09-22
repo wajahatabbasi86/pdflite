@@ -26,6 +26,9 @@ object SafFileUtils {
     /** Contract for choosing a save location for a single output file. */
     val createDocument = ActivityResultContracts.CreateDocument("application/pdf")
 
+    /** Contract for choosing a save location for a zip archive (PDF -> Image(s)' bundled-export mode). */
+    val createZipDocument = ActivityResultContracts.CreateDocument("application/zip")
+
     /** Contract for choosing a destination directory (used by Split's split-into-ranges
      * mode, which produces multiple output files at once — §4.4). */
     val openDocumentTree = ActivityResultContracts.OpenDocumentTree()
