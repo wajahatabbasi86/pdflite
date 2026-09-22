@@ -397,23 +397,42 @@ private fun MergeFileRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            when {
-                item.error != null -> Box(
-                    modifier = Modifier.size(44.dp).clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Filled.Warning, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
+            Box {
+                when {
+                    item.error != null -> Box(
+                        modifier = Modifier.size(44.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.Warning, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
+                    }
+                    item.thumbnail != null -> Image(
+                        bitmap = item.thumbnail.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
+                    )
+                    else -> Box(
+                        modifier = Modifier.size(44.dp).clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
                 }
-                item.thumbnail != null -> Image(
-                    bitmap = item.thumbnail.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
-                )
-                else -> Box(
-                    modifier = Modifier.size(44.dp).clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
+                // Page-count badge overlaid on the corner of the thumbnail, matching the
+                // design reference — only when we actually know the count (real data).
+                if (item.error == null && item.pageCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .clip(RoundedCornerShape(topStart = 6.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(horizontal = 3.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            "${item.pageCount}p",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
             }
 
             Column(modifier = Modifier.weight(1f)) {

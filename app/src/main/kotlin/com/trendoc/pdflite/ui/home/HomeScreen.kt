@@ -47,8 +47,15 @@ import com.trendoc.pdflite.appearance.CrystalSurface
 import com.trendoc.pdflite.appearance.HomeLayout
 import com.trendoc.pdflite.billing.EntitlementRepository
 import com.trendoc.pdflite.ui.common.GradientButton
+import androidx.compose.material.icons.automirrored.filled.CallSplit
+import androidx.compose.material.icons.filled.Compress
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PermMedia
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.trendoc.pdflite.ui.common.ToolAvatar
-import com.trendoc.pdflite.ui.common.ToolGlyphType
 import com.trendoc.pdflite.ui.settings.AppearanceViewModel
 
 /** One entry in the Home screen's tool list (§2 / design system "Home layout" section).
@@ -61,7 +68,7 @@ private data class ToolCard(
     val linkText: String,
     val route: String,
     val tint: Color,
-    val glyph: ToolGlyphType
+    val glyph: ImageVector
 )
 
 /**
@@ -82,16 +89,16 @@ private data class ToolCard(
 // View PDF is the core feature (read/zoom/pan/swipe/presentation) — it gets the hero card.
 private val bigTool = ToolCard(
     "View PDF", "Open and read any PDF, no editing", "Quick view", "Open PDF",
-    "view_pdf", Color(0xFF3B7FB5), ToolGlyphType.VIEW_PDF
+    "view_pdf", Color(0xFF3B7FB5), Icons.Filled.Visibility
 )
 private val documentTools = listOf(
-    ToolCard("Merge PDFs", "Combine multiple files with instant page reorder", "Fast", "Organize", "merge", Color(0xFFB7091B), ToolGlyphType.MERGE),
-    ToolCard("Split & Extract", "Extract specific single pages or custom ranges", "Custom range", "Select Pages", "split", Color(0xFF4C5FD5), ToolGlyphType.SPLIT),
-    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "Reduce Size", "compress", Color(0xFF2F8F82), ToolGlyphType.COMPRESS),
-    ToolCard("Image to PDF", "Convert photo gallery with fit-to-page margins", "JPG/PNG", "Batch Pick", "image_to_pdf", Color(0xFFC98A2E), ToolGlyphType.IMAGE_TO_PDF),
-    ToolCard("PDF to Image", "Export rendered pages as high-resolution PNGs", "300 DPI", "Render", "pdf_to_image", Color(0xFF7A4B8A), ToolGlyphType.PDF_TO_IMAGE),
+    ToolCard("Merge PDFs", "Combine multiple files with instant page reorder", "Fast", "Organize", "merge", Color(0xFFB7091B), Icons.Filled.SwapVert),
+    ToolCard("Split & Extract", "Extract specific single pages or custom ranges", "Custom range", "Select Pages", "split", Color(0xFF4C5FD5), Icons.AutoMirrored.Filled.CallSplit),
+    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "Reduce Size", "compress", Color(0xFF2F8F82), Icons.Filled.Compress),
+    ToolCard("Image to PDF", "Convert photo gallery with fit-to-page margins", "JPG/PNG", "Batch Pick", "image_to_pdf", Color(0xFFC98A2E), Icons.Filled.PermMedia),
+    ToolCard("PDF to Image", "Export rendered pages as high-resolution PNGs", "300 DPI", "Render", "pdf_to_image", Color(0xFF7A4B8A), Icons.Filled.Image),
     // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
-    ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "Fill Fields", "fill_forms", Color(0xFF4A8B5C), ToolGlyphType.FILL_FORM),
+    ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "Fill Fields", "fill_forms", Color(0xFF4A8B5C), Icons.Filled.EditNote),
 )
 private val allTools = listOf(bigTool) + documentTools
 
@@ -222,7 +229,7 @@ private fun HeroToolCard(tool: ToolCard, onClick: () -> Unit, onCrystal: Boolean
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ToolAvatar(type = tool.glyph, tint = tool.tint, size = 40.dp, shape = RoundedCornerShape(12.dp))
+                ToolAvatar(icon = tool.glyph, tint = tool.tint, size = 40.dp, shape = RoundedCornerShape(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(tool.label, style = MaterialTheme.typography.titleMedium, color = contentColor)
@@ -335,7 +342,7 @@ private fun DocumentUtilityCard(
                 verticalAlignment = Alignment.Top
             ) {
                 ToolAvatar(
-                    type = tool.glyph,
+                    icon = tool.glyph,
                     tint = tool.tint,
                     size = 32.dp,
                     shape = RoundedCornerShape(10.dp)
@@ -408,7 +415,7 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ToolAvatar(type = tool.glyph, tint = tool.tint, size = 44.dp, shape = RoundedCornerShape(12.dp))
+            ToolAvatar(icon = tool.glyph, tint = tool.tint, size = 44.dp, shape = RoundedCornerShape(12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
