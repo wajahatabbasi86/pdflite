@@ -64,6 +64,7 @@ import com.trendoc.pdflite.util.SafFileUtils
 @Composable
 fun SplitScreen(
     onDone: () -> Unit,
+    initialUri: android.net.Uri? = null,
     viewModel: SplitViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,6 +72,13 @@ fun SplitScreen(
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.openSingleDocument
     ) { uri -> viewModel.onDocumentPicked(uri) }
+
+    // Pre-loaded when arriving from View PDF's "Extract Page" quick-action bridge.
+    LaunchedEffect(initialUri) {
+        if (initialUri != null) {
+            viewModel.onDocumentPicked(initialUri)
+        }
+    }
 
     val saveFileLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.createDocument

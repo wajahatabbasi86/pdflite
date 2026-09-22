@@ -51,6 +51,7 @@ import kotlin.math.roundToInt
 @Composable
 fun CompressScreen(
     onDone: () -> Unit,
+    initialUri: android.net.Uri? = null,
     viewModel: CompressViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -58,6 +59,13 @@ fun CompressScreen(
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.openSingleDocument
     ) { uri -> viewModel.onDocumentPicked(uri) }
+
+    // Pre-loaded when arriving from View PDF's "Compress" quick-action bridge.
+    LaunchedEffect(initialUri) {
+        if (initialUri != null) {
+            viewModel.onDocumentPicked(initialUri)
+        }
+    }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.createDocument

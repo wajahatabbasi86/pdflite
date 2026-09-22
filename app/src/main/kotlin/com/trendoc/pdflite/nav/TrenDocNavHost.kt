@@ -113,14 +113,16 @@ fun TrenDocNavHost() {
                 })
             }
             composable(Routes.SPLIT) {
-                SplitScreen(onDone = {
-                    navController.popBackStack(Routes.HOME, inclusive = false)
-                })
+                SplitScreen(
+                    initialUri = PendingSplitUri.consume(),
+                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+                )
             }
             composable(Routes.COMPRESS) {
-                CompressScreen(onDone = {
-                    navController.popBackStack(Routes.HOME, inclusive = false)
-                })
+                CompressScreen(
+                    initialUri = PendingCompressUri.consume(),
+                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+                )
             }
             composable(Routes.IMAGE_TO_PDF) {
                 ImageToPdfScreen(onDone = {
@@ -135,7 +137,15 @@ fun TrenDocNavHost() {
             composable(Routes.VIEW_PDF) {
                 ViewPdfScreen(
                     initialUri = PendingPdfIntent.consume(),
-                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) },
+                    onExtractPage = { uri ->
+                        PendingSplitUri.uri.value = uri
+                        navController.navigate(Routes.SPLIT)
+                    },
+                    onCompress = { uri ->
+                        PendingCompressUri.uri.value = uri
+                        navController.navigate(Routes.COMPRESS)
+                    }
                 )
             }
             composable(Routes.FILL_FORMS) {

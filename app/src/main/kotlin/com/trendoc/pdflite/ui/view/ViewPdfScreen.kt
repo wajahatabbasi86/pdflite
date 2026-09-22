@@ -8,12 +8,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,15 +26,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Compress
+import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -42,6 +52,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -70,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.util.SafFileUtils
+import kotlin.math.roundToInt
 
 /**
  * View PDF, per the Home layout's sixth entry — a read-only viewer. Reachable both from
@@ -81,6 +94,8 @@ import com.trendoc.pdflite.util.SafFileUtils
 fun ViewPdfScreen(
     initialUri: android.net.Uri?,
     onDone: () -> Unit,
+    onExtractPage: (android.net.Uri) -> Unit = {},
+    onCompress: (android.net.Uri) -> Unit = {},
     viewModel: ViewPdfViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -133,21 +148,7 @@ fun ViewPdfScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                title = { Text(uiState.fileName ?: "View PDF") },
-                actions = {
-                    uiState.sourceUri?.let { uri ->
-                        IconButton(onClick = {
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "application/pdf"
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(Intent.createChooser(intent, "Share"))
-                        }) {
-                            Icon(Icons.Filled.Share, contentDescription = "Share")
-                        }
-                    }
-                }
+                title = { Text(uiState.fileName ?: "View PDF") }
             )
         }
     ) { innerPadding ->
@@ -157,6 +158,20 @@ fun ViewPdfScreen(
         ) {
             if (uiState.pages.isNotEmpty()) {
                 EngineStatusStrip(pageCount = uiState.pages.size)
+                uiState.sourceUri?.let { uri ->
+                    QuickActionRow(
+                        onExtractPage = { onExtractPage(uri) },
+                        onCompress = { onCompress(uri) },
+                        onShare = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Share"))
+                        }
+                    )
+                }
             }
 
             uiState.errorMessage?.let { message ->
@@ -270,6 +285,38 @@ private fun HardwareIsolationCard() {
     }
 }
 
+/** Quick-action bridge row — "Extract Page" and "Compress" hand the currently loaded file
+ * straight to Split/Compress pre-loaded (via [PendingSplitUri]/[PendingCompressUri]),
+ * matching the design reference's quick-tool bridges. "Share" reuses the same intent the
+ * old top-bar icon used. */
+@Composable
+private fun QuickActionRow(onExtractPage: () -> Unit, onCompress: () -> Unit, onShare: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        QuickActionChip(text = "Extract Page", icon = Icons.AutoMirrored.Filled.KeyboardArrowRight, onClick = onExtractPage)
+        QuickActionChip(text = "Compress", icon = Icons.Filled.Compress, onClick = onCompress)
+        QuickActionChip(text = "Share", icon = Icons.Filled.Share, onClick = onShare)
+    }
+}
+
+@Composable
+private fun QuickActionChip(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium)
+    }
+}
+
 /** The slim "100% Offline · Local Engine" status pill shown above the page list, echoing
  * the same offline-first framing used on Home — purely presentational, no new capability. */
 @Composable
@@ -311,6 +358,14 @@ private fun EngineStatusStrip(pageCount: Int) {
 private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: () -> Unit) {
     var currentIndex by remember { mutableStateOf(initialIndex) }
     var presentationMode by remember { mutableStateOf(false) }
+    var showPageNavigator by remember { mutableStateOf(false) }
+
+    // Hoisted (rather than internal to ZoomableFullPage) so the floating zoom +/- buttons
+    // can drive the same state the pinch gesture does. remember(currentIndex) recreates
+    // fresh state objects on page change — the same "reset zoom per page" behavior the
+    // old key(currentIndex) wrapper gave, without needing to key the whole subtree.
+    val scaleState = remember(currentIndex) { mutableStateOf(1f) }
+    val offsetState = remember(currentIndex) { mutableStateOf(Offset.Zero) }
 
     Scaffold(
         topBar = {
@@ -335,18 +390,41 @@ private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: ()
                     }
                 )
             }
+        },
+        bottomBar = {
+            if (!presentationMode) {
+                PageNavigatorBar(
+                    currentIndex = currentIndex,
+                    pageCount = pages.size,
+                    expanded = showPageNavigator,
+                    onToggleExpanded = { showPageNavigator = !showPageNavigator },
+                    onJumpTo = { index -> currentIndex = index.coerceIn(0, pages.lastIndex) },
+                    thumbnailFor = { index -> pages[index] }
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            // Keyed on the page index so zoom/pan state resets to 1x when switching pages,
-            // instead of carrying the previous page's zoom level over.
-            key(currentIndex) {
-                ZoomableFullPage(
-                    bitmap = pages[currentIndex].asImageBitmap(),
-                    modifier = Modifier.fillMaxSize().padding(if (presentationMode) PaddingValues(0.dp) else innerPadding),
-                    onSwipeNext = { if (currentIndex < pages.lastIndex) currentIndex++ },
-                    onSwipePrevious = { if (currentIndex > 0) currentIndex-- },
-                    onTap = { if (presentationMode) presentationMode = false }
+            ZoomableFullPage(
+                bitmap = pages[currentIndex].asImageBitmap(),
+                scaleState = scaleState,
+                offsetState = offsetState,
+                modifier = Modifier.fillMaxSize().padding(if (presentationMode) PaddingValues(0.dp) else innerPadding),
+                onSwipeNext = { if (currentIndex < pages.lastIndex) currentIndex++ },
+                onSwipePrevious = { if (currentIndex > 0) currentIndex-- },
+                onTap = { if (presentationMode) presentationMode = false }
+            )
+            if (!presentationMode) {
+                ZoomControlPanel(
+                    scale = scaleState.value,
+                    onZoomIn = { scaleState.value = (scaleState.value + 0.5f).coerceIn(1f, 5f) },
+                    onZoomOut = {
+                        val newScale = (scaleState.value - 0.5f).coerceIn(1f, 5f)
+                        scaleState.value = newScale
+                        if (newScale <= 1f) offsetState.value = Offset.Zero
+                    },
+                    onReset = { scaleState.value = 1f; offsetState.value = Offset.Zero },
+                    modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp)
                 )
             }
             if (presentationMode) {
@@ -359,6 +437,112 @@ private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: ()
                         contentDescription = "Exit presentation mode",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
+                }
+            }
+        }
+    }
+}
+
+/** Floating +/-/reset zoom control, matching the design reference's zoom pill. Drives the
+ * same [scaleState]/[offsetState] the pinch gesture writes to, via the [onZoomIn]/
+ * [onZoomOut]/[onReset] callbacks the caller wires to those same state objects. */
+@Composable
+private fun ZoomControlPanel(
+    scale: Float,
+    onZoomIn: () -> Unit,
+    onZoomOut: () -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(4.dp)) {
+            IconButton(onClick = onZoomIn, enabled = scale < 5f) {
+                Icon(Icons.Filled.Add, contentDescription = "Zoom in")
+            }
+            Text(
+                "${(scale * 100).roundToInt()}%",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            IconButton(onClick = onZoomOut, enabled = scale > 1f) {
+                Icon(Icons.Filled.Remove, contentDescription = "Zoom out")
+            }
+            IconButton(onClick = onReset) {
+                Icon(Icons.Filled.FitScreen, contentDescription = "Reset zoom")
+            }
+        }
+    }
+}
+
+/** The bottom page-navigator bar — a compact "N / total" row that expands into a scrubber
+ * slider plus a horizontal thumbnail filmstrip when tapped, matching the design
+ * reference's page navigator. Thumbnails reuse the already-rendered page bitmaps (no
+ * separate lower-res thumbnail pass) since [pages] is a small in-memory list already. */
+@Composable
+private fun PageNavigatorBar(
+    currentIndex: Int,
+    pageCount: Int,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onJumpTo: (Int) -> Unit,
+    thumbnailFor: (Int) -> Bitmap
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 8.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggleExpanded)
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Page Navigator", style = MaterialTheme.typography.labelMedium)
+                Text(
+                    "${currentIndex + 1} / $pageCount",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (expanded) {
+                Slider(
+                    value = currentIndex.toFloat(),
+                    onValueChange = { onJumpTo(it.roundToInt()) },
+                    valueRange = 0f..(pageCount - 1).coerceAtLeast(0).toFloat(),
+                    steps = (pageCount - 2).coerceAtLeast(0),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
+                )
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(pageCount) { index ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(
+                                    width = if (index == currentIndex) 2.dp else 1.dp,
+                                    color = if (index == currentIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable { onJumpTo(index) }
+                        ) {
+                            Image(
+                                bitmap = thumbnailFor(index).asImageBitmap(),
+                                contentDescription = null,
+                                modifier = Modifier.size(56.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -378,20 +562,19 @@ private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: ()
 @Composable
 private fun ZoomableFullPage(
     bitmap: ImageBitmap,
+    scaleState: androidx.compose.runtime.MutableState<Float>,
+    offsetState: androidx.compose.runtime.MutableState<Offset>,
     modifier: Modifier = Modifier,
     onSwipeNext: () -> Unit = {},
     onSwipePrevious: () -> Unit = {},
     onTap: () -> Unit = {}
 ) {
-    var scale by remember { mutableStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-
     BoxWithConstraints(modifier = modifier.clipToBounds()) {
         val density = LocalDensity.current
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
 
-        fun clamp(o: Offset): Offset {
+        fun clamp(o: Offset, scale: Float): Offset {
             val bx = (widthPx * (scale - 1f) / 2f).coerceAtLeast(0f)
             val by = (heightPx * (scale - 1f) / 2f).coerceAtLeast(0f)
             return Offset(o.x.coerceIn(-bx, bx), o.y.coerceIn(-by, by))
@@ -412,10 +595,14 @@ private fun ZoomableFullPage(
                             val zoomChange = event.calculateZoom()
                             val panChange = event.calculatePan()
                             val isMultitouch = event.changes.size > 1
+                            val scale = scaleState.value
                             if (isMultitouch || scale > 1f) {
                                 val newScale = (scale * zoomChange).coerceIn(1f, 5f)
-                                offset = clamp(if (newScale <= 1f) Offset.Zero else offset + panChange)
-                                scale = newScale
+                                offsetState.value = clamp(
+                                    if (newScale <= 1f) Offset.Zero else offsetState.value + panChange,
+                                    newScale
+                                )
+                                scaleState.value = newScale
                             } else {
                                 swipeAccumX += panChange.x
                             }
@@ -424,7 +611,7 @@ private fun ZoomableFullPage(
                             }
                         } while (event.changes.any { it.pressed })
 
-                        if (scale <= 1f) {
+                        if (scaleState.value <= 1f) {
                             val threshold = widthPx * 0.15f
                             when {
                                 swipeAccumX <= -threshold -> onSwipeNext()
@@ -437,20 +624,20 @@ private fun ZoomableFullPage(
                     detectTapGestures(
                         onTap = { onTap() },
                         onDoubleTap = {
-                            if (scale > 1f) {
-                                scale = 1f
-                                offset = Offset.Zero
+                            if (scaleState.value > 1f) {
+                                scaleState.value = 1f
+                                offsetState.value = Offset.Zero
                             } else {
-                                scale = 3f
+                                scaleState.value = 3f
                             }
                         }
                     )
                 }
                 .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
+                    scaleX = scaleState.value,
+                    scaleY = scaleState.value,
+                    translationX = offsetState.value.x,
+                    translationY = offsetState.value.y
                 )
         )
     }
