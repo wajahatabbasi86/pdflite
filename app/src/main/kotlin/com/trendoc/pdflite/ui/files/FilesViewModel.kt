@@ -103,12 +103,19 @@ class FilesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val context = getApplication<Application>()
             val entries = withContext(Dispatchers.IO) {
-                val dir = DocumentFile.fromTreeUri(context, dirUri)
-                dir?.listFiles()
-                    ?.filter { it.isDirectory || (it.name?.endsWith(".pdf", ignoreCase = true) == true) }
-                    ?.map { FileEntry(it.uri, it.name ?: "unnamed", it.isDirectory, it.length()) }
-                    ?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
-                    ?: emptyList()
+                try {
+                    val dir = DocumentFile.fromTreeUri(context, dirUri)
+                    dir?.listFiles()
+                        ?.filter { it.isDirectory || (it.name?.endsWith(".pdf", ignoreCase = true) == true) }
+                        ?.map { FileEntry(it.uri, it.name ?: "unnamed", it.isDirectory, it.length()) }
+                        ?.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+                        ?: emptyList()
+                } catch (e: SecurityException) {
+                    // The granted tree's permission was revoked or never persisted (e.g. the
+                    // OS reclaimed it after a factory reset or storage change) — an empty
+                    // folder is the honest result, not a crash.
+                    emptyList()
+                }
             }
             _uiState.update { it.copy(entries = entries, isLoading = false) }
         }
