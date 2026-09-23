@@ -148,18 +148,6 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.tertiaryContainer)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            "100% Offline",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    }
                     // "Remove Ads" stays a persistent, non-modal top-bar action. Always tappable,
                     // even during an active ad-free window, so the user can check the remaining
                     // time or extend it. The banner itself is global now (see TrenDocNavHost),
