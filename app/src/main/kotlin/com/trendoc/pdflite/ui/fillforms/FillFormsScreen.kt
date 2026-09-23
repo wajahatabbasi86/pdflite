@@ -141,16 +141,16 @@ fun FillFormsScreen(
             }
 
             when {
+                uiState.isLoadingFile -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
                 uiState.fileName == null -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
                             Text("Select PDF")
                         }
-                    }
-                }
-                uiState.isLoadingFile -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
                     }
                 }
                 uiState.hasNoFields -> {

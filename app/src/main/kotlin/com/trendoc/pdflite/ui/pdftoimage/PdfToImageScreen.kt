@@ -133,7 +133,11 @@ fun PdfToImageScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            if (uiState.fileName == null) {
+            if (uiState.fileName == null && uiState.isLoadingFile) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.fileName == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
                         Text("Select PDF")
