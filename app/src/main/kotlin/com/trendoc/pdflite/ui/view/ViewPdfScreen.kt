@@ -193,7 +193,7 @@ fun ViewPdfScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(uiState.pages, key = { _, page -> System.identityHashCode(page) }) { index, page ->
+                    itemsIndexed(uiState.pages, key = { index, _ -> index }) { index, page ->
                         Box {
                             Card(
                                 modifier = Modifier
@@ -224,20 +224,6 @@ fun ViewPdfScreen(
                                 )
                             }
                         }
-                    }
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.10f))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            "${uiState.pages.size} page${if (uiState.pages.size == 1) "" else "s"}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }

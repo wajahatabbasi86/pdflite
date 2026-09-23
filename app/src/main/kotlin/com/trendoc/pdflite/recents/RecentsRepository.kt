@@ -1,6 +1,7 @@
 package com.trendoc.pdflite.recents
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -47,6 +48,16 @@ class RecentsRepository(private val context: Context) {
         pageCount: Int,
         sourceLabel: String
     ) {
+        // Without this, the one-time SAF read grant a picker/save dialog hands back only
+        // lasts for the app's current process — reopening this same entry from Recents
+        // after the app has been killed and restarted throws SecurityException. Some
+        // providers (e.g. a freshly-created SAF document) don't support a persistable
+        // grant at all, which throws too — either way, this entry just won't survive a
+        // process restart, which is no worse than not recording it.
+        try {
+            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: SecurityException) {
+        }
         context.recentsDataStore.edit { prefs ->
             val current = parse(prefs[key]).toMutableList()
             current.removeAll { it.uri == uri }

@@ -49,6 +49,11 @@ object SafFileUtils {
                     name = cursor.getString(nameIndex)
                 }
             }
+        } catch (e: SecurityException) {
+            // A revoked or never-persisted grant (e.g. reopening an old Recents entry
+            // after the app was killed and restarted) — fall through to the Uri-based
+            // fallback below rather than crashing; the caller's own file-open attempt
+            // right after this is what actually surfaces the permission error to the user.
         } finally {
             cursor?.close()
         }
@@ -79,6 +84,8 @@ object SafFileUtils {
                     size = cursor.getLong(sizeIndex)
                 }
             }
+        } catch (e: SecurityException) {
+            // Same reasoning as displayName() above.
         } finally {
             cursor?.close()
         }

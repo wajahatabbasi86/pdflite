@@ -133,13 +133,18 @@ fun TrenDocNavHost() {
             composable(Routes.SPLIT) {
                 SplitScreen(
                     initialUri = PendingSplitUri.consume(),
-                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+                    // A plain pop (rather than popBackStack(HOME, ...)) so back returns to
+                    // wherever this screen was actually reached from — Home normally, but
+                    // View PDF when arrived via its "Extract Page" quick-action bridge.
+                    onDone = { navController.popBackStack() }
                 )
             }
             composable(Routes.COMPRESS) {
                 CompressScreen(
                     initialUri = PendingCompressUri.consume(),
-                    onDone = { navController.popBackStack(Routes.HOME, inclusive = false) }
+                    // Same reasoning as Split above — View PDF's "Compress" bridge is a
+                    // second entry point into this screen besides Home.
+                    onDone = { navController.popBackStack() }
                 )
             }
             composable(Routes.IMAGE_TO_PDF) {
