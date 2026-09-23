@@ -180,24 +180,6 @@ fun MergeScreen(
                                 enabled = uiState.canMerge
                             )
                         }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                "  Processed entirely on this device",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }
@@ -224,8 +206,6 @@ fun MergeScreen(
                     }
                 }
             } else {
-                SandboxIsolationBanner()
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -282,54 +262,6 @@ fun MergeScreen(
                 }
             }
         }
-    }
-}
-
-/** The "LOCAL SANDBOX ISOLATION" banner from the design reference — a stronger-styled
- * restatement of the same offline-first fact every other status pill already surfaces,
- * purely presentational (no new capability). */
-@Composable
-private fun SandboxIsolationBanner() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Filled.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                "LOCAL SANDBOX ISOLATION",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-            Text(
-                "Zero cloud upload • 100% on-device merge",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
-            )
-        }
-        Icon(
-            Icons.Filled.Check,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onTertiaryContainer
-        )
     }
 }
 

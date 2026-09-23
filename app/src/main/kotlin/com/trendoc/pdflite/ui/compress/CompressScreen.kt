@@ -127,23 +127,6 @@ fun CompressScreen(
                                 enabled = uiState.canCompress
                             )
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                "  Processed entirely on this device",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }
@@ -153,7 +136,15 @@ fun CompressScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            if (uiState.fileName == null) {
+            if (uiState.fileName == null && uiState.isLoadingFile) {
+                // Pre-loaded from View PDF's "Compress" bridge — analyzing the handed-off
+                // file's images, not waiting on a pick. Showing "Select PDF" here
+                // (fileName is still null until analysis finishes) would look like the
+                // pre-load silently failed.
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.fileName == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
                         Text("Select PDF")

@@ -240,46 +240,6 @@ fun ViewPdfScreen(
                         )
                     }
                 }
-
-                HardwareIsolationCard()
-            }
-        }
-    }
-}
-
-/** Cosmetic status card reiterating that rendering happens locally — no new capability,
- * just a more prominent restatement of what [EngineStatusStrip] already says. */
-@Composable
-private fun HardwareIsolationCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text("Hardware Isolated Processing", style = MaterialTheme.typography.labelMedium)
-                Text(
-                    "Rendered entirely on-device",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    "OFFLINE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
             }
         }
     }

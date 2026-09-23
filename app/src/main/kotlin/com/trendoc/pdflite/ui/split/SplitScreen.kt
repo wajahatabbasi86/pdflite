@@ -165,23 +165,6 @@ fun SplitScreen(
                                 enabled = if (uiState.mode == SplitMode.EXTRACT_SELECTED) uiState.canExtract else uiState.canSplit
                             )
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Text(
-                                "  Processed entirely on this device",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }
@@ -194,7 +177,15 @@ fun SplitScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (uiState.fileName == null) {
+            if (uiState.fileName == null && uiState.isLoadingFile) {
+                // Pre-loaded from View PDF's "Extract Page" bridge — rendering the
+                // handed-off file's pages, not waiting on a pick. Showing "Select PDF"
+                // here (fileName is still null until rendering finishes) would look like
+                // the pre-load silently failed.
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.fileName == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
                         Text("Select PDF")
