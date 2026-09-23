@@ -111,7 +111,6 @@ fun TrenDocNavHost() {
             composable(Routes.HOME) {
                 HomeScreen(
                     onToolSelected = { route -> navController.navigate(route) },
-                    onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
                     onOpenBilling = { navController.navigate(Routes.BILLING) },
                     onOpenRecents = { navController.navigate(Routes.RECENTS) },
                     onOpenFile = { uri -> PendingPdfIntent.uri.value = uri }

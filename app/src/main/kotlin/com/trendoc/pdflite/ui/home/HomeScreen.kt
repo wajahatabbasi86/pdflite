@@ -23,7 +23,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,7 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -120,7 +118,6 @@ private fun formatRemaining(millis: Long): String {
 @Composable
 fun HomeScreen(
     onToolSelected: (String) -> Unit,
-    onOpenAppearance: () -> Unit,
     onOpenBilling: () -> Unit,
     onOpenRecents: () -> Unit,
     onOpenFile: (android.net.Uri) -> Unit
@@ -163,16 +160,13 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
-                    // "Remove Ads" stays a persistent, non-modal top-bar action — Appearance is
-                    // a separate entry point, not a replacement for it. Always tappable, even
-                    // during an active ad-free window, so the user can check the remaining time
-                    // or extend it. The banner itself is global now (see TrenDocNavHost), not
-                    // owned by this screen.
+                    // "Remove Ads" stays a persistent, non-modal top-bar action. Always tappable,
+                    // even during an active ad-free window, so the user can check the remaining
+                    // time or extend it. The banner itself is global now (see TrenDocNavHost),
+                    // not owned by this screen. Appearance is reached via the bottom nav's
+                    // "Settings" tab now, not a separate top-bar icon.
                     TextButton(onClick = onOpenBilling) {
                         Text(if (remainingMillis > 0) "Ad-free (${formatRemaining(remainingMillis)})" else "Remove Ads")
-                    }
-                    IconButton(onClick = onOpenAppearance) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Appearance")
                     }
                 }
             )
