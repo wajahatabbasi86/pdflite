@@ -55,6 +55,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -62,9 +63,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -135,7 +138,8 @@ fun ViewPdfScreen(
         PageDetailScreen(
             pages = uiState.pages,
             initialIndex = openedPageIndex,
-            onClose = { selectedPageIndex = null }
+            onClose = { selectedPageIndex = null },
+            loadHighRes = { index -> viewModel.renderPageHighRes(index) }
         )
         return
     }
@@ -189,40 +193,76 @@ fun ViewPdfScreen(
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    itemsIndexed(uiState.pages, key = { index, _ -> index }) { index, page ->
-                        Box {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { selectedPageIndex = index },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E)),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Image(
-                                    bitmap = page.asImageBitmap(),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                                )
+                // Pinch-to-zoom the whole page list at once, rather than requiring a tap
+                // into a single page first — the list keeps scrolling normally with one
+                // finger throughout, since the gesture handler below only ever reacts to
+                // (and consumes) two-finger touches.
+                val listScale = remember { mutableStateOf(1f) }
+                Box(modifier = Modifier.weight(1f)) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                awaitEachGesture {
+                                    awaitFirstDown(requireUnconsumed = false)
+                                    do {
+                                        val event = awaitPointerEvent()
+                                        if (event.changes.size > 1) {
+                                            val zoomChange = event.calculateZoom()
+                                            listScale.value = (listScale.value * zoomChange).coerceIn(1f, 3f)
+                                            event.changes.forEach { change ->
+                                                if (change.positionChanged()) change.consume()
+                                            }
+                                        }
+                                    } while (event.changes.any { it.pressed })
+                                }
                             }
-                            Box(
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
-                                Text(
-                                    "p. ${(index + 1).toString().padStart(2, '0')}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                            .graphicsLayer(
+                                scaleX = listScale.value,
+                                scaleY = listScale.value,
+                                transformOrigin = TransformOrigin(0.5f, 0f)
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        itemsIndexed(uiState.pages, key = { index, _ -> index }) { index, page ->
+                            Box {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedPageIndex = index },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Image(
+                                        bitmap = page.asImageBitmap(),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .padding(8.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        "p. ${(index + 1).toString().padStart(2, '0')}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
+                        }
+                    }
+                    if (listScale.value != 1f) {
+                        TextButton(
+                            onClick = { listScale.value = 1f },
+                            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                        ) {
+                            Text("Reset zoom (${(listScale.value * 100).roundToInt()}%)")
                         }
                     }
                 }
@@ -301,7 +341,12 @@ private fun EngineStatusStrip(pageCount: Int) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: () -> Unit) {
+private fun PageDetailScreen(
+    pages: List<Bitmap>,
+    initialIndex: Int,
+    onClose: () -> Unit,
+    loadHighRes: suspend (Int) -> Bitmap?
+) {
     var currentIndex by remember { mutableStateOf(initialIndex) }
     var presentationMode by remember { mutableStateOf(false) }
     var showPageNavigator by remember { mutableStateOf(false) }
@@ -312,6 +357,26 @@ private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: ()
     // old key(currentIndex) wrapper gave, without needing to key the whole subtree.
     val scaleState = remember(currentIndex) { mutableStateOf(1f) }
     val offsetState = remember(currentIndex) { mutableStateOf(Offset.Zero) }
+
+    // The list's per-page bitmaps are low-res (they all have to fit in memory at once for
+    // every page in the document); pinch-zooming into one just stretches — and blurs — that
+    // same small bitmap. Swapping in a much higher-resolution re-render of only the page
+    // actually being viewed fixes that without paying the memory cost of doing this for
+    // every page up front. Capped at a handful of entries so browsing many pages while
+    // zoomed can't grow this without bound.
+    val highResCache = remember { mutableStateMapOf<Int, Bitmap>() }
+    LaunchedEffect(currentIndex) {
+        if (!highResCache.containsKey(currentIndex)) {
+            val bitmap = loadHighRes(currentIndex)
+            if (bitmap != null) {
+                if (highResCache.size >= 4) {
+                    highResCache.keys.firstOrNull { it != currentIndex }?.let { highResCache.remove(it) }
+                }
+                highResCache[currentIndex] = bitmap
+            }
+        }
+    }
+    val displayBitmap = highResCache[currentIndex] ?: pages[currentIndex]
 
     Scaffold(
         topBar = {
@@ -352,7 +417,7 @@ private fun PageDetailScreen(pages: List<Bitmap>, initialIndex: Int, onClose: ()
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             ZoomableFullPage(
-                bitmap = pages[currentIndex].asImageBitmap(),
+                bitmap = displayBitmap.asImageBitmap(),
                 scaleState = scaleState,
                 offsetState = offsetState,
                 modifier = Modifier.fillMaxSize().padding(if (presentationMode) PaddingValues(0.dp) else innerPadding),
@@ -533,9 +598,15 @@ private fun ZoomableFullPage(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
-                    awaitEachGesture {
+    awaitEachGesture {
                         awaitFirstDown(requireUnconsumed = false)
                         var swipeAccumX = 0f
+                        // Dragging past the pan boundary while already zoomed in — rather
+                        // than requiring the user to zoom back out first — is what
+                        // "overflow" beyond clamp() tracks: a continued single-finger drag
+                        // once panning has hit the left/right edge reads as a page-swipe
+                        // request instead of just doing nothing.
+                        var zoomedSwipeAccumX = 0f
                         do {
                             val event = awaitPointerEvent()
                             val zoomChange = event.calculateZoom()
@@ -544,10 +615,12 @@ private fun ZoomableFullPage(
                             val scale = scaleState.value
                             if (isMultitouch || scale > 1f) {
                                 val newScale = (scale * zoomChange).coerceIn(1f, 5f)
-                                offsetState.value = clamp(
-                                    if (newScale <= 1f) Offset.Zero else offsetState.value + panChange,
-                                    newScale
-                                )
+                                val rawTarget = if (newScale <= 1f) Offset.Zero else offsetState.value + panChange
+                                val clamped = clamp(rawTarget, newScale)
+                                if (!isMultitouch && newScale > 1f) {
+                                    zoomedSwipeAccumX += rawTarget.x - clamped.x
+                                }
+                                offsetState.value = clamped
                                 scaleState.value = newScale
                             } else {
                                 swipeAccumX += panChange.x
@@ -557,11 +630,16 @@ private fun ZoomableFullPage(
                             }
                         } while (event.changes.any { it.pressed })
 
+                        val threshold = widthPx * 0.15f
                         if (scaleState.value <= 1f) {
-                            val threshold = widthPx * 0.15f
                             when {
                                 swipeAccumX <= -threshold -> onSwipeNext()
                                 swipeAccumX >= threshold -> onSwipePrevious()
+                            }
+                        } else {
+                            when {
+                                zoomedSwipeAccumX <= -threshold -> onSwipeNext()
+                                zoomedSwipeAccumX >= threshold -> onSwipePrevious()
                             }
                         }
                     }

@@ -130,4 +130,37 @@ class ViewPdfViewModel(application: Application) : AndroidViewModel(application)
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    /** Re-renders one page at a much higher resolution than the list's per-page bitmaps,
+     * used by the full-screen zoom viewer so pinch-zooming in doesn't just stretch (and
+     * blur) the same low-res thumbnail every other page in the list also uses. Opens its
+     * own short-lived [PdfRenderer] rather than reusing [renderPages]'s — that one is
+     * long gone by the time a page is tapped open. */
+    suspend fun renderPageHighRes(pageIndex: Int): Bitmap? {
+        val uri = _uiState.value.sourceUri ?: return null
+        return withContext(Dispatchers.IO) {
+            var pfd: ParcelFileDescriptor? = null
+            var renderer: PdfRenderer? = null
+            try {
+                pfd = SafFileUtils.openFileDescriptor(getApplication(), uri) ?: return@withContext null
+                renderer = PdfRenderer(pfd)
+                if (pageIndex !in 0 until renderer.pageCount) return@withContext null
+                renderer.openPage(pageIndex).use { page ->
+                    val bitmap = Bitmap.createBitmap(
+                        page.width.coerceAtMost(2400),
+                        page.height.coerceAtMost(3400),
+                        Bitmap.Config.ARGB_8888
+                    )
+                    bitmap.eraseColor(android.graphics.Color.WHITE)
+                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    bitmap
+                }
+            } catch (e: Exception) {
+                null
+            } finally {
+                renderer?.close()
+                pfd?.close()
+            }
+        }
+    }
 }
