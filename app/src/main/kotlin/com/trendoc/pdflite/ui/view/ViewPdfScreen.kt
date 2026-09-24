@@ -67,7 +67,6 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -194,11 +193,24 @@ fun ViewPdfScreen(
                 }
             } else {
                 // Pinch-to-zoom the whole page list at once, rather than requiring a tap
-                // into a single page first — the list keeps scrolling normally with one
-                // finger throughout, since the gesture handler below only ever reacts to
-                // (and consumes) two-finger touches.
+                // into a single page first. Single-finger drag stays reserved for the
+                // list's own vertical scroll throughout; only two-finger touches are ever
+                // consumed here, for both the pinch itself and panning around once zoomed
+                // in (needed since scaling visually makes the content wider/taller than
+                // the screen, with no other way to reach what's now off to the side).
                 val listScale = remember { mutableStateOf(1f) }
-                Box(modifier = Modifier.weight(1f)) {
+                val listOffset = remember { mutableStateOf(Offset.Zero) }
+                BoxWithConstraints(modifier = Modifier.weight(1f)) {
+                    val density = LocalDensity.current
+                    val widthPx = with(density) { maxWidth.toPx() }
+                    val heightPx = with(density) { maxHeight.toPx() }
+
+                    fun clampListOffset(o: Offset, scale: Float): Offset {
+                        val bx = (widthPx * (scale - 1f) / 2f).coerceAtLeast(0f)
+                        val by = (heightPx * (scale - 1f) / 2f).coerceAtLeast(0f)
+                        return Offset(o.x.coerceIn(-bx, bx), o.y.coerceIn(-by, by))
+                    }
+
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -209,7 +221,13 @@ fun ViewPdfScreen(
                                         val event = awaitPointerEvent()
                                         if (event.changes.size > 1) {
                                             val zoomChange = event.calculateZoom()
-                                            listScale.value = (listScale.value * zoomChange).coerceIn(1f, 3f)
+                                            val panChange = event.calculatePan()
+                                            val newScale = (listScale.value * zoomChange).coerceIn(1f, 3f)
+                                            listOffset.value = clampListOffset(
+                                                if (newScale <= 1f) Offset.Zero else listOffset.value + panChange,
+                                                newScale
+                                            )
+                                            listScale.value = newScale
                                             event.changes.forEach { change ->
                                                 if (change.positionChanged()) change.consume()
                                             }
@@ -220,7 +238,8 @@ fun ViewPdfScreen(
                             .graphicsLayer(
                                 scaleX = listScale.value,
                                 scaleY = listScale.value,
-                                transformOrigin = TransformOrigin(0.5f, 0f)
+                                translationX = listOffset.value.x,
+                                translationY = listOffset.value.y
                             ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -259,7 +278,7 @@ fun ViewPdfScreen(
                     }
                     if (listScale.value != 1f) {
                         TextButton(
-                            onClick = { listScale.value = 1f },
+                            onClick = { listScale.value = 1f; listOffset.value = Offset.Zero },
                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
                         ) {
                             Text("Reset zoom (${(listScale.value * 100).roundToInt()}%)")
