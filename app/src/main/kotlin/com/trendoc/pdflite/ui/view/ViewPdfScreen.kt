@@ -374,7 +374,10 @@ private fun PageDetailScreen(
     // can drive the same state the pinch gesture does. remember(currentIndex) recreates
     // fresh state objects on page change — the same "reset zoom per page" behavior the
     // old key(currentIndex) wrapper gave, without needing to key the whole subtree.
-    val scaleState = remember(currentIndex) { mutableStateOf(1f) }
+    // Dense pages (a packed table, fine print) start pre-zoomed instead of always at 100%,
+    // which just forces the reader to zoom in themselves every single time — see
+    // estimateDefaultZoom().
+    val scaleState = remember(currentIndex) { mutableStateOf(estimateDefaultZoom(pages[currentIndex])) }
     val offsetState = remember(currentIndex) { mutableStateOf(Offset.Zero) }
 
     // The list's per-page bitmaps are low-res (they all have to fit in memory at once for
@@ -576,6 +579,87 @@ private fun PageNavigatorBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * A page packed with a dense table or fine print reads as near-unreadable at the same
+ * 100% fit-to-screen start every other page gets — the reader has to zoom in themselves
+ * every single time. This estimates that from the page's own rendered bitmap rather than
+ * guessing from file metadata: tile it into a coarse grid of cells and, per cell, measure
+ * how much the luminance varies internally (its standard deviation across a small sub-grid
+ * of samples). A cell straddling fine print or a table's grid lines mixes light background
+ * with dark ink and scores high; a cell that's fully inside a blank margin or a single flat
+ * heading/photo region scores low regardless of how dark or light it is overall — this is
+ * why a plain adjacent-pixel-difference scan undercounts small text (individual character
+ * strokes are thinner than the sampling step, so consecutive single-pixel samples can both
+ * land on "mostly background" and barely differ even in genuinely dense text).
+ *
+ * Variance alone isn't enough on its own, though — a photographed page (bricks, foliage,
+ * stone texture) is often just as locally "busy" as a dense table, but isn't something a
+ * reader wants force-zoomed in on. Real print/table pages are overwhelmingly near-white
+ * background with sparse dark ink; photos have a much more continuous spread of mid-tones
+ * and rarely clear a high near-white fraction. Gating on that keeps photos at 100% while
+ * still catching dense text.
+ */
+private fun estimateDefaultZoom(bitmap: Bitmap): Float {
+    val gridWidth = 40
+    val gridHeight = 56
+    val cellW = (bitmap.width / gridWidth).coerceAtLeast(4)
+    val cellH = (bitmap.height / gridHeight).coerceAtLeast(4)
+    val samplesPerAxis = 5
+
+    fun luminanceAt(x: Int, y: Int): Int {
+        val px = x.coerceIn(0, bitmap.width - 1)
+        val py = y.coerceIn(0, bitmap.height - 1)
+        val pixel = bitmap.getPixel(px, py)
+        val r = (pixel shr 16) and 0xFF
+        val g = (pixel shr 8) and 0xFF
+        val b = pixel and 0xFF
+        return (r + g + b) / 3
+    }
+
+    var busyCells = 0
+    var totalCells = 0
+    var nearWhiteSamples = 0
+    var totalSamples = 0
+    var row = 0
+    while (row * cellH < bitmap.height) {
+        var col = 0
+        while (col * cellW < bitmap.width) {
+            val baseX = col * cellW
+            val baseY = row * cellH
+            val samples = IntArray(samplesPerAxis * samplesPerAxis)
+            var index = 0
+            for (sy in 0 until samplesPerAxis) {
+                for (sx in 0 until samplesPerAxis) {
+                    val x = baseX + sx * cellW / samplesPerAxis
+                    val y = baseY + sy * cellH / samplesPerAxis
+                    val luminance = luminanceAt(x, y)
+                    samples[index] = luminance
+                    index++
+                    if (luminance > 215) nearWhiteSamples++
+                    totalSamples++
+                }
+            }
+            val mean = samples.average()
+            val variance = samples.sumOf { (it - mean) * (it - mean) } / samples.size
+            val stdDev = kotlin.math.sqrt(variance)
+            if (stdDev > 22.0) busyCells++
+            totalCells++
+            col++
+        }
+        row++
+    }
+
+    val nearWhiteFraction = if (totalSamples > 0) nearWhiteSamples.toFloat() / totalSamples else 0f
+    if (nearWhiteFraction < 0.5f) return 1f // photo/scan-like page, not a text document — leave at 100%
+
+    val density = if (totalCells > 0) busyCells.toFloat() / totalCells else 0f
+    return when {
+        density > 0.16f -> 2f
+        density > 0.08f -> 1.5f
+        else -> 1f
     }
 }
 
