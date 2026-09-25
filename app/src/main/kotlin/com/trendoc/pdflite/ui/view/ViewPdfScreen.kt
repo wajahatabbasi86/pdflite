@@ -78,12 +78,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.util.SafFileUtils
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 /**
@@ -138,7 +140,7 @@ fun ViewPdfScreen(
             pages = uiState.pages,
             initialIndex = openedPageIndex,
             onClose = { selectedPageIndex = null },
-            loadHighRes = { index -> viewModel.renderPageHighRes(index) }
+            loadAtResolution = { index, targetLongestSidePx -> viewModel.renderPageAtResolution(index, targetLongestSidePx) }
         )
         return
     }
@@ -364,7 +366,7 @@ private fun PageDetailScreen(
     pages: List<Bitmap>,
     initialIndex: Int,
     onClose: () -> Unit,
-    loadHighRes: suspend (Int) -> Bitmap?
+    loadAtResolution: suspend (index: Int, targetLongestSidePx: Int) -> Bitmap?
 ) {
     var currentIndex by remember { mutableStateOf(initialIndex) }
     var presentationMode by remember { mutableStateOf(false) }
@@ -380,21 +382,41 @@ private fun PageDetailScreen(
     val scaleState = remember(currentIndex) { mutableStateOf(estimateDefaultZoom(pages[currentIndex])) }
     val offsetState = remember(currentIndex) { mutableStateOf(Offset.Zero) }
 
-    // The list's per-page bitmaps are low-res (they all have to fit in memory at once for
-    // every page in the document); pinch-zooming into one just stretches — and blurs — that
-    // same small bitmap. Swapping in a much higher-resolution re-render of only the page
-    // actually being viewed fixes that without paying the memory cost of doing this for
-    // every page up front. Capped at a handful of entries so browsing many pages while
-    // zoomed can't grow this without bound.
+    // PdfRenderer rasterizes to one fixed-size bitmap — it can't redraw infinitely sharp
+    // text at any zoom level the way a true vector viewer can. So instead of rendering once
+    // at a single "high enough" resolution, this re-renders the current page whenever the
+    // reader zooms in far enough that the bitmap already in hand can no longer keep up,
+    // targeting a resolution derived from the actual viewport-size × zoom-scale. Capped at
+    // a handful of cached entries (and evicted ones are recycled) so browsing many pages
+    // while zoomed can't grow memory without bound.
     val highResCache = remember { mutableStateMapOf<Int, Bitmap>() }
-    LaunchedEffect(currentIndex) {
-        if (!highResCache.containsKey(currentIndex)) {
-            val bitmap = loadHighRes(currentIndex)
+    val cachedResolution = remember { mutableStateMapOf<Int, Int>() }
+    val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val viewportLongestSidePx = with(density) {
+        maxOf(configuration.screenWidthDp.dp.toPx(), configuration.screenHeightDp.dp.toPx())
+    }
+    // Keying on a coarse bucket of the scale (rather than the raw float) means a live pinch
+    // gesture doesn't restart this effect on every frame — only when the zoom level has
+    // moved enough to actually matter — and the delay() below is skipped entirely (and thus
+    // never fires a stale request) whenever the key changes again before it elapses, since
+    // LaunchedEffect cancels and restarts its coroutine on every key change.
+    val scaleBucket = (scaleState.value * 4).roundToInt()
+    LaunchedEffect(currentIndex, scaleBucket) {
+        val target = (viewportLongestSidePx * scaleState.value).roundToInt().coerceIn(1100, 4500)
+        val cached = cachedResolution[currentIndex] ?: 0
+        if (target > (cached * 1.15f).roundToInt()) {
+            delay(250)
+            val bitmap = loadAtResolution(currentIndex, target)
             if (bitmap != null) {
-                if (highResCache.size >= 4) {
-                    highResCache.keys.firstOrNull { it != currentIndex }?.let { highResCache.remove(it) }
+                if (highResCache.size >= 3) {
+                    highResCache.keys.firstOrNull { it != currentIndex }?.let { evictKey ->
+                        highResCache.remove(evictKey)?.recycle()
+                        cachedResolution.remove(evictKey)
+                    }
                 }
                 highResCache[currentIndex] = bitmap
+                cachedResolution[currentIndex] = target
             }
         }
     }
