@@ -446,7 +446,9 @@ private fun EngineStatusStrip(pageCount: Int) {
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
-            "$pageCount page${if (pageCount == 1) "" else "s"} rendered",
+            // Not "rendered": pages are rasterized on demand as they scroll into view,
+            // so at any moment only a handful of these actually exist as bitmaps.
+            "$pageCount page${if (pageCount == 1) "" else "s"}",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -665,7 +667,8 @@ private fun ZoomControlPanel(
 
 /** The bottom page-navigator bar — a compact "N / total" row that expands into a scrubber
  * slider plus a horizontal thumbnail filmstrip when tapped, matching the design
- * reference's page navigator. Thumbnails reuse the already-rendered page bitmaps (no
+ * reference's page navigator. Thumbnails reuse whatever page bitmaps the on-demand cache
+ * happens to hold (no
  * separate lower-res thumbnail pass) since [pages] is a small in-memory list already. */
 @Composable
 private fun PageNavigatorBar(

@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
+import com.trendoc.pdflite.util.renderPageBitmap
 import com.tom_roush.pdfbox.multipdf.Splitter
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import kotlinx.coroutines.Dispatchers
@@ -182,17 +183,16 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
             renderer = PdfRenderer(pfd)
             if (index !in 0 until renderer.pageCount) return null
             renderer.openPage(index).use { page ->
-                val bitmap = Bitmap.createBitmap(
-                    page.width.coerceAtMost(THUMBNAIL_WIDTH),
-                    page.height.coerceAtMost(THUMBNAIL_HEIGHT),
-                    // Half the bytes of ARGB_8888, and a PDF page rendered on white has no
-                    // alpha to preserve. At thumbnail size the reduced color depth isn't
-                    // visible; the full-quality render is Split's output, not this grid.
-                    Bitmap.Config.RGB_565
+                // halveMemory: rendered at ARGB_8888 (the only config PdfRenderer accepts),
+                // then kept as RGB_565. A page on white has no alpha, and the reduced depth
+                // isn't visible at thumbnail size — the full-quality render is Split's
+                // output file, not this grid.
+                renderPageBitmap(
+                    page = page,
+                    width = page.width.coerceAtMost(THUMBNAIL_WIDTH),
+                    height = page.height.coerceAtMost(THUMBNAIL_HEIGHT),
+                    halveMemory = true
                 )
-                bitmap.eraseColor(android.graphics.Color.WHITE)
-                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                bitmap
             }
         } catch (e: Exception) {
             null

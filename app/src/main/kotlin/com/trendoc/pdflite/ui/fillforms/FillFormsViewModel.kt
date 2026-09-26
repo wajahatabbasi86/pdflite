@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
+import com.trendoc.pdflite.util.renderPageBitmap
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDCheckBox
 import com.tom_roush.pdfbox.pdmodel.interactive.form.PDChoice
@@ -265,9 +266,16 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                         val targetWidthPx = 1080
                         val pxPerPoint = targetWidthPx / page.width.toFloat()
                         val targetHeightPx = (page.height * pxPerPoint).toInt().coerceAtLeast(1)
-                        val bitmap = Bitmap.createBitmap(targetWidthPx, targetHeightPx, Bitmap.Config.RGB_565)
-                        bitmap.eraseColor(android.graphics.Color.WHITE)
-                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        // halveMemory: rendered at ARGB_8888 (the only config PdfRenderer
+                        // accepts) then kept as RGB_565, which halves what stays resident
+                        // per page. Dimensions are unchanged, so pxPerPoint and the field
+                        // overlay coordinates built on it are unaffected.
+                        val bitmap = renderPageBitmap(
+                            page = page,
+                            width = targetWidthPx,
+                            height = targetHeightPx,
+                            halveMemory = true
+                        )
                         FormPage(pageIndex = index, bitmap = bitmap, pxPerPoint = pxPerPoint, heightPt = page.height.toFloat())
                     }
                 }
