@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -33,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -139,6 +145,21 @@ fun ImageToPdfScreen(
     }
 
     val validCount = uiState.images.count { it.error == null }
+
+    // Tapping an image row opens it full-screen to view/rotate/caption before the PDF is
+    // built — the same file, re-decoded with whatever edits are applied, so what's shown
+    // here is exactly what ends up in the PDF page.
+    var editingUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val editingItem = uiState.images.firstOrNull { it.uri == editingUri }
+    if (editingItem != null) {
+        ImageEditScreen(
+            item = editingItem,
+            onRotate = { viewModel.rotateImage(editingItem.uri) },
+            onTextChanged = { text -> viewModel.setOverlayText(editingItem.uri, text) },
+            onClose = { editingUri = null }
+        )
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -272,7 +293,8 @@ fun ImageToPdfScreen(
                             canMoveDown = index < uiState.images.lastIndex,
                             onMoveUp = { viewModel.moveImage(index, -1) },
                             onMoveDown = { viewModel.moveImage(index, 1) },
-                            onRemove = { viewModel.removeImage(image.uri) }
+                            onRemove = { viewModel.removeImage(image.uri) },
+                            onView = { editingUri = image.uri }
                         )
                     }
                 }
@@ -318,7 +340,8 @@ private fun ImageRow(
     canMoveDown: Boolean,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onView: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -376,8 +399,8 @@ private fun ImageRow(
                 }
                 item.thumbnail != null -> Image(
                     bitmap = item.thumbnail.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
+                    contentDescription = "View and edit ${item.displayName}",
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onView)
                 )
                 else -> Box(
                     modifier = Modifier.size(44.dp).clip(CircleShape)
@@ -385,15 +408,97 @@ private fun ImageRow(
                 )
             }
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f).clickable(enabled = item.thumbnail != null, onClick = onView)
+            ) {
                 Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 item.error?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                }
+                } ?: Text(
+                    "Tap to view / edit",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             IconButton(onClick = onRemove) {
                 Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+/** Full-screen view/edit for one queued image — rotate (90° per tap, cumulative) and an
+ * optional caption baked into the bottom-left corner, both applied to the same bitmap
+ * that ends up in the final PDF page (see [ImageToPdfViewModel.applyEdits]). Not a general
+ * photo editor: no crop/filters/free-form text placement — just the two edits actually
+ * useful for turning a photo into a document page. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImageEditScreen(
+    item: ImageItem,
+    onRotate: () -> Unit,
+    onTextChanged: (String) -> Unit,
+    onClose: () -> Unit
+) {
+    var showTextField by remember(item.uri) { mutableStateOf(false) }
+    var textDraft by remember(item.uri) { mutableStateOf(item.overlayText) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                title = { Text(item.displayName, maxLines = 1) },
+                actions = {
+                    IconButton(onClick = onRotate) {
+                        Icon(Icons.Filled.RotateRight, contentDescription = "Rotate")
+                    }
+                    IconButton(onClick = { showTextField = !showTextField }) {
+                        Icon(Icons.Filled.TextFields, contentDescription = "Add text")
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            if (showTextField) {
+                Surface(modifier = Modifier.fillMaxWidth(), shadowElevation = 8.dp) {
+                    Row(
+                        modifier = Modifier.navigationBarsPadding().fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = textDraft,
+                            onValueChange = { textDraft = it },
+                            label = { Text("Caption") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(onClick = {
+                            onTextChanged(textDraft)
+                            showTextField = false
+                        }) {
+                            Text("Apply")
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+            if (item.thumbnail != null) {
+                Image(
+                    bitmap = item.thumbnail.asImageBitmap(),
+                    contentDescription = item.displayName,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                )
+            } else {
+                CircularProgressIndicator()
             }
         }
     }

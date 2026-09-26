@@ -3,7 +3,10 @@ package com.trendoc.pdflite.ui.imagetopdf
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
@@ -27,12 +30,17 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-/** One entry in the Image(s) -> PDF reorderable list (docs/REQUIREMENTS.md §6.1). */
+/** One entry in the Image(s) -> PDF reorderable list (docs/REQUIREMENTS.md §6.1).
+ * [rotationDegrees]/[overlayText] are the user's edits (view/rotate/add-text) — declarative
+ * rather than a stored edited bitmap, so [thumbnail] and the final PDF page can both be
+ * regenerated from the same original file plus these two parameters whenever either changes. */
 data class ImageItem(
     val uri: Uri,
     val displayName: String,
     val thumbnail: Bitmap? = null,
-    val error: String? = null
+    val error: String? = null,
+    val rotationDegrees: Int = 0,
+    val overlayText: String = ""
 )
 
 data class ImageToPdfUiState(
@@ -74,34 +82,72 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
             })
         }
 
-        newUris.forEach { uri ->
-            viewModelScope.launch {
-                val result = withContext(Dispatchers.IO) { loadThumbnail(uri) }
-                _uiState.update { state ->
-                    state.copy(images = state.images.map { item ->
-                        if (item.uri == uri) {
-                            result.fold(
-                                onSuccess = { item.copy(thumbnail = it, error = null) },
-                                onFailure = { item.copy(error = "Couldn't read this image.") }
-                            )
-                        } else item
-                    })
-                }
+        newUris.forEach { uri -> regenerateThumbnail(uri) }
+    }
+
+    /** Re-decodes one item's thumbnail from scratch, applying its current rotation/text
+     * edits — the same regeneration [rotateImage] and [setOverlayText] trigger, so the
+     * preview always matches what will actually end up in the PDF. */
+    private fun regenerateThumbnail(uri: Uri) {
+        val item = _uiState.value.images.firstOrNull { it.uri == uri } ?: return
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                loadThumbnail(uri, item.rotationDegrees, item.overlayText)
+            }
+            _uiState.update { state ->
+                state.copy(images = state.images.map { current ->
+                    if (current.uri == uri) {
+                        result.fold(
+                            onSuccess = { current.copy(thumbnail = it, error = null) },
+                            onFailure = { current.copy(error = "Couldn't read this image.") }
+                        )
+                    } else current
+                })
             }
         }
     }
 
-    private fun loadThumbnail(uri: Uri): Result<Bitmap> {
+    private fun loadThumbnail(uri: Uri, rotationDegrees: Int, overlayText: String): Result<Bitmap> {
         val context = getApplication<Application>()
         return try {
             val decoded = context.contentResolver.openInputStream(uri)?.use { input ->
                 val options = BitmapFactory.Options().apply { inSampleSize = 4 }
                 BitmapFactory.decodeStream(input, null, options)
             } ?: return Result.failure(IllegalStateException("Unable to decode $uri"))
-            Result.success(applyExifOrientation(uri, decoded))
+            val oriented = applyExifOrientation(uri, decoded)
+            Result.success(applyEdits(oriented, rotationDegrees, overlayText))
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /** Rotate 90°/180°/270° and/or bake in a caption — declarative edits applied on top of
+     * the EXIF-corrected decode, the same for a preview thumbnail and the full embed, so
+     * what the user sees while editing is exactly what ends up in the PDF page. */
+    private fun applyEdits(bitmap: Bitmap, rotationDegrees: Int, overlayText: String): Bitmap {
+        var result = bitmap
+        if (rotationDegrees != 0) {
+            val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+            val rotated = Bitmap.createBitmap(result, 0, 0, result.width, result.height, matrix, true)
+            if (rotated != result) result.recycle()
+            result = rotated
+        }
+        if (overlayText.isNotBlank()) {
+            val mutable = if (result.isMutable) result else result.copy(Bitmap.Config.ARGB_8888, true)
+            if (mutable != result) result.recycle()
+            val canvas = Canvas(mutable)
+            val textSizePx = mutable.width * 0.05f
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                textSize = textSizePx
+                setShadowLayer(textSizePx * 0.15f, 0f, 0f, Color.BLACK)
+            }
+            val x = mutable.width * 0.05f
+            val y = mutable.height * 0.92f
+            canvas.drawText(overlayText, x, y, paint)
+            result = mutable
+        }
+        return result
     }
 
     /** A camera photo (and many gallery images) is stored by the sensor's own physical
@@ -147,6 +193,28 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
         _uiState.update { it.copy(images = it.images.filterNot { img -> img.uri == uri }) }
     }
 
+    /** Rotates one image a further 90° clockwise (cumulative — four taps return to normal)
+     * and regenerates its thumbnail so the change is visible right away. */
+    fun rotateImage(uri: Uri) {
+        _uiState.update { state ->
+            state.copy(images = state.images.map { item ->
+                if (item.uri == uri) item.copy(rotationDegrees = (item.rotationDegrees + 90) % 360) else item
+            })
+        }
+        regenerateThumbnail(uri)
+    }
+
+    /** Sets (or clears, for a blank string) the caption baked into the bottom-left of the
+     * image — both the preview and the final PDF page. */
+    fun setOverlayText(uri: Uri, text: String) {
+        _uiState.update { state ->
+            state.copy(images = state.images.map { item ->
+                if (item.uri == uri) item.copy(overlayText = text) else item
+            })
+        }
+        regenerateThumbnail(uri)
+    }
+
     fun moveImage(index: Int, delta: Int) {
         _uiState.update { state ->
             val target = index + delta
@@ -160,13 +228,13 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun startCreate() {
-        val validUris = _uiState.value.images.filter { it.error == null }.map { it.uri }
-        if (validUris.isEmpty()) return
+        val validItems = _uiState.value.images.filter { it.error == null }
+        if (validItems.isEmpty()) return
 
         _uiState.update { it.copy(isCreating = true, errorMessage = null) }
 
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) { buildPdf(validUris) }
+            val result = withContext(Dispatchers.IO) { buildPdf(validItems) }
             result.fold(
                 onSuccess = { file ->
                     pendingFile = file
@@ -187,7 +255,7 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
     /** Downsampled decode cap for the full-resolution embed — avoids OOM on very large photos
      * while still producing a perfectly usable page image (most phone cameras shoot well
      * above what a screen or printed page can resolve anyway). */
-    private fun decodeForEmbedding(uri: Uri): Bitmap? {
+    private fun decodeForEmbedding(uri: Uri, rotationDegrees: Int, overlayText: String): Bitmap? {
         val context = getApplication<Application>()
         val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { input ->
@@ -202,16 +270,18 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
         val decoded = context.contentResolver.openInputStream(uri)?.use { input ->
             BitmapFactory.decodeStream(input, null, options)
         } ?: return null
-        return applyExifOrientation(uri, decoded)
+        val oriented = applyExifOrientation(uri, decoded)
+        return applyEdits(oriented, rotationDegrees, overlayText)
     }
 
-    private fun buildPdf(uris: List<Uri>): Result<File> {
+    private fun buildPdf(items: List<ImageItem>): Result<File> {
         val context = getApplication<Application>()
         val outputFile = File(context.cacheDir, "images_${UUID.randomUUID()}.pdf")
         return try {
             PDDocument().use { document ->
-                uris.forEach { uri ->
-                    val bitmap = decodeForEmbedding(uri) ?: throw IllegalStateException("Unable to decode $uri")
+                items.forEach { item ->
+                    val bitmap = decodeForEmbedding(item.uri, item.rotationDegrees, item.overlayText)
+                        ?: throw IllegalStateException("Unable to decode ${item.uri}")
                     val pdImage = LosslessFactory.createFromImage(document, bitmap)
                     val page = PDPage(PDRectangle(bitmap.width.toFloat(), bitmap.height.toFloat()))
                     document.addPage(page)
