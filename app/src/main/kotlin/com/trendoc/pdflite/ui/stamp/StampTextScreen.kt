@@ -82,6 +82,7 @@ import com.trendoc.pdflite.ui.common.rememberZoomPanState
 import com.trendoc.pdflite.ui.common.ZoomPanBox
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
+import com.trendoc.pdflite.util.RuledLineFinder
 import com.trendoc.pdflite.util.SafFileUtils
 
 /**
@@ -377,11 +378,22 @@ private fun StampPageView(
                         .pointerInput(pageIndex, pointsToPx, pageSize) {
                             detectTapGestures { offset ->
                                 val xPt = offset.x / pointsToPx
-                                val yPt = pageSize.height - (offset.y / pointsToPx)
+                                val rawYPt = pageSize.height - (offset.y / pointsToPx)
+                                // Aim for the printed rule the user was pointing at, so the
+                                // text sits on the line instead of needing nudging every
+                                // time. Falls back to the tap itself in open space.
+                                val baselineYPt = snapBaselineToRule(
+                                    bitmap = bitmap,
+                                    tapXContentPx = offset.x,
+                                    tapYContentPx = offset.y,
+                                    contentWidthPx = viewportWidthPx,
+                                    pageHeightPt = pageSize.height.toFloat(),
+                                    pointsToPx = pointsToPx
+                                ) ?: (rawYPt + DEFAULT_FONT_SIZE_PT * BASELINE_LIFT_FRACTION)
                                 if (!zoomState.isZoomed) {
-                                    onRequestZoom(ZoomFocus(pageIndex, xPt, yPt))
+                                    onRequestZoom(ZoomFocus(pageIndex, xPt, baselineYPt))
                                 }
-                                onAddStamp(xPt, yPt)
+                                onAddStamp(xPt, baselineYPt)
                             }
                         }
                 ) {
@@ -544,3 +556,55 @@ private const val MIN_FIELD_CHARS = 6
 
 /** Size of the grip shown beside a selected text box for dragging it by hand. */
 private val DRAG_HANDLE_SIZE = 28.dp
+
+/**
+ * Resolves where a tap's text baseline should sit, snapping onto a printed rule when the tap
+ * was near one.
+ *
+ * Works in the rendered bitmap's own pixels, which may be the magnified render or the
+ * fit-to-width one, so the tap is scaled into that space first. Returns null when the page
+ * has not rendered yet or the tap was not close to a rule, leaving the caller to place the
+ * text exactly where it was tapped.
+ */
+private fun snapBaselineToRule(
+    bitmap: android.graphics.Bitmap?,
+    tapXContentPx: Float,
+    tapYContentPx: Float,
+    contentWidthPx: Float,
+    pageHeightPt: Float,
+    pointsToPx: Float
+): Float? {
+    if (bitmap == null || contentWidthPx <= 0f) return null
+    val contentToBitmap = bitmap.width / contentWidthPx
+    val pointsToBitmapPx = pointsToPx * contentToBitmap
+    if (pointsToBitmapPx <= 0f) return null
+
+    val lineTopBitmapPx = RuledLineFinder.findLineTop(
+        bitmap = bitmap,
+        xPx = tapXContentPx * contentToBitmap,
+        yPx = tapYContentPx * contentToBitmap,
+        // Only snap to a rule the tap was plausibly aimed at; beyond this the user meant
+        // the blank space they touched.
+        // Asymmetric: a rule well below the finger is still probably the target, while one
+        // above it is more likely a box border or the previous row's line.
+        searchAbovePx = (SNAP_SEARCH_ABOVE_PT * pointsToBitmapPx).toInt().coerceAtLeast(1),
+        searchBelowPx = (SNAP_SEARCH_BELOW_PT * pointsToBitmapPx).toInt().coerceAtLeast(2),
+        sampleHalfWidthPx = (SNAP_SAMPLE_HALF_WIDTH_PT * pointsToBitmapPx).toInt().coerceAtLeast(4)
+    ) ?: return null
+
+    // Bitmap y grows downward from the page top; PDF y grows upward from the bottom.
+    val lineTopPt = pageHeightPt - (lineTopBitmapPx / pointsToBitmapPx)
+    // Sit the baseline just above the rule rather than exactly on it, so descenders clear it.
+    return lineTopPt + DEFAULT_FONT_SIZE_PT * BASELINE_LIFT_FRACTION
+}
+
+/** How far above the tap to look for a rule. Kept short — a rule above the finger is more
+ * often a box border than the line being filled in. */
+private const val SNAP_SEARCH_ABOVE_PT = 3f
+
+/** How far below the tap to look. Generous, since the line being written on sits under the
+ * text and therefore under the finger. */
+private const val SNAP_SEARCH_BELOW_PT = 11f
+
+/** How wide a span either side of the tap must be dark for a row to count as a rule. */
+private const val SNAP_SAMPLE_HALF_WIDTH_PT = 28f

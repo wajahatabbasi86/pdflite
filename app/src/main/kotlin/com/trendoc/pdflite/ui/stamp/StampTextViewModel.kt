@@ -292,10 +292,9 @@ class StampTextViewModel(application: Application) : AndroidViewModel(applicatio
             id = UUID.randomUUID().toString(),
             pageIndex = pageIndex,
             xPt = xPt,
-            // Lift the baseline slightly above the tap. On a printed form the user aims at
-            // the ruled line they're filling in, and a baseline exactly on it draws the text
-            // with the rule struck through its middle instead of sitting on top of it.
-            yPt = yPt + DEFAULT_FONT_SIZE_PT * BASELINE_LIFT_FRACTION,
+            // Already the final baseline: the screen resolves it, since only it has the
+            // rendered page to look for a ruled line in.
+            yPt = yPt,
             text = ""
         )
         _uiState.update { it.copy(stamps = it.stamps + stamp, selectedStampId = stamp.id) }
@@ -491,8 +490,9 @@ private const val MAX_RENDER_HEIGHT = 1550
 
 const val DEFAULT_FONT_SIZE_PT = 11f
 
-/** How far above the tap the initial baseline sits, as a fraction of the font size. Roughly
- * the descender depth, so text rests on a ruled line rather than through it. */
-private const val BASELINE_LIFT_FRACTION = 0.25f
+/** How far above the tap — or above a detected rule — the baseline sits, as a fraction of
+ * the font size. Roughly the descender depth, so text rests on a line rather than through
+ * it. Public because the screen applies it when resolving where a tap lands. */
+const val BASELINE_LIFT_FRACTION = 0.25f
 const val MIN_FONT_SIZE_PT = 6f
 const val MAX_FONT_SIZE_PT = 36f
