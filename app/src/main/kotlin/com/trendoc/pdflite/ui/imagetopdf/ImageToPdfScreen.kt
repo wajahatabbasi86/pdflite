@@ -21,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -266,6 +268,10 @@ fun ImageToPdfScreen(
                             onDragStart = { dragState.onDragStart(index) },
                             onDrag = { deltaY -> dragState.onDrag(deltaY) },
                             onDragEnd = { dragState.onDragEnd() },
+                            canMoveUp = index > 0,
+                            canMoveDown = index < uiState.images.lastIndex,
+                            onMoveUp = { viewModel.moveImage(index, -1) },
+                            onMoveDown = { viewModel.moveImage(index, 1) },
                             onRemove = { viewModel.removeImage(image.uri) }
                         )
                     }
@@ -308,6 +314,10 @@ private fun ImageRow(
     onDragStart: () -> Unit,
     onDrag: (Float) -> Unit,
     onDragEnd: () -> Unit,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onRemove: () -> Unit
 ) {
     Card(
@@ -340,6 +350,22 @@ private fun ImageRow(
                     )
                 }
             )
+            Column {
+                IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        Icons.Filled.KeyboardArrowUp,
+                        contentDescription = "Move up",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "Move down",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             when {
                 item.error != null -> Box(
                     modifier = Modifier.size(44.dp).clip(CircleShape)

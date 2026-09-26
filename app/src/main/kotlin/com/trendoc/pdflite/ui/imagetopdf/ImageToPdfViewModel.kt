@@ -3,7 +3,9 @@ package com.trendoc.pdflite.ui.imagetopdf
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trendoc.pdflite.recents.RecentsRepository
@@ -92,12 +94,52 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
     private fun loadThumbnail(uri: Uri): Result<Bitmap> {
         val context = getApplication<Application>()
         return try {
-            context.contentResolver.openInputStream(uri)?.use { input ->
+            val decoded = context.contentResolver.openInputStream(uri)?.use { input ->
                 val options = BitmapFactory.Options().apply { inSampleSize = 4 }
                 BitmapFactory.decodeStream(input, null, options)
-            }?.let { Result.success(it) } ?: Result.failure(IllegalStateException("Unable to decode $uri"))
+            } ?: return Result.failure(IllegalStateException("Unable to decode $uri"))
+            Result.success(applyExifOrientation(uri, decoded))
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /** A camera photo (and many gallery images) is stored by the sensor's own physical
+     * orientation, with an EXIF tag saying how it should actually be displayed —
+     * [BitmapFactory] never reads that tag itself, so without this, a portrait photo comes
+     * out sideways once decoded to a bitmap (this is what actually embeds into the PDF,
+     * not the original file). Rotates/flips the bitmap to match, recycling the pre-rotation
+     * one — same fix needed for both the list thumbnail and the full embed. */
+    private fun applyExifOrientation(uri: Uri, bitmap: Bitmap): Bitmap {
+        val context = getApplication<Application>()
+        val orientation = try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                ExifInterface(input).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
+        } catch (e: Exception) {
+            ExifInterface.ORIENTATION_NORMAL
+        }
+
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(270f); matrix.postScale(-1f, 1f) }
+            else -> return bitmap
+        }
+        return try {
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated != bitmap) bitmap.recycle()
+            rotated
+        } catch (e: Exception) {
+            bitmap
         }
     }
 
@@ -157,9 +199,10 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
             sample *= 2
         }
         val options = BitmapFactory.Options().apply { inSampleSize = sample }
-        return context.contentResolver.openInputStream(uri)?.use { input ->
+        val decoded = context.contentResolver.openInputStream(uri)?.use { input ->
             BitmapFactory.decodeStream(input, null, options)
-        }
+        } ?: return null
+        return applyExifOrientation(uri, decoded)
     }
 
     private fun buildPdf(uris: List<Uri>): Result<File> {
