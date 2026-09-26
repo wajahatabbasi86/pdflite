@@ -259,10 +259,12 @@ fun ViewPdfScreen(
                                     awaitFirstDown(requireUnconsumed = false)
                                     do {
                                         val event = awaitPointerEvent()
-                                        if (event.changes.size > 1) {
+                                        val isMultitouch = event.changes.size > 1
+                                        val scale = listScale.value
+                                        if (isMultitouch) {
                                             val zoomChange = event.calculateZoom()
                                             val panChange = event.calculatePan()
-                                            val newScale = (listScale.value * zoomChange).coerceIn(1f, 3f)
+                                            val newScale = (scale * zoomChange).coerceIn(1f, 3f)
                                             listOffset.value = clampListOffset(
                                                 if (newScale <= 1f) Offset.Zero else listOffset.value + panChange,
                                                 newScale
@@ -271,7 +273,21 @@ fun ViewPdfScreen(
                                             event.changes.forEach { change ->
                                                 if (change.positionChanged()) change.consume()
                                             }
+                                        } else if (scale > 1f) {
+                                            // Zoomed in: a single-finger drag pans around
+                                            // instead of falling through to the list's own
+                                            // vertical scroll. Once zoomed, "see what's now
+                                            // off to the side" is the point of dragging, not
+                                            // "scroll to another page" — zoom back out (the
+                                            // reset chip) to go back to browsing normally.
+                                            val panChange = event.calculatePan()
+                                            listOffset.value = clampListOffset(listOffset.value + panChange, scale)
+                                            event.changes.forEach { change ->
+                                                if (change.positionChanged()) change.consume()
+                                            }
                                         }
+                                        // Single-finger, not zoomed: don't consume — let the
+                                        // LazyColumn's own scrollable handle it normally.
                                     } while (event.changes.any { it.pressed })
                                 }
                             }
