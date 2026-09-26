@@ -168,13 +168,20 @@ fun TrenDocNavHost() {
                     onCompress = { uri ->
                         PendingCompressUri.uri.value = uri
                         navController.navigate(Routes.COMPRESS)
+                    },
+                    onFillForms = { uri ->
+                        PendingFillFormsUri.uri.value = uri
+                        navController.navigate(Routes.FILL_FORMS)
                     }
                 )
             }
             composable(Routes.FILL_FORMS) {
-                FillFormsScreen(onDone = {
-                    navController.popBackStack(Routes.HOME, inclusive = false)
-                })
+                FillFormsScreen(
+                    initialUri = PendingFillFormsUri.consume(),
+                    // Same reasoning as Split/Compress above — View PDF's "Fill Forms"
+                    // bridge is a second entry point into this screen besides Home.
+                    onDone = { navController.popBackStack() }
+                )
             }
             composable(Routes.FILES) {
                 FilesScreen(onOpenFile = { uri -> PendingPdfIntent.uri.value = uri })

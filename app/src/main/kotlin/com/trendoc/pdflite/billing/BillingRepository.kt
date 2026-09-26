@@ -15,6 +15,7 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -114,8 +115,13 @@ class BillingRepository(
             )
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { result, detailsList ->
-            val details = detailsList.firstOrNull()
+        // Play Billing 8 changed this callback's second argument from a plain
+        // List<ProductDetails> to a QueryProductDetailsResult, which also carries the
+        // products Play couldn't fetch. Only the fetched list matters here — an unfetched
+        // "remove_ads" falls through to the same billingUnavailable state as any other
+        // failure to load a price.
+        billingClient.queryProductDetailsAsync(params) { result, queryResult ->
+            val details = queryResult.productDetailsList.firstOrNull()
             if (result.responseCode == BillingClient.BillingResponseCode.OK && details != null) {
                 productDetails = details
                 _uiState.update {
@@ -168,6 +174,10 @@ class BillingRepository(
 
     fun close() {
         billingClient.endConnection()
+        // Without this the SupervisorJob created above outlives the repository — the owning
+        // BillingViewModel calls close() from onCleared(), so anything still running here
+        // would leak past the screen it belongs to.
+        scope.cancel()
     }
 }
 

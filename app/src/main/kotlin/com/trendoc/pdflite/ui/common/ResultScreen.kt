@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.trendoc.pdflite.util.startActivitySafely
 import androidx.compose.ui.unit.dp
 
 /** The same "approved" green used across the app for success states (compression results,
@@ -125,7 +126,10 @@ fun ResultScreen(
                         setDataAndType(resultUri, mimeType)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(intent, null))
+                    context.startActivitySafely(
+                        Intent.createChooser(intent, null),
+                        "No app on this device can open this file."
+                    )
                 }
             )
 
@@ -136,7 +140,10 @@ fun ResultScreen(
                         putExtra(Intent.EXTRA_STREAM, resultUri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share"))
+                    context.startActivitySafely(
+                        Intent.createChooser(intent, "Share"),
+                        "No app available to share this file."
+                    )
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {

@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -15,14 +16,55 @@ val keystoreProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+// Real AdMob identifiers — same pattern as keystore.properties above: gitignored, never
+// committed, see admob.properties.example for the format. Absent on a fresh checkout or CI
+// without secrets, in which case every build falls back to Google's published TEST ids
+// below, so the project still builds and runs — it just can't serve real ads.
+val admobProperties = Properties().apply {
+    val file = rootProject.file("admob.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+// Google's published test identifiers. Safe to ship in a debug build — they always serve a
+// clearly-marked test ad and never a real one. Debug always uses these regardless of what
+// admob.properties holds, so development traffic can never contaminate real ad metrics or
+// trip AdMob's invalid-traffic detection.
+val testAdMobAppId = "ca-app-pub-3940256099942544~3347511713"
+val testBannerAdUnitId = "ca-app-pub-3940256099942544/6300978111"
+val testRewardedAdUnitId = "ca-app-pub-3940256099942544/5224354917"
+
+val releaseAdMobAppId = admobProperties.getProperty("admobAppId") ?: testAdMobAppId
+val releaseBannerAdUnitId = admobProperties.getProperty("bannerAdUnitId") ?: testBannerAdUnitId
+val releaseRewardedAdUnitId = admobProperties.getProperty("rewardedAdUnitId") ?: testRewardedAdUnitId
+
+// A release build that silently ships test ad units earns nothing and gets flagged by AdMob,
+// and the failure is invisible at runtime (a test ad looks like a working ad). Fail the build
+// instead — but only for the release variant, and only once the task graph is known, so a
+// plain `assembleDebug` on a fresh checkout is unaffected.
+gradle.taskGraph.whenReady {
+    val buildingRelease = allTasks.any { it.name.contains("Release") && it.project == project }
+    if (buildingRelease && releaseBannerAdUnitId == testBannerAdUnitId) {
+        throw GradleException(
+            "Release build is still using Google's TEST AdMob ids. Create admob.properties at " +
+                "the repo root (see admob.properties.example) with the real ids from the AdMob " +
+                "console before building a release artifact."
+        )
+    }
+}
+
 android {
     namespace = "com.trendoc.pdflite"
-    35.also { compileSdk = it }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.trendoc.pdflite"
-        minSdk = 21
-        targetSdk = 35
+        // Raised from 21 by play-services-ads: the 16 KB page-size-compliant line of that SDK
+        // requires 23, and 25.4.0+ requires 24. Android 7.0 is the floor rather than 6.0 so the
+        // ads SDK can stay on its current release instead of being pinned a version back.
+        minSdk = 24
+        // Play's annual rule requires new apps and updates to target the API level released
+        // within the last year — API 36 (Android 16) as of the 31 Aug 2026 deadline.
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
 
@@ -41,6 +83,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Always the test ids — see the note on testAdMobAppId above.
+            manifestPlaceholders["admobAppId"] = testAdMobAppId
+            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
+            buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$testRewardedAdUnitId\"")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -51,16 +99,16 @@ android {
             if (keystoreProperties.containsKey("storeFile")) {
                 signingConfig = signingConfigs.getByName("release")
             }
+
+            manifestPlaceholders["admobAppId"] = releaseAdMobAppId
+            buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$releaseBannerAdUnitId\"")
+            buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$releaseRewardedAdUnitId\"")
         }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
     }
 
     lint {
@@ -74,6 +122,9 @@ android {
 
     buildFeatures {
         compose = true
+        // Carries the per-variant AdMob ad unit ids into Kotlin — see AdBanner and
+        // RewardedAdRepository, which read them from BuildConfig rather than hardcoding.
+        buildConfig = true
     }
 
     packaging {
@@ -93,8 +144,15 @@ android {
 
     // Source lives under src/main/kotlin rather than the default src/main/java.
     sourceSets["main"].kotlin.srcDirs("src/main/kotlin")
-    var compileSdkMinor = 0
     buildToolsVersion = "36.0.0"
+}
+
+// Replaces the android { kotlinOptions { } } block, which Kotlin 2.3 turned from a
+// deprecation warning into a hard error. Same setting, current DSL.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 dependencies {

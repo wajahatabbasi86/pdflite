@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Compress
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
@@ -85,6 +88,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
+import com.trendoc.pdflite.util.startActivitySafely
 import com.trendoc.pdflite.util.SafFileUtils
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -101,6 +105,7 @@ fun ViewPdfScreen(
     onDone: () -> Unit,
     onExtractPage: (android.net.Uri) -> Unit = {},
     onCompress: (android.net.Uri) -> Unit = {},
+    onFillForms: (android.net.Uri) -> Unit = {},
     viewModel: ViewPdfViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -136,9 +141,14 @@ fun ViewPdfScreen(
     // and panning work like a photo viewer, with swipe between pages while zoomed out.
     var selectedPageIndex by remember { mutableStateOf<Int?>(null) }
     val openedPageIndex = selectedPageIndex
-    if (openedPageIndex != null && uiState.pages.isNotEmpty()) {
+    if (openedPageIndex != null && uiState.pageCount > 0) {
         PageDetailScreen(
-            pages = uiState.pages,
+            pageCount = uiState.pageCount,
+            pageSizes = uiState.pageSizes,
+            baseBitmapFor = { index ->
+                viewModel.requestPage(index)
+                viewModel.pageCache[index]
+            },
             initialIndex = openedPageIndex,
             onClose = { selectedPageIndex = null },
             loadAtResolution = { index, targetLongestSidePx -> viewModel.renderPageAtResolution(index, targetLongestSidePx) }
@@ -162,19 +172,23 @@ fun ViewPdfScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (uiState.pages.isNotEmpty()) {
-                EngineStatusStrip(pageCount = uiState.pages.size)
+            if (uiState.pageCount > 0) {
+                EngineStatusStrip(pageCount = uiState.pageCount)
                 uiState.sourceUri?.let { uri ->
                     QuickActionRow(
                         onExtractPage = { onExtractPage(uri) },
                         onCompress = { onCompress(uri) },
+                        onFillForms = if (uiState.hasFormFields) ({ onFillForms(uri) }) else null,
                         onShare = {
                             val intent = Intent(Intent.ACTION_SEND).apply {
                                 type = "application/pdf"
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share"))
+                            context.startActivitySafely(
+                                Intent.createChooser(intent, "Share"),
+                                "No app available to share this file."
+                            )
                         }
                     )
                 }
@@ -188,7 +202,7 @@ fun ViewPdfScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-            } else if (uiState.pages.isEmpty()) {
+            } else if (uiState.pageCount == 0) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
                         Text("Select PDF")
@@ -299,7 +313,15 @@ fun ViewPdfScreen(
                             ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        itemsIndexed(uiState.pages, key = { index, _ -> index }) { index, page ->
+                        items(uiState.pageCount, key = { index -> index }) { index ->
+                            // Asking for the page from inside the item's composition is what
+                            // makes rendering demand-driven: LazyColumn only composes items
+                            // near the viewport, so only those pages are ever rasterized.
+                            // Pages scrolled far away get evicted by the ViewModel's budget
+                            // and simply re-render if the reader comes back to them.
+                            viewModel.requestPage(index)
+                            val page = viewModel.pageCache[index]
+                            val pageSize = uiState.pageSizes.getOrNull(index)
                             Box {
                                 Card(
                                     modifier = Modifier
@@ -310,11 +332,28 @@ fun ViewPdfScreen(
                                     border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E)),
                                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                 ) {
-                                    Image(
-                                        bitmap = (listHighResCache[index] ?: page).asImageBitmap(),
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                                    )
+                                    val bitmap = listHighResCache[index] ?: page
+                                    if (bitmap != null) {
+                                        Image(
+                                            bitmap = bitmap.asImageBitmap(),
+                                            contentDescription = "Page ${index + 1} of ${uiState.pageCount}",
+                                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                                        )
+                                    } else {
+                                        // Correctly-proportioned placeholder from the page's
+                                        // own dimensions, so the list never reflows or jumps
+                                        // as real pages stream in behind it.
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .aspectRatio((pageSize?.aspectRatio ?: DEFAULT_PAGE_ASPECT).coerceAtLeast(0.1f))
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                                        }
+                                    }
                                 }
                                 Box(
                                     modifier = Modifier
@@ -349,15 +388,26 @@ fun ViewPdfScreen(
 /** Quick-action bridge row — "Extract Page" and "Compress" hand the currently loaded file
  * straight to Split/Compress pre-loaded (via [PendingSplitUri]/[PendingCompressUri]),
  * matching the design reference's quick-tool bridges. "Share" reuses the same intent the
- * old top-bar icon used. */
+ * old top-bar icon used. "Fill Forms" is a fourth bridge, shown only once
+ * [ViewPdfViewModel.checkHasFormFields] confirms the open PDF actually has AcroForm fields
+ * (onFillForms is null until then) — most PDFs don't, and the chip would otherwise be a
+ * dead end. */
 @Composable
-private fun QuickActionRow(onExtractPage: () -> Unit, onCompress: () -> Unit, onShare: () -> Unit) {
+private fun QuickActionRow(
+    onExtractPage: () -> Unit,
+    onCompress: () -> Unit,
+    onFillForms: (() -> Unit)?,
+    onShare: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         QuickActionChip(text = "Extract Page", icon = Icons.AutoMirrored.Filled.KeyboardArrowRight, onClick = onExtractPage)
         QuickActionChip(text = "Compress", icon = Icons.Filled.Compress, onClick = onCompress)
+        if (onFillForms != null) {
+            QuickActionChip(text = "Fill Forms", icon = Icons.Filled.EditNote, onClick = onFillForms)
+        }
         QuickActionChip(text = "Share", icon = Icons.Filled.Share, onClick = onShare)
     }
 }
@@ -396,7 +446,9 @@ private fun EngineStatusStrip(pageCount: Int) {
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
-            "$pageCount page${if (pageCount == 1) "" else "s"} rendered",
+            // Not "rendered": pages are rasterized on demand as they scroll into view,
+            // so at any moment only a handful of these actually exist as bitmaps.
+            "$pageCount page${if (pageCount == 1) "" else "s"}",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -417,11 +469,16 @@ private fun EngineStatusStrip(pageCount: Int) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PageDetailScreen(
-    pages: List<Bitmap>,
+    pageCount: Int,
+    pageSizes: List<PdfPageSize>,
+    /** Returns the cached base bitmap for a page, requesting a render if it isn't there
+     * yet — so this screen pulls in only the page being read, not the whole document. */
+    baseBitmapFor: (Int) -> Bitmap?,
     initialIndex: Int,
     onClose: () -> Unit,
     loadAtResolution: suspend (index: Int, targetLongestSidePx: Int) -> Bitmap?
 ) {
+    val lastIndex = pageCount - 1
     var currentIndex by remember { mutableStateOf(initialIndex) }
     var presentationMode by remember { mutableStateOf(false) }
     var showPageNavigator by remember { mutableStateOf(false) }
@@ -433,7 +490,13 @@ private fun PageDetailScreen(
     // Dense pages (a packed table, fine print) start pre-zoomed instead of always at 100%,
     // which just forces the reader to zoom in themselves every single time — see
     // estimateDefaultZoom().
-    val scaleState = remember(currentIndex) { mutableStateOf(estimateDefaultZoom(pages[currentIndex])) }
+    val basePage = baseBitmapFor(currentIndex)
+    // Until this page's bitmap exists there is nothing to measure ink density on, so the
+    // pre-zoom estimate keys on the bitmap as well as the index — it starts at 1x and
+    // settles to the estimate once the page arrives.
+    val scaleState = remember(currentIndex, basePage != null) {
+        mutableStateOf(basePage?.let { estimateDefaultZoom(it) } ?: 1f)
+    }
     val offsetState = remember(currentIndex) { mutableStateOf(Offset.Zero) }
 
     // PdfRenderer rasterizes to one fixed-size bitmap — it can't redraw infinitely sharp
@@ -474,13 +537,13 @@ private fun PageDetailScreen(
             }
         }
     }
-    val displayBitmap = highResCache[currentIndex] ?: pages[currentIndex]
+    val displayBitmap = highResCache[currentIndex] ?: basePage
 
     Scaffold(
         topBar = {
             if (!presentationMode) {
                 TopAppBar(
-                    title = { Text("${currentIndex + 1} / ${pages.size}") },
+                    title = { Text("${currentIndex + 1} / $pageCount") },
                     navigationIcon = {
                         IconButton(onClick = onClose) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -490,7 +553,7 @@ private fun PageDetailScreen(
                         IconButton(onClick = { currentIndex-- }, enabled = currentIndex > 0) {
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous page")
                         }
-                        IconButton(onClick = { currentIndex++ }, enabled = currentIndex < pages.lastIndex) {
+                        IconButton(onClick = { currentIndex++ }, enabled = currentIndex < lastIndex) {
                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next page")
                         }
                         IconButton(onClick = { presentationMode = true }) {
@@ -504,25 +567,39 @@ private fun PageDetailScreen(
             if (!presentationMode) {
                 PageNavigatorBar(
                     currentIndex = currentIndex,
-                    pageCount = pages.size,
+                    pageCount = pageCount,
                     expanded = showPageNavigator,
                     onToggleExpanded = { showPageNavigator = !showPageNavigator },
-                    onJumpTo = { index -> currentIndex = index.coerceIn(0, pages.lastIndex) },
-                    thumbnailFor = { index -> pages[index] }
+                    onJumpTo = { index -> currentIndex = index.coerceIn(0, lastIndex) },
+                    thumbnailFor = { index -> baseBitmapFor(index) },
+                    aspectRatioFor = { index -> pageSizes.getOrNull(index)?.aspectRatio ?: DEFAULT_PAGE_ASPECT }
                 )
             }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            ZoomableFullPage(
-                bitmap = displayBitmap.asImageBitmap(),
-                scaleState = scaleState,
-                offsetState = offsetState,
-                modifier = Modifier.fillMaxSize().padding(if (presentationMode) PaddingValues(0.dp) else innerPadding),
-                onSwipeNext = { if (currentIndex < pages.lastIndex) currentIndex++ },
-                onSwipePrevious = { if (currentIndex > 0) currentIndex-- },
-                onTap = { if (presentationMode) presentationMode = false }
-            )
+            if (displayBitmap != null) {
+                ZoomableFullPage(
+                    bitmap = displayBitmap.asImageBitmap(),
+                    scaleState = scaleState,
+                    offsetState = offsetState,
+                    modifier = Modifier.fillMaxSize().padding(if (presentationMode) PaddingValues(0.dp) else innerPadding),
+                    onSwipeNext = { if (currentIndex < lastIndex) currentIndex++ },
+                    onSwipePrevious = { if (currentIndex > 0) currentIndex-- },
+                    onTap = { if (presentationMode) presentationMode = false }
+                )
+            } else {
+                // This page hasn't finished rendering yet — it was evicted, or the reader
+                // jumped straight to it from the navigator. A spinner beats a blank frame.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(if (presentationMode) PaddingValues(0.dp) else innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
             if (!presentationMode) {
                 ZoomControlPanel(
                     scale = scaleState.value,
@@ -590,7 +667,8 @@ private fun ZoomControlPanel(
 
 /** The bottom page-navigator bar — a compact "N / total" row that expands into a scrubber
  * slider plus a horizontal thumbnail filmstrip when tapped, matching the design
- * reference's page navigator. Thumbnails reuse the already-rendered page bitmaps (no
+ * reference's page navigator. Thumbnails reuse whatever page bitmaps the on-demand cache
+ * happens to hold (no
  * separate lower-res thumbnail pass) since [pages] is a small in-memory list already. */
 @Composable
 private fun PageNavigatorBar(
@@ -599,7 +677,8 @@ private fun PageNavigatorBar(
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
     onJumpTo: (Int) -> Unit,
-    thumbnailFor: (Int) -> Bitmap
+    thumbnailFor: (Int) -> Bitmap?,
+    aspectRatioFor: (Int) -> Float
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -645,11 +724,23 @@ private fun PageNavigatorBar(
                                 )
                                 .clickable { onJumpTo(index) }
                         ) {
-                            Image(
-                                bitmap = thumbnailFor(index).asImageBitmap(),
-                                contentDescription = null,
-                                modifier = Modifier.size(56.dp)
-                            )
+                            val thumb = thumbnailFor(index)
+                            if (thumb != null) {
+                                Image(
+                                    bitmap = thumb.asImageBitmap(),
+                                    contentDescription = "Page ${index + 1}",
+                                    modifier = Modifier.size(56.dp)
+                                )
+                            } else {
+                                // Not rendered yet — hold the slot at the right shape so the
+                                // strip doesn't shuffle as thumbnails arrive.
+                                Box(
+                                    modifier = Modifier
+                                        .height(56.dp)
+                                        .aspectRatio(aspectRatioFor(index).coerceAtLeast(0.1f))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                )
+                            }
                         }
                     }
                 }
@@ -845,3 +936,7 @@ private fun ZoomableFullPage(
         )
     }
 }
+
+/** Fallback page shape for placeholders when a page's real dimensions aren't known —
+ * US-Letter (612×792 points), the overwhelmingly common case. */
+private const val DEFAULT_PAGE_ASPECT = 612f / 792f

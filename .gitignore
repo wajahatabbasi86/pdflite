@@ -19,3 +19,6 @@ __pycache__/
 *.jks
 *.keystore
 keystore.properties
+
+# Real AdMob identifiers — see admob.properties.example for the format.
+admob.properties

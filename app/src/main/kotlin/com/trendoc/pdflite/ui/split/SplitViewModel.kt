@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.trendoc.pdflite.recents.RecentsRepository
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
+import com.trendoc.pdflite.util.renderPageBitmap
 import com.tom_roush.pdfbox.multipdf.Splitter
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,19 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
     private var pendingSingleOutput: File? = null
     private var pendingMultiOutputs: List<File>? = null
 
+    /** Page indices in least-recently-shown order, and those currently rendering. */
+    private val thumbnailOrder = ArrayDeque<Int>()
+    private val inFlightThumbnails = mutableSetOf<Int>()
+
+    /** An eighth of the heap divided by one RGB_565 thumbnail. Generous compared to the
+     * viewer's full-size page budget because these are ~240 KB rather than ~1.9 MB, so a
+     * whole screenful plus a healthy scroll margin stays resident. */
+    private val maxCachedThumbnails: Int = run {
+        val budgetBytes = Runtime.getRuntime().maxMemory() / 8
+        val thumbnailBytes = THUMBNAIL_WIDTH.toLong() * THUMBNAIL_HEIGHT * 2
+        (budgetBytes / thumbnailBytes).toInt().coerceIn(24, 120)
+    }
+
     fun onDocumentPicked(uri: Uri?) {
         if (uri == null) return
         sourceUri = uri
@@ -82,16 +96,18 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             val fileName = SafFileUtils.displayName(context, uri)
-            val result = withContext(Dispatchers.IO) { renderAllPages(uri) }
+            val result = withContext(Dispatchers.IO) { readPageCount(uri) }
 
             result.fold(
-                onSuccess = { thumbnails ->
+                onSuccess = { pageCount ->
                     _uiState.update {
                         it.copy(
                             isLoadingFile = false,
                             fileName = fileName,
-                            pages = thumbnails.mapIndexed { index, bmp ->
-                                SplitPageItem(index = index, thumbnail = bmp)
+                            // Thumbnails start null and are filled in by requestThumbnail
+                            // as the grid actually scrolls them into view.
+                            pages = (0 until pageCount).map { index ->
+                                SplitPageItem(index = index, thumbnail = null)
                             },
                             defaultSaveName = defaultNameFor(fileName)
                         )
@@ -111,34 +127,108 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
         return "${base}_extracted.pdf"
     }
 
-    /** Renders every page. Fine for the scaffold; §4's "large page-count documents" note
-     * calls for lazy/paged rendering later if this becomes a real bottleneck. */
-    private fun renderAllPages(uri: Uri): Result<List<Bitmap>> {
+    /** Page count only — no rasterizing. Thumbnails come later, per page, via
+     * [requestThumbnail]. Rendering all of them up front cost ~480 KB each, so a
+     * 500-page document reached ~240 MB before a single one was on screen. */
+    private fun readPageCount(uri: Uri): Result<Int> {
         var pfd: ParcelFileDescriptor? = null
         var renderer: PdfRenderer? = null
         return try {
             pfd = SafFileUtils.openFileDescriptor(getApplication(), uri)
                 ?: return Result.failure(IllegalStateException("Unable to open file descriptor"))
             renderer = PdfRenderer(pfd)
-            val bitmaps = mutableListOf<Bitmap>()
-            for (i in 0 until renderer.pageCount) {
-                renderer.openPage(i).use { page ->
-                    val bitmap = Bitmap.createBitmap(
-                        page.width.coerceAtMost(300),
-                        page.height.coerceAtMost(400),
-                        Bitmap.Config.ARGB_8888
-                    )
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    bitmaps.add(bitmap)
-                }
-            }
-            Result.success(bitmaps)
+            Result.success(renderer.pageCount)
         } catch (e: Exception) {
             Result.failure(e)
         } finally {
             renderer?.close()
             pfd?.close()
         }
+    }
+
+    /**
+     * Renders the thumbnail for one page if it isn't already in hand. Called from the
+     * grid's item composition, so only pages the user actually scrolls to are rasterized.
+     * Selection state lives on [SplitPageItem] independently of the thumbnail, so evicting
+     * a bitmap never loses which pages the user picked.
+     */
+    fun requestThumbnail(index: Int) {
+        if (index in inFlightThumbnails) return
+        if (_uiState.value.pages.getOrNull(index)?.thumbnail != null) {
+            touchThumbnail(index)
+            return
+        }
+        val uri = sourceUri ?: return
+
+        inFlightThumbnails += index
+        viewModelScope.launch {
+            val bitmap = withContext(Dispatchers.IO) { renderThumbnail(uri, index) }
+            inFlightThumbnails -= index
+            if (bitmap == null || sourceUri != uri) return@launch
+            _uiState.update { state ->
+                state.copy(
+                    pages = state.pages.map { if (it.index == index) it.copy(thumbnail = bitmap) else it }
+                )
+            }
+            touchThumbnail(index)
+            trimThumbnails()
+        }
+    }
+
+    private fun renderThumbnail(uri: Uri, index: Int): Bitmap? {
+        var pfd: ParcelFileDescriptor? = null
+        var renderer: PdfRenderer? = null
+        return try {
+            pfd = SafFileUtils.openFileDescriptor(getApplication(), uri) ?: return null
+            renderer = PdfRenderer(pfd)
+            if (index !in 0 until renderer.pageCount) return null
+            renderer.openPage(index).use { page ->
+                // halveMemory: rendered at ARGB_8888 (the only config PdfRenderer accepts),
+                // then kept as RGB_565. A page on white has no alpha, and the reduced depth
+                // isn't visible at thumbnail size — the full-quality render is Split's
+                // output file, not this grid.
+                renderPageBitmap(
+                    page = page,
+                    width = page.width.coerceAtMost(THUMBNAIL_WIDTH),
+                    height = page.height.coerceAtMost(THUMBNAIL_HEIGHT),
+                    halveMemory = true
+                )
+            }
+        } catch (e: Exception) {
+            null
+        } catch (e: OutOfMemoryError) {
+            // An Error slips past catch(Exception). Drop everything cached rather than
+            // letting a single oversized page take the process down.
+            clearThumbnails()
+            null
+        } finally {
+            renderer?.close()
+            pfd?.close()
+        }
+    }
+
+    private fun touchThumbnail(index: Int) {
+        thumbnailOrder.remove(index)
+        thumbnailOrder.addLast(index)
+    }
+
+    /** Drops the least-recently-shown thumbnails back to null once over budget. They
+     * re-render if scrolled back to; dereferenced rather than recycled, since a bitmap
+     * that just scrolled off can still be held by an in-flight composition. */
+    private fun trimThumbnails() {
+        if (thumbnailOrder.size <= maxCachedThumbnails) return
+        val evicted = mutableSetOf<Int>()
+        while (thumbnailOrder.size > maxCachedThumbnails) {
+            evicted += thumbnailOrder.removeFirst()
+        }
+        _uiState.update { state ->
+            state.copy(pages = state.pages.map { if (it.index in evicted) it.copy(thumbnail = null) else it })
+        }
+    }
+
+    private fun clearThumbnails() {
+        thumbnailOrder.clear()
+        _uiState.update { state -> state.copy(pages = state.pages.map { it.copy(thumbnail = null) }) }
     }
 
     fun setMode(mode: SplitMode) {
@@ -408,3 +498,7 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(errorMessage = null) }
     }
 }
+
+/** Thumbnail render caps for the page-selection grid. */
+private const val THUMBNAIL_WIDTH = 300
+private const val THUMBNAIL_HEIGHT = 400

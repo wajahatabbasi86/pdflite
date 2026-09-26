@@ -1,0 +1,11 @@
+# Copy to admob.properties (gitignored) and fill in the real values from the AdMob console.
+# Without this file every build falls back to Google's published TEST ad units, and a release
+# build fails outright rather than silently shipping them.
+#
+# admobAppId       — AdMob console > Apps > your app > App settings > App ID (note the ~)
+# bannerAdUnitId   — Ad units > the Home banner placement (note the /)
+# rewardedAdUnitId — Ad units > the "watch a video for ad-free time" rewarded placement
+
+admobAppId=ca-app-pub-0000000000000000~0000000000
+bannerAdUnitId=ca-app-pub-0000000000000000/0000000000
+rewardedAdUnitId=ca-app-pub-0000000000000000/0000000000

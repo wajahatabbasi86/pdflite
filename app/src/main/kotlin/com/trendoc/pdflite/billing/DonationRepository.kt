@@ -103,7 +103,12 @@ class DonationRepository(context: Context) {
         }
         val params = QueryProductDetailsParams.newBuilder().setProductList(products).build()
 
-        billingClient.queryProductDetailsAsync(params) { result, detailsList ->
+        // Play Billing 8 changed this callback's second argument from a plain
+        // List<ProductDetails> to a QueryProductDetailsResult — see the same note in
+        // BillingRepository. A tier Play can't price simply keeps a null priceText, which
+        // the UI already renders as an unavailable tier.
+        billingClient.queryProductDetailsAsync(params) { result, queryResult ->
+            val detailsList = queryResult.productDetailsList
             if (result.responseCode == BillingClient.BillingResponseCode.OK && detailsList.isNotEmpty()) {
                 productDetailsById = detailsList.associateBy { it.productId }
                 _uiState.update { state ->

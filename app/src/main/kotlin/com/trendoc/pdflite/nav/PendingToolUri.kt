@@ -29,3 +29,13 @@ object PendingCompressUri {
         return value
     }
 }
+
+object PendingFillFormsUri {
+    val uri = MutableStateFlow<Uri?>(null)
+
+    fun consume(): Uri? {
+        val value = uri.value
+        uri.value = null
+        return value
+    }
+}
