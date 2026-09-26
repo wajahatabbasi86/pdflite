@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import com.trendoc.pdflite.util.startActivitySafely
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.appearance.AccentColor
@@ -181,7 +182,10 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 PrivacyPolicyRow(
                     onClick = {
                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(PRIVACY_POLICY_URL))
-                        context.startActivity(intent)
+                        context.startActivitySafely(
+                            intent,
+                            "No app available to open the privacy policy."
+                        )
                     }
                 )
             }

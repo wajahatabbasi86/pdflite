@@ -227,9 +227,32 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * Renders every page that carries a form field, all held at once.
+     *
+     * Bounded in practice by how many pages actually have fields rather than by the
+     * document's length, but a long form (a multi-page tax or insurance packet) still
+     * reaches a real memory ceiling: at 1080px wide these are several MB each. RGB_565
+     * halves that versus ARGB_8888 with no visible loss on what is a white-background
+     * document, and the OutOfMemoryError catch keeps a pathological file from taking the
+     * process down. A full fix — rendering on demand the way View PDF and Split now do —
+     * is tracked as item 2.5 in docs/PLAY_RELEASE_FIX_PROMPT.md; it is more involved here
+     * because each page's bitmap is the coordinate space its field overlays are placed in.
+     */
     private fun renderPages(uri: Uri, pageIndices: Set<Int>): List<FormPage> {
         val context = getApplication<Application>()
         val pfd = SafFileUtils.openFileDescriptor(context, uri) ?: return emptyList()
+        return try {
+            renderPagesInto(pfd, pageIndices)
+        } catch (e: OutOfMemoryError) {
+            emptyList()
+        }
+    }
+
+    private fun renderPagesInto(
+        pfd: android.os.ParcelFileDescriptor,
+        pageIndices: Set<Int>
+    ): List<FormPage> {
         return pfd.use {
             PdfRenderer(it).use { renderer ->
                 pageIndices.mapNotNull { index ->
@@ -242,7 +265,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                         val targetWidthPx = 1080
                         val pxPerPoint = targetWidthPx / page.width.toFloat()
                         val targetHeightPx = (page.height * pxPerPoint).toInt().coerceAtLeast(1)
-                        val bitmap = Bitmap.createBitmap(targetWidthPx, targetHeightPx, Bitmap.Config.ARGB_8888)
+                        val bitmap = Bitmap.createBitmap(targetWidthPx, targetHeightPx, Bitmap.Config.RGB_565)
                         bitmap.eraseColor(android.graphics.Color.WHITE)
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                         FormPage(pageIndex = index, bitmap = bitmap, pxPerPoint = pxPerPoint, heightPt = page.height.toFloat())
@@ -325,7 +348,14 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun onSaveLocationChosen(destination: Uri?) {
         val tempFile = pendingOutput
-        if (destination == null || tempFile == null) return
+        if (destination == null || tempFile == null) {
+            // User backed out of the SAF picker (or it reported no file). Reset readyToSave
+            // so a later tap on "Save Filled PDF" can set it true -> false -> true again and
+            // retrigger the LaunchedEffect(uiState.readyToSave) that launches the picker —
+            // otherwise it would stay stuck at true and silently do nothing on retry.
+            _uiState.update { it.copy(readyToSave = false) }
+            return
+        }
 
         viewModelScope.launch {
             val context = getApplication<Application>()

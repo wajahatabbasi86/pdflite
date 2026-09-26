@@ -15,6 +15,7 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -173,6 +174,10 @@ class BillingRepository(
 
     fun close() {
         billingClient.endConnection()
+        // Without this the SupervisorJob created above outlives the repository — the owning
+        // BillingViewModel calls close() from onCleared(), so anything still running here
+        // would leak past the screen it belongs to.
+        scope.cancel()
     }
 }
 

@@ -2,6 +2,7 @@ package com.trendoc.pdflite.billing
 
 import android.app.Activity
 import android.content.Context
+import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
@@ -66,6 +67,15 @@ class RewardedAdRepository(context: Context) {
         _isReady.value = false
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
+                rewardedAd = null
+                load()
+            }
+
+            /** Without this the ad that failed to show stayed assigned to [rewardedAd]
+             * while isReady was already false, so load() short-circuited on the non-null
+             * field and the "Watch" button sat on "Loading…" forever. Clearing it lets the
+             * next load actually run. */
+            override fun onAdFailedToShowFullScreenContent(error: AdError) {
                 rewardedAd = null
                 load()
             }

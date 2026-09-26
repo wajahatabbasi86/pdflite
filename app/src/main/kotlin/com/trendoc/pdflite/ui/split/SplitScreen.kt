@@ -274,6 +274,9 @@ fun SplitScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.pages, key = { it.index }) { page ->
+                        // Demand-driven: the grid only composes cells near the viewport, so
+                        // only those pages are ever rasterized.
+                        viewModel.requestThumbnail(page.index)
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
@@ -287,14 +290,24 @@ fun SplitScreen(
                                 )
                         ) {
                             Column {
-                                page.thumbnail?.let { bmp ->
+                                val bmp = page.thumbnail
+                                if (bmp != null) {
                                     Image(
                                         bitmap = bmp.asImageBitmap(),
-                                        contentDescription = null,
+                                        contentDescription = "Page ${page.index + 1}",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .size(120.dp)
                                             .alpha(if (uiState.mode == SplitMode.EXTRACT_SELECTED) 1f else 0.6f)
+                                    )
+                                } else {
+                                    // Holds the cell at its final size while the thumbnail
+                                    // renders, so the grid doesn't collapse and reflow.
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .size(120.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
                                     )
                                 }
                                 Text(

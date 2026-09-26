@@ -198,7 +198,7 @@ report `p_align = 16384`.
 
 ## Phase 2 — Crash and stability (Android Vitals)
 
-### 2.1 Fix the guaranteed OOM in View PDF
+### 2.1 Fix the guaranteed OOM in View PDF — ✅ DONE (2026-09-26)
 
 **Problem.** `ui/view/ViewPdfViewModel.kt:109-120` renders **every page** of the document into
 `ARGB_8888` bitmaps and holds them all simultaneously in UI state. A US-Letter page renders at
@@ -226,7 +226,7 @@ stays flat while scrolling.
 
 ---
 
-### 2.2 Apply the same fix to the Split page grid
+### 2.2 Apply the same fix to the Split page grid — ✅ DONE (2026-09-26)
 
 **Problem.** `ui/split/SplitViewModel.kt:120-133` has the identical shape at 300×400 (~480 KB/page).
 Survivable longer, but a 500-page file still reaches ~240 MB.
@@ -238,7 +238,7 @@ Survivable longer, but a 500-page file still reaches ~240 MB.
 
 ---
 
-### 2.3 Guard the unprotected `startActivity`
+### 2.3 Guard the unprotected `startActivity` — ✅ DONE (2026-09-26)
 
 **Problem.** `ui/settings/AppearanceScreen.kt:183` launches the privacy policy URL with no
 `try/catch`. A device with no browser throws `ActivityNotFoundException` → crash.
@@ -249,13 +249,34 @@ Survivable longer, but a 500-page file still reaches ~240 MB.
 
 ---
 
-### 2.4 Fix the coroutine scope leak and the stuck-ad state
+### 2.4 Fix the coroutine scope leak and the stuck-ad state — ✅ DONE (2026-09-26)
 
 - [ ] `billing/BillingRepository.kt:56` creates a `CoroutineScope` that `close()` (line 169) never
       cancels. Call `scope.cancel()` in `close()`.
 - [ ] `billing/RewardedAdRepository.show()` doesn't implement
       `onAdFailedToShowFullScreenContent`. A failed show leaves `rewardedAd` non-null and
       `_isReady` false forever. Implement the callback: null the ad, reload, surface the failure.
+
+### 2.5 Render Fill Forms pages on demand — ⚠️ PARTIALLY MITIGATED (2026-09-26)
+
+**Found while doing 2.1/2.2; not in the original audit.** `FillFormsViewModel.renderPages`
+has the same shape as the two bugs above: it renders *every* page carrying a form field, all
+held simultaneously, at 1080px wide. That was ~6 MB per page in ARGB_8888, so a long form —
+a multi-page tax or insurance packet — hits the same ceiling.
+
+**Mitigated, not fixed.** The bitmaps now use `RGB_565` (half the memory, no visible loss on
+a white-background document) and an `OutOfMemoryError` catch was added. That roughly doubles
+the page count the screen survives; it does not make memory independent of document length.
+
+**The real fix** is the same on-demand treatment View PDF and Split now have. It is more
+involved here because each page's bitmap *is* the coordinate space its field overlays are
+positioned in (`pxPerPoint` is derived from the render width), so lazy loading has to keep
+overlay placement correct against a page that may not be resident yet.
+
+- [ ] Compute `FormPage` metadata (`pxPerPoint`, `heightPt`) eagerly — it does not need the
+      bitmap, only `page.width`/`page.height`.
+- [ ] Load bitmaps per visible page with a bounded cache, as in `ViewPdfViewModel`.
+- [ ] Verify field overlays still land correctly while a page is still rendering.
 
 ---
 
