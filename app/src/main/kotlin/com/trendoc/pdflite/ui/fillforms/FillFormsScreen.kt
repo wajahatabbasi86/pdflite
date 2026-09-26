@@ -68,9 +68,15 @@ import com.trendoc.pdflite.util.SafFileUtils
 @Composable
 fun FillFormsScreen(
     onDone: () -> Unit,
+    initialUri: android.net.Uri? = null,
     viewModel: FillFormsViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Pre-loaded when reached via View PDF's "Fill Forms" quick-action bridge.
+    LaunchedEffect(initialUri) {
+        if (initialUri != null) viewModel.onDocumentPicked(initialUri)
+    }
 
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.openSingleDocument
