@@ -30,6 +30,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
@@ -146,6 +150,7 @@ fun StampTextScreen(
                         uiState.selectedStamp?.let { selected ->
                             SelectedStampBar(
                                 fontSizePt = selected.fontSizePt,
+                                onNudge = { dxPt, dyPt -> viewModel.moveStamp(selected.id, dxPt, dyPt) },
                                 onSmaller = { viewModel.setFontSize(selected.id, selected.fontSizePt - 1f) },
                                 onLarger = { viewModel.setFontSize(selected.id, selected.fontSizePt + 1f) },
                                 onDelete = { viewModel.removeStamp(selected.id) }
@@ -244,30 +249,57 @@ fun StampTextScreen(
 @Composable
 private fun SelectedStampBar(
     fontSizePt: Float,
+    onNudge: (Float, Float) -> Unit,
     onSmaller: () -> Unit,
     onLarger: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text("Text size", style = MaterialTheme.typography.labelMedium)
-        IconButton(onClick = onSmaller) {
-            Icon(Icons.Filled.Remove, contentDescription = "Smaller text")
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Dragging is fine for getting close, but a fingertip covers several points of page
+        // at fit-to-width and hides the very line the text is being aligned to. These move
+        // it a fixed, predictable step with nothing under the finger.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("Position", style = MaterialTheme.typography.labelMedium)
+            Box(Modifier.weight(1f))
+            IconButton(onClick = { onNudge(-NUDGE_STEP_PT, 0f) }) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Move left")
+            }
+            // Positive y is up the page, matching PDF's bottom-left origin.
+            IconButton(onClick = { onNudge(0f, NUDGE_STEP_PT) }) {
+                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
+            }
+            IconButton(onClick = { onNudge(0f, -NUDGE_STEP_PT) }) {
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
+            }
+            IconButton(onClick = { onNudge(NUDGE_STEP_PT, 0f) }) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Move right")
+            }
         }
-        Text("${fontSizePt.toInt()}", style = MaterialTheme.typography.labelLarge)
-        IconButton(onClick = onLarger) {
-            Icon(Icons.Filled.Add, contentDescription = "Larger text")
-        }
-        Box(Modifier.weight(1f))
-        IconButton(onClick = onDelete) {
-            Icon(
-                Icons.Filled.Delete,
-                contentDescription = "Delete this text",
-                tint = MaterialTheme.colorScheme.error
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Text size", style = MaterialTheme.typography.labelMedium)
+            IconButton(onClick = onSmaller) {
+                Icon(Icons.Filled.Remove, contentDescription = "Smaller text")
+            }
+            Text("${fontSizePt.toInt()}", style = MaterialTheme.typography.labelLarge)
+            IconButton(onClick = onLarger) {
+                Icon(Icons.Filled.Add, contentDescription = "Larger text")
+            }
+            Box(Modifier.weight(1f))
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Delete this text",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }
@@ -473,3 +505,8 @@ private const val MAX_ZOOM_SCALE = 6f
 
 /** Long edge to re-render a zoomed page at, so magnification adds detail rather than blur. */
 const val ZOOM_RENDER_TARGET_PX = 2400
+
+/** How far one arrow tap moves the text, in PDF points. Two points is under a millimetre —
+ * fine enough to settle onto a ruled line, coarse enough that crossing a field takes taps
+ * rather than dozens. */
+private const val NUDGE_STEP_PT = 2f
