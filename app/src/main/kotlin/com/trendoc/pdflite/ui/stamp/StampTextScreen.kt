@@ -26,6 +26,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -373,11 +376,11 @@ private fun StampPageView(
                         .fillMaxSize()
                         .pointerInput(pageIndex, pointsToPx, pageSize) {
                             detectTapGestures { offset ->
-                                // Content keeps its own untransformed space, so this
-                                // conversion is the same zoomed in or out.
                                 val xPt = offset.x / pointsToPx
                                 val yPt = pageSize.height - (offset.y / pointsToPx)
-                                onRequestZoom(ZoomFocus(pageIndex, xPt, yPt))
+                                if (!zoomState.isZoomed) {
+                                    onRequestZoom(ZoomFocus(pageIndex, xPt, yPt))
+                                }
                                 onAddStamp(xPt, yPt)
                             }
                         }
@@ -410,6 +413,7 @@ private fun StampPageView(
                             stamp = stamp,
                             selected = stamp.id == selectedStampId,
                             pointsToPx = pointsToPx,
+                            zoomScale = zoomState.scale,
                             modifier = Modifier.offset(x = leftDp, y = topDp),
                             onSelect = { onSelect(stamp.id) },
                             onTextChange = { onTextChange(stamp.id, it) },
@@ -435,6 +439,7 @@ private fun StampEditor(
     stamp: TextStamp,
     selected: Boolean,
     pointsToPx: Float,
+    zoomScale: Float,
     modifier: Modifier,
     onSelect: () -> Unit,
     onTextChange: (String) -> Unit,
@@ -446,10 +451,15 @@ private fun StampEditor(
     val fontSizeSp = with(density) { (stamp.fontSizePt * pointsToPx).toSp() }
     val accent = MaterialTheme.colorScheme.primary
 
-    // A tap that dropped an empty, unfocused box would be a dead end: the box is small and
-    // blank, so the user has to hunt for it and tap again before they can type. Focusing it
-    // (and raising the keyboard) the moment it becomes selected makes tap-then-type work as
-    // one gesture.
+    // BasicTextField fills the width it is offered, so an empty box silently claimed the
+    // rest of the page and swallowed taps meant for the line below it — tapping a clear
+    // spot then created nothing. Sizing to roughly the text's own width keeps the touch
+    // target where the text actually is. Helvetica averages about half an em per character.
+    val charCount = stamp.text.length.coerceAtLeast(MIN_FIELD_CHARS)
+    val fieldWidthDp = with(density) {
+        (charCount * stamp.fontSizePt * 0.55f * pointsToPx).toDp()
+    }
+
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(selected) {
         if (selected) {
@@ -457,41 +467,59 @@ private fun StampEditor(
         }
     }
 
-    Box(
-        modifier = modifier
-            .then(
-                if (selected) {
-                    Modifier.pointerInput(stamp.id, pointsToPx) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        // Dragging the text itself would fight the text field's own cursor placement, so
+        // moving is done from a dedicated grip that appears once the box is selected.
+        if (selected) {
+            // The handle sits inside the zoom layer, so it would be drawn 3x larger at 3x
+            // zoom and cover the very line being aimed at. Dividing by the zoom keeps it a
+            // constant size on screen whatever the magnification.
+            val handleSize = DRAG_HANDLE_SIZE / zoomScale.coerceAtLeast(0.1f)
+            Box(
+                modifier = Modifier
+                    .size(handleSize)
+                    .background(accent, CircleShape)
+                    .pointerInput(stamp.id, pointsToPx) {
                         detectDragGestures { change, dragAmount ->
                             change.consume()
                             onDrag(dragAmount.x, dragAmount.y)
                         }
-                    }
-                } else Modifier
-            )
-            .background(
-                if (selected) accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent
-            )
-            .border(
-                width = if (selected) 1.dp else 0.dp,
-                color = if (selected) accent.copy(alpha = 0.7f) else androidx.compose.ui.graphics.Color.Transparent
-            )
-    ) {
-        BasicTextField(
-            value = stamp.text,
-            onValueChange = onTextChange,
-            singleLine = true,
-            textStyle = TextStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = fontSizeSp
-            ),
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.DragIndicator,
+                    contentDescription = "Drag to move this text",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(handleSize * 0.7f)
+                )
+            }
+        }
+        Box(
             modifier = Modifier
-                .widthIn(min = 40.dp)
-                .focusRequester(focusRequester)
-                .onFocusChanged { if (it.isFocused) onSelect() }
-        )
+                .background(if (selected) accent.copy(alpha = 0.12f) else Color.Transparent)
+                .border(
+                    width = if (selected) 1.dp else 0.dp,
+                    color = if (selected) accent.copy(alpha = 0.7f) else Color.Transparent
+                )
+        ) {
+            BasicTextField(
+                value = stamp.text,
+                onValueChange = onTextChange,
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = fontSizeSp
+                ),
+                modifier = Modifier
+                    .width(fieldWidthDp)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { if (it.isFocused) onSelect() }
+            )
+        }
     }
 }
+
 
 /** The page and point the magnifier is centred on. */
 data class ZoomFocus(val pageIndex: Int, val xPt: Float, val yPt: Float)
@@ -510,3 +538,9 @@ const val ZOOM_RENDER_TARGET_PX = 2400
  * fine enough to settle onto a ruled line, coarse enough that crossing a field takes taps
  * rather than dozens. */
 private const val NUDGE_STEP_PT = 2f
+
+/** Minimum width of a text box, in characters — an empty one still has to be tappable. */
+private const val MIN_FIELD_CHARS = 6
+
+/** Size of the grip shown beside a selected text box for dragging it by hand. */
+private val DRAG_HANDLE_SIZE = 28.dp

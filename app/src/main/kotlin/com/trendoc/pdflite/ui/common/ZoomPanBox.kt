@@ -1,6 +1,7 @@
 package com.trendoc.pdflite.ui.common
 
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
@@ -58,6 +59,20 @@ class ZoomPanState(
         )
     }
 
+    /**
+     * Inverse of the render transform: which content pixel is visually under [position],
+     * a point measured in the viewport. The layer scales about the centre, so a content
+     * point p is drawn at c + (p - c) * s + offset; this solves that for p.
+     */
+    fun viewportToContent(position: Offset, viewportWidthPx: Float, viewportHeightPx: Float): Offset {
+        val cx = viewportWidthPx / 2f
+        val cy = viewportHeightPx / 2f
+        return Offset(
+            cx + (position.x - cx - offset.x) / scale,
+            cy + (position.y - cy - offset.y) / scale
+        )
+    }
+
     internal fun clampOffset(
         candidate: Offset,
         s: Float,
@@ -97,6 +112,16 @@ fun rememberZoomPanState(minScale: Float = 1f, maxScale: Float = 6f): ZoomPanSta
 fun ZoomPanBox(
     state: ZoomPanState,
     modifier: Modifier = Modifier,
+    /**
+     * Tap handler receiving the position in the **content's own unscaled pixels**.
+     *
+     * Detected on the untransformed outer box and converted here, rather than by a detector
+     * placed inside the scaled layer: relying on the framework to hand back an
+     * already-inverted position put taps on the wrong part of the page once zoomed. Doing the
+     * inverse explicitly makes the mapping the same at every zoom level. A tap a child
+     * consumes (a text field placing its cursor) never reaches this.
+     */
+    onTap: ((Offset) -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     BoxWithConstraints(modifier = modifier.clipToBounds()) {
@@ -106,13 +131,24 @@ fun ZoomPanBox(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                // One gesture loop handles tap, pinch and pan together. Split across two
+                // pointerInput modifiers they fought each other: the tap detector consumed
+                // the down, the pan handler then saw an already-consumed down, and the tap
+                // never completed — so once zoomed, tapping the page created nothing.
                 .pointerInput(viewportWidthPx, viewportHeightPx) {
+                    val slop = viewConfiguration.touchSlop
                     awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        var travelled = 0f
+                        var transforming = false
+                        var multiTouchSeen = false
+
                         do {
                             val event = awaitPointerEvent()
-                            val multiTouch = event.changes.size > 1
-                            if (multiTouch) {
+                            val pressedCount = event.changes.count { it.pressed }
+                            if (pressedCount > 1) multiTouchSeen = true
+
+                            if (pressedCount > 1) {
                                 val newScale = (state.scale * event.calculateZoom())
                                     .coerceIn(state.minScale, state.maxScale)
                                 val pan = event.calculatePan()
@@ -121,24 +157,39 @@ fun ZoomPanBox(
                                     if (newScale <= state.minScale) Offset.Zero else state.offset + pan,
                                     newScale, viewportWidthPx, viewportHeightPx
                                 )
+                                transforming = true
                                 event.changes.forEach { if (it.positionChanged()) it.consume() }
                             } else if (state.isZoomed) {
-                                state.offset = state.clampOffset(
-                                    state.offset + event.calculatePan(),
-                                    state.scale, viewportWidthPx, viewportHeightPx
-                                )
-                                event.changes.forEach { if (it.positionChanged()) it.consume() }
+                                val pan = event.calculatePan()
+                                if (!transforming) {
+                                    travelled += pan.getDistance()
+                                    // Only past the slop is this a pan rather than a tap.
+                                    if (travelled > slop) transforming = true
+                                }
+                                if (transforming) {
+                                    state.offset = state.clampOffset(
+                                        state.offset + pan,
+                                        state.scale, viewportWidthPx, viewportHeightPx
+                                    )
+                                    event.changes.forEach { if (it.positionChanged()) it.consume() }
+                                }
                             }
                         } while (event.changes.any { it.pressed })
+
                     }
                 }
-                .graphicsLayer(
-                    scaleX = state.scale,
-                    scaleY = state.scale,
-                    translationX = state.offset.x,
-                    translationY = state.offset.y
-                ),
-            content = content
-        )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = state.scale,
+                        scaleY = state.scale,
+                        translationX = state.offset.x,
+                        translationY = state.offset.y
+                    ),
+                content = content
+            )
+        }
     }
 }
