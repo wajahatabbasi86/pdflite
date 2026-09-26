@@ -50,6 +50,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import com.trendoc.pdflite.ui.fillforms.MULTI_VALUE_SEPARATOR
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -188,7 +193,8 @@ fun FillFormsScreen(
                                 onTextChange = viewModel::setTextValue,
                                 onCheckboxToggle = viewModel::toggleCheckbox,
                                 onRadioSelect = viewModel::selectRadio,
-                                onChoiceSelect = viewModel::selectChoice
+                                onChoiceSelect = viewModel::selectChoice,
+                                onChoiceToggle = viewModel::toggleChoice
                             )
                         }
                     }
@@ -231,25 +237,44 @@ private fun FormPageView(
     onTextChange: (String, String) -> Unit,
     onCheckboxToggle: (String, String) -> Unit,
     onRadioSelect: (String, String) -> Unit,
-    onChoiceSelect: (String, String) -> Unit
+    onChoiceSelect: (String, String) -> Unit,
+    onChoiceToggle: (String, String) -> Unit
 ) {
     val density = LocalDensity.current
-    val bitmapWidthDp = with(density) { page.bitmap.width.toDp() }
-    val bitmapHeightDp = with(density) { page.bitmap.height.toDp() }
 
-    Box(modifier = Modifier.width(bitmapWidthDp).height(bitmapHeightDp)) {
+    // The page is laid out at whatever width the parent actually allows — NOT at the
+    // bitmap's own pixel width. Sizing the container to bitmap.width.toDp() (411dp for a
+    // 1080px render on a 2.625-density screen) overflowed the 16dp screen padding, so the
+    // Image scaled itself down to fit and centred vertically inside the taller container,
+    // while the widget overlays kept using unscaled, top-anchored coordinates. Every
+    // overlay therefore sat ~54px too high and drifted further out the further down the
+    // page it was. Deriving the scale from the real width keeps bitmap and overlays in one
+    // coordinate space.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val displayWidthDp = maxWidth
+        val displayWidthPx = with(density) { displayWidthDp.toPx() }
+        val displayScale = displayWidthPx / page.bitmap.width.coerceAtLeast(1)
+        val displayHeightDp = with(density) { (page.bitmap.height * displayScale).toDp() }
+        // Points -> displayed pixels, folding in both the render scale and the fit-to-width
+        // scale, so a rect in PDF points lands exactly on the same spot the bitmap draws it.
+        val pointsToPx = page.pxPerPoint * displayScale
+
+        Box(modifier = Modifier.width(displayWidthDp).height(displayHeightDp)) {
         Image(
             bitmap = page.bitmap.asImageBitmap(),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            // The container is already the bitmap's aspect ratio, so this only guards
+            // against a rounding difference reintroducing letterboxing.
+            contentScale = ContentScale.FillBounds
         )
         widgets.forEach { widget ->
             // PDF rects are bottom-left-origin points; flip to the bitmap's top-left-origin
             // pixel space, then to dp, using this specific page's own render scale.
-            val leftPx = widget.rect.left * page.pxPerPoint
-            val topPx = (page.heightPt - widget.rect.top) * page.pxPerPoint
-            val widthPx = widget.rect.width * page.pxPerPoint
-            val heightPx = widget.rect.height * page.pxPerPoint
+            val leftPx = widget.rect.left * pointsToPx
+            val topPx = (page.heightPt - widget.rect.top) * pointsToPx
+            val widthPx = widget.rect.width * pointsToPx
+            val heightPx = widget.rect.height * pointsToPx
             val leftDp = with(density) { leftPx.toDp() }
             val topDp = with(density) { topPx.toDp() }
             val widthDp = with(density) { widthPx.toDp() }
@@ -261,16 +286,22 @@ private fun FormPageView(
                         value = fieldValues[widget.groupId] ?: "",
                         width = widthDp,
                         height = heightDp,
+                        readOnly = widget.isReadOnly,
+                        password = widget.isPassword,
+                        multiline = widget.isMultiline,
+                        maxLength = widget.maxLength,
                         onValueChange = { onTextChange(widget.groupId, it) }
                     )
                     FieldKind.CHECKBOX -> CheckboxOverlay(
                         checked = fieldValues[widget.groupId] == widget.onValue,
                         size = maxOf(widthDp, heightDp, 20.dp),
+                        enabled = !widget.isReadOnly,
                         onClick = { onCheckboxToggle(widget.groupId, widget.onValue ?: "Yes") }
                     )
                     FieldKind.RADIO -> RadioOverlay(
                         selected = fieldValues[widget.groupId] == widget.onValue,
                         size = maxOf(widthDp, heightDp, 20.dp),
+                        enabled = !widget.isReadOnly,
                         onClick = { onRadioSelect(widget.groupId, widget.onValue ?: return@RadioOverlay) }
                     )
                     FieldKind.CHOICE -> ChoiceOverlay(
@@ -278,39 +309,93 @@ private fun FormPageView(
                         options = widget.choiceOptions,
                         width = maxOf(widthDp, 80.dp),
                         height = maxOf(heightDp, 28.dp),
-                        onSelect = { onChoiceSelect(widget.groupId, it) }
+                        multiSelect = widget.isMultiSelect,
+                        enabled = !widget.isReadOnly,
+                        onSelect = {
+                            // Multi-select toggles one option in/out; single-select replaces.
+                            if (widget.isMultiSelect) onChoiceToggle(widget.groupId, it)
+                            else onChoiceSelect(widget.groupId, it)
+                        }
+                    )
+                    FieldKind.SIGNATURE -> SignatureOverlay(
+                        width = maxOf(widthDp, 40.dp),
+                        height = maxOf(heightDp, 20.dp)
                     )
                 }
             }
+        }
         }
     }
 }
 
 @Composable
-private fun TextFieldOverlay(value: String, width: Dp, height: Dp, onValueChange: (String) -> Unit) {
+private fun TextFieldOverlay(
+    value: String,
+    width: Dp,
+    height: Dp,
+    readOnly: Boolean,
+    password: Boolean,
+    multiline: Boolean,
+    maxLength: Int?,
+    onValueChange: (String) -> Unit
+) {
+    // A read-only field is drawn in muted grey rather than the editable accent tint, so it
+    // reads as "issued, not yours to change" before the user even taps it.
+    val accent =
+        if (readOnly) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
     BasicTextField(
         value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
+        onValueChange = { new ->
+            // /MaxLen is a hard limit in the PDF spec; a viewer that lets the user type past
+            // it produces a value the field can't actually hold.
+            if (maxLength == null || new.length <= maxLength) onValueChange(new)
+        },
+        readOnly = readOnly,
+        singleLine = !multiline,
+        visualTransformation =
+            if (password) PasswordVisualTransformation() else VisualTransformation.None,
         textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
         modifier = Modifier
             .width(maxOf(width, 40.dp))
             .height(maxOf(height, 20.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            .background(accent.copy(alpha = 0.10f))
+            .border(1.dp, accent.copy(alpha = 0.5f))
             .padding(horizontal = 2.dp)
     )
 }
 
+/** A signature field can't be filled here — signing needs a certificate this app doesn't
+ * handle — but it must still be visible, otherwise a form's signature box just isn't there
+ * and the user has no idea the document expects one. */
 @Composable
-private fun CheckboxOverlay(checked: Boolean, size: Dp, onClick: () -> Unit) {
+private fun SignatureOverlay(width: Dp, height: Dp) {
+    Box(
+        modifier = Modifier
+            .width(width)
+            .height(height)
+            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.06f))
+            .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "Signature — sign elsewhere",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun CheckboxOverlay(checked: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(RoundedCornerShape(2.dp))
             .background(if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface)
             .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
-            .clickable(onClick = onClick),
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         if (checked) {
@@ -320,14 +405,14 @@ private fun CheckboxOverlay(checked: Boolean, size: Dp, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RadioOverlay(selected: Boolean, size: Dp, onClick: () -> Unit) {
+private fun RadioOverlay(selected: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surface)
             .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-            .clickable(onClick = onClick),
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         if (selected) {
@@ -342,26 +427,51 @@ private fun RadioOverlay(selected: Boolean, size: Dp, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ChoiceOverlay(value: String, options: List<String>, width: Dp, height: Dp, onSelect: (String) -> Unit) {
+private fun ChoiceOverlay(
+    value: String,
+    options: List<String>,
+    width: Dp,
+    height: Dp,
+    multiSelect: Boolean,
+    enabled: Boolean,
+    onSelect: (String) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
+    // The UI state carries a multi-select field's selections as one separator-joined
+    // string; split it back out so each option can show its own tick.
+    val selected = remember(value) {
+        value.split(MULTI_VALUE_SEPARATOR).filter { it.isNotEmpty() }
+    }
+    val accent =
+        if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
     Box {
         Box(
             modifier = Modifier
                 .width(width)
                 .height(height)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
-                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                .clickable { expanded = true }
+                .background(accent.copy(alpha = 0.10f))
+                .border(1.dp, accent.copy(alpha = 0.5f))
+                .then(if (enabled) Modifier.clickable { expanded = true } else Modifier)
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Text(value.ifBlank { "Select…" }, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            Text(
+                selected.joinToString(", ").ifBlank { "Select…" },
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1
+            )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
+                val isSelected = option in selected
                 DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = { onSelect(option); expanded = false }
+                    text = { Text(if (multiSelect && isSelected) "✓ $option" else option) },
+                    onClick = {
+                        onSelect(option)
+                        // A multi-select list stays open so several options can be ticked in
+                        // one go; a single-select dropdown closes on the first pick.
+                        if (!multiSelect) expanded = false
+                    }
                 )
             }
         }

@@ -16,6 +16,11 @@ object PdfErrorMessages {
     const val CORRUPTED_OR_PASSWORD_PROTECTED = "This file couldn't be read. It may be corrupted or password-protected."
     const val SAVE_FAILED_SINGLE = "Not enough space to save this file. Free up space and try again."
     const val SAVE_FAILED_PLURAL = "Not enough space to save these files. Free up space and try again."
+    /** A failure while *writing* the filled/edited document, as opposed to reading it.
+     * Reusing [forOpenFailure] here told the user their file was "corrupted or
+     * password-protected" when in fact it had opened fine and only the write had failed. */
+    const val WRITE_FAILED = "Couldn't save this document. Please try again."
+
     const val SAVE_FAILED_OUTPUT_FOLDER =
         "Couldn't save the converted images. Make sure there's enough free space and the destination folder is still accessible, then try again."
 
