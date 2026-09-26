@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -202,10 +203,22 @@ fun ViewPdfScreen(
                 // the screen, with no other way to reach what's now off to the side).
                 val listScale = remember { mutableStateOf(1f) }
                 val listOffset = remember { mutableStateOf(Offset.Zero) }
+                val lazyListState = rememberLazyListState()
+
+                // Same fixed-resolution-bitmap problem the full-screen viewer had: pinching
+                // the list in only ever stretched (via graphicsLayer) the same low-res
+                // bitmap every page in the list shares, which is fine unzoomed but visibly
+                // blurs once zoomed. Re-renders whichever pages are actually on-screen at a
+                // resolution matching the current zoom, the same way PageDetailScreen does
+                // for a single page — debounced, and only for the visible range rather than
+                // the whole document, so pinching a 60-page PDF doesn't re-render all 60.
+                val listHighResCache = remember { mutableStateMapOf<Int, Bitmap>() }
+                val listCachedResolution = remember { mutableStateMapOf<Int, Int>() }
                 BoxWithConstraints(modifier = Modifier.weight(1f)) {
                     val density = LocalDensity.current
                     val widthPx = with(density) { maxWidth.toPx() }
                     val heightPx = with(density) { maxHeight.toPx() }
+                    val viewportLongestSidePx = maxOf(widthPx, heightPx)
 
                     fun clampListOffset(o: Offset, scale: Float): Offset {
                         val bx = (widthPx * (scale - 1f) / 2f).coerceAtLeast(0f)
@@ -213,7 +226,32 @@ fun ViewPdfScreen(
                         return Offset(o.x.coerceIn(-bx, bx), o.y.coerceIn(-by, by))
                     }
 
+                    val listScaleBucket = (listScale.value * 4).roundToInt()
+                    LaunchedEffect(listScaleBucket, lazyListState.firstVisibleItemIndex) {
+                        if (listScale.value <= 1f) return@LaunchedEffect
+                        delay(250)
+                        val target = (viewportLongestSidePx * listScale.value).roundToInt().coerceIn(1100, 4500)
+                        val visibleIndices = lazyListState.layoutInfo.visibleItemsInfo.map { it.index }
+                        for (index in visibleIndices) {
+                            val cached = listCachedResolution[index] ?: 0
+                            if (target > (cached * 1.15f).roundToInt()) {
+                                val bitmap = viewModel.renderPageAtResolution(index, target)
+                                if (bitmap != null) {
+                                    if (listHighResCache.size >= 6) {
+                                        listHighResCache.keys.firstOrNull { it !in visibleIndices }?.let { evictKey ->
+                                            listHighResCache.remove(evictKey)?.recycle()
+                                            listCachedResolution.remove(evictKey)
+                                        }
+                                    }
+                                    listHighResCache[index] = bitmap
+                                    listCachedResolution[index] = target
+                                }
+                            }
+                        }
+                    }
+
                     LazyColumn(
+                        state = lazyListState,
                         modifier = Modifier
                             .fillMaxSize()
                             .pointerInput(Unit) {
@@ -257,7 +295,7 @@ fun ViewPdfScreen(
                                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                 ) {
                                     Image(
-                                        bitmap = page.asImageBitmap(),
+                                        bitmap = (listHighResCache[index] ?: page).asImageBitmap(),
                                         contentDescription = null,
                                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
                                     )
