@@ -61,6 +61,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
+import com.trendoc.pdflite.ui.common.ZoomPanBox
+import com.trendoc.pdflite.ui.common.rememberZoomPanState
 import com.trendoc.pdflite.util.SafFileUtils
 
 /**
@@ -278,7 +280,11 @@ private fun FormPageView(
         // scale, so a rect in PDF points lands exactly on the same spot the bitmap draws it.
         val pointsToPx = page.pxPerPoint * displayScale
 
-        Box(modifier = Modifier.width(displayWidthDp).height(displayHeightDp)) {
+        val zoomState = rememberZoomPanState(maxScale = 6f)
+        ZoomPanBox(
+            state = zoomState,
+            modifier = Modifier.width(displayWidthDp).height(displayHeightDp)
+        ) {
         Image(
             bitmap = page.bitmap.asImageBitmap(),
             contentDescription = null,

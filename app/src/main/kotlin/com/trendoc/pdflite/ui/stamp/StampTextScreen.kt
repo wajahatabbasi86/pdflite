@@ -71,6 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
+import com.trendoc.pdflite.ui.common.rememberZoomPanState
+import com.trendoc.pdflite.ui.common.ZoomPanBox
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
 import com.trendoc.pdflite.util.SafFileUtils
@@ -295,64 +297,52 @@ private fun StampPageView(
     onDrag: (String, Float, Float) -> Unit
 ) {
     val density = LocalDensity.current
-    // The magnified render when it has arrived; the fit-to-width one until then, so zooming
-    // is instant and simply sharpens a moment later.
+    // The magnified render once it arrives; the fit-to-width one until then, so zooming is
+    // instant and simply sharpens a moment later.
     val bitmap = zoomRender?.bitmap ?: bitmapProvider()
+    val zoomState = rememberZoomPanState(maxScale = MAX_ZOOM_SCALE)
 
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val viewportWidthDp = maxWidth
         val viewportWidthPx = with(density) { viewportWidthDp.toPx() }
-        // Points -> pixels at fit-to-width. Every stamp coordinate is converted with this,
-        // then the whole layer is scaled, so the page image and its text boxes magnify
-        // together and stay locked to each other.
+        // Points -> pixels at fit-to-width. Stamps are positioned with this and the whole
+        // layer is then scaled, so page and text boxes magnify together and stay locked.
         val pointsToPx = viewportWidthPx / pageSize.width.coerceAtLeast(1)
         val pageHeightPx = pageSize.height * pointsToPx
-        val zoom = if (zoomFocus != null) ZOOM_SCALE else 1f
+        val pageHeightDp = with(density) { pageHeightPx.toDp() }
 
-        // The card keeps its fit-to-width footprint when zoomed out; zoomed in it becomes a
-        // fixed viewport that a magnified slice of the page scrolls beneath.
-        val viewportHeightDp = with(density) {
-            (if (zoomFocus != null) minOf(pageHeightPx, viewportWidthPx * 0.9f) else pageHeightPx).toDp()
-        }
-
-        // Translation that brings the focal point to the middle of the viewport, clamped so
-        // the magnified page can never be dragged off its own edges.
-        val viewportHeightPx = with(density) { viewportHeightDp.toPx() }
-        val translate = if (zoomFocus == null) Offset.Zero else {
-            val focusX = zoomFocus.xPt * pointsToPx * zoom
-            val focusY = (pageSize.height - zoomFocus.yPt) * pointsToPx * zoom
-            val maxX = (viewportWidthPx * zoom - viewportWidthPx).coerceAtLeast(0f)
-            val maxY = (pageHeightPx * zoom - viewportHeightPx).coerceAtLeast(0f)
-            Offset(
-                -(focusX - viewportWidthPx / 2f).coerceIn(0f, maxX),
-                -(focusY - viewportHeightPx / 2f).coerceIn(0f, maxY)
-            )
+        // Tapping a spot jumps the viewport to it. Done as a state change on the shared
+        // zoom/pan state rather than a second, parallel transform, so a pinch afterwards
+        // continues from wherever the tap left off instead of fighting it.
+        LaunchedEffect(zoomFocus, pointsToPx, pageHeightPx) {
+            val focus = zoomFocus
+            if (focus == null) {
+                zoomState.reset()
+            } else {
+                zoomState.focusOn(
+                    xPx = focus.xPt * pointsToPx,
+                    yPx = (pageSize.height - focus.yPt) * pointsToPx,
+                    viewportWidthPx = viewportWidthPx,
+                    viewportHeightPx = pageHeightPx,
+                    targetScale = TAP_ZOOM_SCALE
+                )
+            }
         }
 
         Card(
-            modifier = Modifier.width(viewportWidthDp).height(viewportHeightDp),
+            modifier = Modifier.width(viewportWidthDp).height(pageHeightDp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Box(modifier = Modifier.fillMaxSize().clipToBounds()) {
+            ZoomPanBox(state = zoomState, modifier = Modifier.fillMaxSize()) {
                 Box(
                     modifier = Modifier
-                        .width(viewportWidthDp)
-                        .height(with(density) { pageHeightPx.toDp() })
-                        .graphicsLayer(
-                            scaleX = zoom,
-                            scaleY = zoom,
-                            translationX = translate.x,
-                            translationY = translate.y,
-                            // Top-left origin keeps the translation arithmetic above in the
-                            // same space as the point-to-pixel conversion.
-                            transformOrigin = TransformOrigin(0f, 0f)
-                        )
+                        .fillMaxSize()
                         .pointerInput(pageIndex, pointsToPx, pageSize) {
                             detectTapGestures { offset ->
-                                // Coordinates arrive in this Box's own untransformed space,
-                                // so the conversion is the same zoomed in or out.
+                                // Content keeps its own untransformed space, so this
+                                // conversion is the same zoomed in or out.
                                 val xPt = offset.x / pointsToPx
                                 val yPt = pageSize.height - (offset.y / pointsToPx)
                                 onRequestZoom(ZoomFocus(pageIndex, xPt, yPt))
@@ -392,9 +382,13 @@ private fun StampPageView(
                             onSelect = { onSelect(stamp.id) },
                             onTextChange = { onTextChange(stamp.id, it) },
                             onDrag = { dxPx, dyPx ->
-                                // Divide out the zoom as well: a finger moving 30px across a
-                                // 3x view has moved only 10px of page.
-                                onDrag(stamp.id, dxPx / pointsToPx / zoom, -dyPx / pointsToPx / zoom)
+                                // Divide out the zoom too: a finger moving 30px across a 3x
+                                // view has moved only 10px of page.
+                                onDrag(
+                                    stamp.id,
+                                    dxPx / pointsToPx / zoomState.scale,
+                                    -dyPx / pointsToPx / zoomState.scale
+                                )
                             }
                         )
                     }
@@ -472,7 +466,10 @@ data class ZoomFocus(val pageIndex: Int, val xPt: Float, val yPt: Float)
 
 /** How far a tap magnifies. 3x turns a form's ruled line from roughly two pixels tall into
  * something a fingertip can actually be positioned against. */
-private const val ZOOM_SCALE = 3f
+private const val TAP_ZOOM_SCALE = 3f
+
+/** Ceiling for pinch-zoom on a page. */
+private const val MAX_ZOOM_SCALE = 6f
 
 /** Long edge to re-render a zoomed page at, so magnification adds detail rather than blur. */
 const val ZOOM_RENDER_TARGET_PX = 2400
