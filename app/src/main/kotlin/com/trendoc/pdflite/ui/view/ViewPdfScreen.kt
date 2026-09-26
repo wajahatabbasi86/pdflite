@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -106,6 +107,7 @@ fun ViewPdfScreen(
     onExtractPage: (android.net.Uri) -> Unit = {},
     onCompress: (android.net.Uri) -> Unit = {},
     onFillForms: (android.net.Uri) -> Unit = {},
+    onAddText: (android.net.Uri) -> Unit = {},
     viewModel: ViewPdfViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -179,6 +181,7 @@ fun ViewPdfScreen(
                         onExtractPage = { onExtractPage(uri) },
                         onCompress = { onCompress(uri) },
                         onFillForms = if (uiState.hasFormFields) ({ onFillForms(uri) }) else null,
+                        onAddText = { onAddText(uri) },
                         onShare = {
                             val intent = Intent(Intent.ACTION_SEND).apply {
                                 type = "application/pdf"
@@ -397,6 +400,7 @@ private fun QuickActionRow(
     onExtractPage: () -> Unit,
     onCompress: () -> Unit,
     onFillForms: (() -> Unit)?,
+    onAddText: () -> Unit,
     onShare: () -> Unit
 ) {
     Row(
@@ -408,6 +412,10 @@ private fun QuickActionRow(
         if (onFillForms != null) {
             QuickActionChip(text = "Fill Forms", icon = Icons.Filled.EditNote, onClick = onFillForms)
         }
+        // Offered for every document, not just ones without form fields: a form can need a
+        // note written in a margin, and a scanned form has no fields to offer in the first
+        // place — which is exactly the case Fill Forms cannot serve.
+        QuickActionChip(text = "Add Text", icon = Icons.Filled.TextFields, onClick = onAddText)
         QuickActionChip(text = "Share", icon = Icons.Filled.Share, onClick = onShare)
     }
 }

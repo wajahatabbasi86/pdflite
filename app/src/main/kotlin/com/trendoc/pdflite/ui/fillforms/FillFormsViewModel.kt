@@ -91,7 +91,10 @@ data class FillFormsUiState(
     val readyToSave: Boolean = false,
     val defaultSaveName: String = "filled.pdf",
     val savedResultUri: Uri? = null,
-    val savedFileName: String? = null
+    val savedFileName: String? = null,
+    /** The document being filled. Exposed so the screen can hand it to Add Text when the
+     * PDF turns out to have no fields — see [hasNoFields]. */
+    val sourceUri: Uri? = null
 ) {
     val canSave: Boolean get() = widgets.isNotEmpty() && !isProcessing
 }
@@ -117,7 +120,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
         sourceUri = uri
         val context = getApplication<Application>()
         _uiState.update {
-            FillFormsUiState(isLoadingFile = true, fileName = null)
+            FillFormsUiState(isLoadingFile = true, fileName = null, sourceUri = uri)
         }
 
         viewModelScope.launch {

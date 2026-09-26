@@ -174,6 +174,10 @@ fun TrenDocNavHost() {
                     onFillForms = { uri ->
                         PendingFillFormsUri.uri.value = uri
                         navController.navigate(Routes.FILL_FORMS)
+                    },
+                    onAddText = { uri ->
+                        PendingAddTextUri.uri.value = uri
+                        navController.navigate(Routes.ADD_TEXT)
                     }
                 )
             }
@@ -188,6 +192,10 @@ fun TrenDocNavHost() {
                     initialUri = PendingFillFormsUri.consume(),
                     // Same reasoning as Split/Compress above — View PDF's "Fill Forms"
                     // bridge is a second entry point into this screen besides Home.
+                    onAddText = { uri ->
+                        PendingAddTextUri.uri.value = uri
+                        navController.navigate(Routes.ADD_TEXT)
+                    },
                     onDone = { navController.popBackStack() }
                 )
             }

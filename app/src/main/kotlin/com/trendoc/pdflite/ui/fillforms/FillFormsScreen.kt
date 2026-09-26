@@ -73,6 +73,7 @@ import com.trendoc.pdflite.util.SafFileUtils
 @Composable
 fun FillFormsScreen(
     onDone: () -> Unit,
+    onAddText: (android.net.Uri) -> Unit = {},
     initialUri: android.net.Uri? = null,
     viewModel: FillFormsViewModel = viewModel()
 ) {
@@ -165,13 +166,31 @@ fun FillFormsScreen(
                     }
                 }
                 uiState.hasNoFields -> {
+                    // Stating the problem and stopping there is a dead end — and it is the
+                    // common case, since scanned claim and application forms carry no
+                    // AcroForm fields at all. Hand the same document straight to Add Text,
+                    // which types onto the page instead of into fields.
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "This PDF doesn't have any fillable fields.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.padding(24.dp)
-                        )
+                        ) {
+                            Text(
+                                "This PDF doesn't have any fillable fields.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                "It's most likely a scan. You can still type onto the page itself.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            uiState.sourceUri?.let { uri ->
+                                Button(onClick = { onAddText(uri) }) { Text("Add text instead") }
+                            }
+                        }
                     }
                 }
                 else -> {
