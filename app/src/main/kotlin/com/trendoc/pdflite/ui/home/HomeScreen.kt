@@ -52,6 +52,7 @@ import com.trendoc.pdflite.ui.common.GradientButton
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PermMedia
 import androidx.compose.material.icons.filled.SwapVert
@@ -103,6 +104,9 @@ private val documentTools = listOf(
     ToolCard("PDF to Image", "Export rendered pages as high-resolution PNGs", "300 DPI", "Render", "pdf_to_image", Color(0xFF7A4B8A), Icons.Filled.Image),
     // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
     ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "Fill Fields", "fill_forms", Color(0xFF4A8B5C), Icons.Filled.EditNote),
+    // Works where Fill Forms cannot: a scanned claim or application form carries no AcroForm
+    // fields at all, so there is nothing to fill — this types straight onto the page instead.
+    ToolCard("Add Text", "Type onto scanned forms with no fillable fields", "Any PDF", "Start Typing", "add_text", Color(0xFFB5643B), Icons.Filled.TextFields),
 )
 private val allTools = listOf(bigTool) + documentTools
 

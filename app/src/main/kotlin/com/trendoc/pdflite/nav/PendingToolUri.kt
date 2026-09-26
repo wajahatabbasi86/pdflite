@@ -39,3 +39,14 @@ object PendingFillFormsUri {
         return value
     }
 }
+
+/** Carries the file open in View PDF into Add Text, same one-shot pattern as above. */
+object PendingAddTextUri {
+    val uri = MutableStateFlow<Uri?>(null)
+
+    fun consume(): Uri? {
+        val value = uri.value
+        uri.value = null
+        return value
+    }
+}

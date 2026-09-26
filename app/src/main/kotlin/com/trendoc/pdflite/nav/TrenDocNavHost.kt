@@ -41,6 +41,7 @@ import com.trendoc.pdflite.ui.picker.PdfPickerScreen
 import com.trendoc.pdflite.ui.recents.RecentsScreen
 import com.trendoc.pdflite.ui.settings.AppearanceScreen
 import com.trendoc.pdflite.ui.split.SplitScreen
+import com.trendoc.pdflite.ui.stamp.StampTextScreen
 import com.trendoc.pdflite.ui.view.ViewPdfScreen
 
 /**
@@ -60,6 +61,7 @@ object Routes {
     const val PDF_TO_IMAGE = "pdf_to_image"
     const val VIEW_PDF = "view_pdf"
     const val FILL_FORMS = "fill_forms"
+    const val ADD_TEXT = "add_text"
     const val APPEARANCE = "appearance"
     const val BILLING = "billing"
     const val FILES = "files"
@@ -175,6 +177,12 @@ fun TrenDocNavHost() {
                     }
                 )
             }
+            composable(Routes.ADD_TEXT) {
+                StampTextScreen(
+                    initialUri = PendingAddTextUri.consume(),
+                    onDone = { navController.popBackStack() }
+                )
+            }
             composable(Routes.FILL_FORMS) {
                 FillFormsScreen(
                     initialUri = PendingFillFormsUri.consume(),
@@ -219,7 +227,8 @@ fun TrenDocNavHost() {
 private fun BottomNavBar(currentRoute: String?, onTabSelected: (String) -> Unit) {
     val toolRoutes = setOf(
         Routes.HOME, Routes.MERGE, Routes.SPLIT, Routes.COMPRESS,
-        Routes.IMAGE_TO_PDF, Routes.PDF_TO_IMAGE, Routes.VIEW_PDF, Routes.FILL_FORMS
+        Routes.IMAGE_TO_PDF, Routes.PDF_TO_IMAGE, Routes.VIEW_PDF, Routes.FILL_FORMS,
+        Routes.ADD_TEXT
     )
     NavigationBar {
         NavigationBarItem(
