@@ -45,7 +45,7 @@ re-litigate these decisions per screen.
 | Item | Choice |
 |---|---|
 | IDE | Android Studio (built on IntelliJ Platform — same keymap/theme importable from IntelliJ IDEA) |
-| Min SDK | API 21 (Android 5.0), per README |
+| Min SDK | API 24 (Android 7.0), per README |
 | Target/Compile SDK | Latest stable at time of each dependency bump |
 | Package name | `com.trendoc.pdflite` |
 

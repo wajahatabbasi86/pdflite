@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -57,7 +58,10 @@ android {
 
     defaultConfig {
         applicationId = "com.trendoc.pdflite"
-        minSdk = 21
+        // Raised from 21 by play-services-ads: the 16 KB page-size-compliant line of that SDK
+        // requires 23, and 25.4.0+ requires 24. Android 7.0 is the floor rather than 6.0 so the
+        // ads SDK can stay on its current release instead of being pinned a version back.
+        minSdk = 24
         // Play's annual rule requires new apps and updates to target the API level released
         // within the last year — API 36 (Android 16) as of the 31 Aug 2026 deadline.
         targetSdk = 36
@@ -107,10 +111,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     lint {
         // lintVitalRelease (which assembleRelease/bundleRelease depend on by default) crashes
         // in this environment with "Could not initialize class org.jetbrains.uast.UastFacade"
@@ -145,6 +145,14 @@ android {
     // Source lives under src/main/kotlin rather than the default src/main/java.
     sourceSets["main"].kotlin.srcDirs("src/main/kotlin")
     buildToolsVersion = "36.0.0"
+}
+
+// Replaces the android { kotlinOptions { } } block, which Kotlin 2.3 turned from a
+// deprecation warning into a hard error. Same setting, current DSL.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 dependencies {

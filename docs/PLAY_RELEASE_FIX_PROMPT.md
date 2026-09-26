@@ -163,19 +163,36 @@ without one is an AdMob policy violation.
 
 ---
 
-### 1.6 Verify 16 KB page-size compliance
+### 1.6 Verify 16 KB page-size compliance — ✅ DONE (2026-09-26)
 
-**Problem.** Apps targeting API 35+ must support 16 KB memory pages on 64-bit devices.
-PdfBox-Android is pure Java and unaffected, but `play-services-ads:23.6.0` ships native libraries
-and predates the 16 KB-compliant releases.
+**Correction to the original finding.** This task was written on the assumption that
+`play-services-ads:23.6.0` ships native libraries and so risked 16 KB non-compliance. That was
+wrong: both 23.6.0 and 25.5.0 contain **zero `.so` files**. The app's only native libraries come
+from AndroidX (`libandroidx.graphics.path.so`, `libdatastore_shared_counter.so`), and all four
+64-bit variants were **already 16 KB aligned** before any change. There was no compliance gap.
 
-**Do:**
-- [ ] Bump `play-services-ads` to current stable (24.x) in `libs.versions.toml`.
-- [ ] Bump `billing-ktx` to current stable while you're there.
-- [ ] Inspect the built AAB's native libs for 16 KB alignment (Android Studio's APK Analyzer, or
-      `check_elf_alignment.sh` from the NDK).
+**What was done anyway, and why it still mattered.** The dependency bumps stand on their own
+merits — Play enforces an annual minimum Play Billing Library version and 7.1.1 was below it, and
+23.6.0 was two major versions behind on security fixes. The bump also forced a round of overdue
+toolchain modernization:
 
-**Verify:** no 16 KB warning in the Play Console pre-launch report.
+| Change | Forced by |
+|---|---|
+| `play-services-ads` 23.6.0 → 25.5.0 | the task itself |
+| `minSdk` 21 → 24 | ads 25.4.0+ hard-requires it (24.0.0–25.3.0 require 23) |
+| `kotlin` 2.0.21 → 2.3.21 | ads 25.5.0 ships Kotlin 2.3.0 metadata a 2.0.x compiler cannot read |
+| `android { kotlinOptions { } }` → `kotlin { compilerOptions { } }` | Kotlin 2.3 made the old DSL a hard error |
+| `billing-ktx` 7.1.1 → 9.1.0 | Play's annual Billing Library floor |
+| `queryProductDetailsAsync` call sites in `BillingRepository` + `DonationRepository` | Billing 8 changed the callback's 2nd arg from `List<ProductDetails>` to `QueryProductDetailsResult` |
+
+**minSdk decision.** 24 (Android 7.0) was chosen over 23 so the ads SDK can stay on its current
+release rather than being pinned at 25.3.0. Costs roughly the bottom ~1% of the global Android
+base. README and TECH_STACK updated to match.
+
+**Verified:** `assembleDebug` and `assembleRelease` both succeed; all 4 arm64/x86_64 `.so` files
+report `p_align = 16384`.
+
+**Still to confirm:** no 16 KB warning in the Play Console pre-launch report once uploaded.
 
 ---
 

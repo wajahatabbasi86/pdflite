@@ -41,7 +41,7 @@ TrenDoc is a small, honest alternative: five core PDF tools, fully on-device, on
 | Ads | Google AdMob (single banner placement) |
 | Payments | Google Play Billing (one-time IAP) |
 | Testing | JUnit + Turbine (unit), Compose UI Testing (UI, optional for v1) |
-| Min SDK | API 21 (Android 5.0) |
+| Min SDK | API 24 (Android 7.0) — raised from 21 by the 16 KB-compliant AdMob SDK line |
 | IDE | Android Studio (Quail 4 / 2026.1.4 or later stable) |
 
 Full architecture rationale is in [`docs/TECH_STACK.md`](docs/TECH_STACK.md).
