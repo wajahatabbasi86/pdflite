@@ -28,13 +28,14 @@
         android:theme="@style/Theme.TrenDoc">
 
         <!--
-          Google's published TEST AdMob App ID — safe to ship in debug/dev builds, never
-          serves real ads. MUST be swapped for the real AdMob App ID from the Play Console
-          before a production release (see docs/REQUIREMENTS.md §7).
+          Injected per build type from app/build.gradle.kts: debug always gets Google's
+          published TEST App ID, release gets the real one out of admob.properties (which is
+          gitignored — see admob.properties.example). A release build that can't find the real
+          id fails the build rather than silently shipping a test id.
         -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="${admobAppId}" />
 
         <activity
             android:name=".MainActivity"

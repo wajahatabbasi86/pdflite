@@ -1,5 +1,8 @@
 [versions]
-agp = "8.6.1"
+# AGP 8.13.x is the first line that can compile against compileSdk 36 (Android 16), which
+# Play's annual target-API rule now requires — 8.6.1 could not, and also predates official
+# Gradle 9 support despite the wrapper already being on 9.7.1.
+agp = "8.13.2"
 kotlin = "2.0.21"
 coreKtx = "1.15.0"
 documentfile = "1.0.1"

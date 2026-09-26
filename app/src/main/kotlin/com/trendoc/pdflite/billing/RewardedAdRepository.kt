@@ -7,14 +7,10 @@ import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.trendoc.pdflite.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
-/** Google's published TEST rewarded ad unit — safe to ship in debug/dev builds, always serves
- * a clearly-marked test ad. MUST be swapped for the real rewarded ad unit ID from AdMob before
- * a production release, same as [com.trendoc.pdflite.ui.common.AdBanner]'s test banner unit. */
-private const val TEST_REWARDED_AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
 
 /** How long one watched rewarded video removes the banner for — shorter than
  * [PAID_REMOVAL_DURATION_MILLIS] since this path costs nothing. */
@@ -42,7 +38,9 @@ class RewardedAdRepository(context: Context) {
         _isLoading.value = true
         RewardedAd.load(
             appContext,
-            TEST_REWARDED_AD_UNIT_ID,
+            // Per build type — Google's test unit in debug, the real one in release.
+            // See app/build.gradle.kts and admob.properties.example.
+            BuildConfig.REWARDED_AD_UNIT_ID,
             AdRequest.Builder().build(),
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {

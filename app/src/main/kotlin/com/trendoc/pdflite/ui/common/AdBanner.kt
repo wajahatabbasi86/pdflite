@@ -8,11 +8,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
-
-/** Google's published TEST banner ad unit — safe to ship in debug/dev builds, always serves a
- * clearly-marked test ad, never a real one. MUST be swapped for the real ad unit ID from the
- * Play Console before a production release (see docs/REQUIREMENTS.md §7). */
-private const val TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111"
+import com.trendoc.pdflite.BuildConfig
 
 /**
  * The single AdMob banner, per docs/REQUIREMENTS.md §7 — "Loads on Home screen only; standard
@@ -29,7 +25,9 @@ fun AdBanner(modifier: Modifier = Modifier) {
         factory = {
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
-                adUnitId = TEST_BANNER_AD_UNIT_ID
+                // Per build type — Google's test unit in debug, the real one in release.
+                // See app/build.gradle.kts and admob.properties.example.
+                adUnitId = BuildConfig.BANNER_AD_UNIT_ID
                 loadAd(AdRequest.Builder().build())
             }
         },
