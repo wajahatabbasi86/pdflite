@@ -337,7 +337,16 @@ fun ViewPdfScreen(
                             viewModel.requestPage(index)
                             val page = viewModel.pageCache[index]
                             val pageSize = uiState.pageSizes.getOrNull(index)
-                            Box {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                // Page number above the page, in the list's own gap. As an overlay
+                                // on the page it covered whatever the document had in that corner —
+                                // a title at top-left, a footer at bottom-right.
+                                Text(
+                                    stringResource(R.string.view_page_badge, index + 1),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -369,19 +378,6 @@ fun ViewPdfScreen(
                                             CircularProgressIndicator(modifier = Modifier.size(28.dp))
                                         }
                                     }
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                                ) {
-                                    Text(
-                                        stringResource(R.string.view_page_badge, index + 1),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
                                 }
                             }
                         }

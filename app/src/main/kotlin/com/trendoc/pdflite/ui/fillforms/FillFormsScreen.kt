@@ -359,7 +359,9 @@ private fun FormPageView(
                     FieldKind.CHECKBOX -> CheckboxOverlay(
                         label = widget.label,
                         checked = fieldValues[widget.groupId] == widget.onValue,
-                        size = maxOf(widthDp, heightDp, 20.dp),
+                        // The PDF's own box size. The 48dp tap area is separate (FieldTouchTarget), so
+                        // the drawing no longer needs a 20dp floor — which grew it over its label.
+                        size = minOf(widthDp, heightDp).coerceAtLeast(10.dp),
                         enabled = !widget.isReadOnly,
                         onClick = { onCheckboxToggle(widget.groupId, widget.onValue ?: "Yes") }
                     )
@@ -367,7 +369,9 @@ private fun FormPageView(
                         // Option first, then its group: "Female, Gender".
                         label = listOfNotNull(widget.onValue, widget.label).joinToString(", "),
                         selected = fieldValues[widget.groupId] == widget.onValue,
-                        size = maxOf(widthDp, heightDp, 20.dp),
+                        // The PDF's own box size. The 48dp tap area is separate (FieldTouchTarget), so
+                        // the drawing no longer needs a 20dp floor — which grew it over its label.
+                        size = minOf(widthDp, heightDp).coerceAtLeast(10.dp),
                         enabled = !widget.isReadOnly,
                         onClick = { onRadioSelect(widget.groupId, widget.onValue ?: return@RadioOverlay) }
                     )

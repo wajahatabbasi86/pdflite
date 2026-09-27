@@ -28,21 +28,22 @@ this copy needs to be revisited before it's a lie rather than a fact.
 
 ## Screenshots
 
-Captured on-device from a debug build (Pixel 8 AVD), in the order Play Console displays them:
+Captured on a Samsung Galaxy A32 from the 1.0.0 debug build (2026-09-27), 1080×2160: the status and
+navigation bars are cropped (Play's 2:1 aspect limit, and no personal notification icons), and
+Samsung's Edge Panel handle — a system overlay, not app UI — is painted out of the right margin.
+Taken during an ad-free window, so no test banner shows. The documents shown are fictional
+samples made for these shots (a garden guide, a library-card form, a volunteer sign-up "scan").
 
-1. `01-home.png` — Home, all six tools in the List layout (the ad banner strip is cropped out — a
-   real production build would show a live ad here, not a "Test Ad" placeholder)
-2. `02-merge.png` — Merge PDFs entry screen
-3. `03-split.png` — Split / Extract Pages entry screen
-4. `04-compress.png` — Compress PDF entry screen
-5. `05-appearance.png` — Appearance settings (accent color, card/border/muted tints, background
-   style, Home layout, theme) — the app's user-customizable theming, a real differentiator worth
-   surfacing in the listing rather than just showing tool screens
+1. `01-home.png` — Home, every tool
+2. `02-view-pdf.png` — View PDF reading a document, with its quick-action chips
+3. `03-split.png` — Split, two of three pages selected
+4. `04-merge.png` — Merge queue with two files
+5. `05-compress.png` — Compress presets with size estimates
+6. `06-fill-forms.png` — Fill Forms, a form part-filled (text, radio, checkbox, dropdown)
+7. `07-add-text.png` — Add Text typing onto a scanned form with no fillable fields
+8. `08-appearance.png` — Appearance settings
 
-Not included: a View PDF screenshot with a rendered page — the on-device sample PDF used for
-testing throughout this project renders a blank page, which would look broken in a store
-listing. Swap in a real, visually rich PDF and recapture that screen before publishing if a
-sixth screenshot is wanted.
+Retake these if the UI changes visibly — Play requires screenshots to show the current app.
 
 ## Feature graphic & app icon
 
