@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.home
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.BorderStroke
@@ -241,7 +243,7 @@ private fun RecentsPreviewStrip(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("On-Device Recents", style = MaterialTheme.typography.titleSmall, color = titleColor)
+                Text("On-Device Recents", style = MaterialTheme.typography.titleSmall, color = titleColor, modifier = Modifier.semantics { heading() })
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -388,7 +390,7 @@ private fun SectionHeader(title: String, darkGround: Boolean, modifier: Modifier
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleSmall, color = titleColor)
+        Text(title, style = MaterialTheme.typography.titleSmall, color = titleColor, modifier = Modifier.semantics { heading() })
         Text("Local Execution", style = MaterialTheme.typography.labelSmall, color = accent)
     }
 }

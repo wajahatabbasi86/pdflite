@@ -371,7 +371,13 @@ a permanent non-consumable, the timestamp goes away for the paid path anyway.
 
 ---
 
-## Phase 4 — Accessibility
+## Phase 4 — Accessibility — ✅ DONE (2026-09-27)
+
+> Method: each screen's live accessibility tree (uiautomator dump) checked for clickables with no
+> label and targets under 48dp, before and after. Remaining findings are the AdMob WebView (third
+> party) and nodes clipped by a scroll edge. Roles set in code — uiautomator on this device reports
+> every Compose node as `android.view.View`, so roles can't be read back that way; confirm with
+> Accessibility Scanner / the pre-launch report.
 
 This is the weakest area of the codebase. A grep for `semantics`, `Role.`, `stateDescription`, and
 `heading()` across all 9.3k lines returns **zero matches**.

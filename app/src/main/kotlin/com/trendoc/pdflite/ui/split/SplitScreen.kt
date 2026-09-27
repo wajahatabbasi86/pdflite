@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.split
 
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.semantics.semantics
@@ -225,7 +226,8 @@ fun SplitScreen(
                 Text(
                     "CHOOSE SPLIT MODE",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.semantics { heading() }
                 )
 
                 SplitModeCard(
@@ -260,7 +262,7 @@ fun SplitScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Tap pages to select", style = MaterialTheme.typography.titleSmall)
+                        Text("Tap pages to select", style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
                         Text(
                             "$selectedCount / ${uiState.pages.size} chosen",
                             style = MaterialTheme.typography.labelMedium,

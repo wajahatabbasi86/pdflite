@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.settings
 
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -252,7 +253,9 @@ private fun SectionLabel(text: String) {
     Text(
         text = text.uppercase(),
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        // Lets TalkBack users jump section to section instead of swiping every swatch.
+        modifier = Modifier.semantics { heading() }
     )
 }
 

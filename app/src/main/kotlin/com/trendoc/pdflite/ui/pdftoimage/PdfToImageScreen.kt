@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.pdftoimage
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.toggleable
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -182,7 +184,7 @@ fun PdfToImageScreen(
                 }
 
                 if (uiState.pageCount > 0) {
-                    Text("FORMAT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("FORMAT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() })
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         ImageFormat.entries.forEachIndexed { index, format ->
                             SegmentedButton(
@@ -193,7 +195,7 @@ fun PdfToImageScreen(
                         }
                     }
 
-                    Text("QUALITY", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("QUALITY", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() })
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         ImageQuality.entries.forEachIndexed { index, quality ->
                             SegmentedButton(
