@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Dark-mode twin of values/themes.xml. Without it a device in dark mode launched onto a
+      white window for the moment before Compose applied its own dark theme.
+    -->
+    <style name="Theme.TrenDoc" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

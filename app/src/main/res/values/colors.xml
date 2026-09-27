@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window colour shown before Compose draws its first frame: Material 3's default
+         light background, which the Compose theme uses when dynamic colour isn't available. -->
+    <color name="window_background">#FFFFFBFE</color>
+</resources>

@@ -473,7 +473,7 @@ Hilt, or at minimum a manual service-locator + ViewModel factory, so Phase 5.5 i
 `BillingRepository` correctly treats it as a consumable. Contradictory comments mislead the next
 reader. Fix whichever ends up wrong after the 1.2 decision.
 
-### 5.8 Theme and icon polish
+### 5.8 Theme and icon polish — ✅ DONE (2026-09-27)
 
 - [ ] `res/values/themes.xml` parents `android:Theme.Material.Light.NoActionBar` — not a DayNight
       theme. Dark-mode launches flash white. Use a `DayNight` parent, or add `values-night/`.
