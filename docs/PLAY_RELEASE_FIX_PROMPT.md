@@ -431,7 +431,13 @@ match, or the listing looks like a different app.
 
 - [ ] Decide the real name. Update `app_name`, the README, and the store listing to agree.
 
-### 5.3 Re-enable release lint
+### 5.3 Re-enable release lint — ✅ DONE (2026-09-27)
+
+> `checkReleaseBuilds = false` removed; `lintVitalRelease` passes. Lint had never run at all: the
+> androidTest classpath lacked the Compose BOM. Fixed a scroll-driven recomposition in View PDF and
+> the unused round icon; the Bouncy Castle TrustManager finding is ignored for that jar only in
+> `app/lint.xml` (R8 removes it — verified in the release dex). Remaining: version-bump suggestions
+> and UseKtx style hints, left visible as warnings.
 
 `app/build.gradle.kts:72` sets `checkReleaseBuilds = false` because `lintVitalRelease` crashed with
 a UAST class-loading error. Understandable, but it disables the gate that would have caught several

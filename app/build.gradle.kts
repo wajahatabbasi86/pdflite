@@ -117,12 +117,10 @@ android {
     }
 
     lint {
-        // lintVitalRelease (which assembleRelease/bundleRelease depend on by default) crashes
-        // in this environment with "Could not initialize class org.jetbrains.uast.UastFacade"
-        // — a JVM/lint-tooling class-loading issue, not a real lint finding, and unrelated to
-        // any code in this project. Run `./gradlew lint` on its own (non-fatal) to actually see
-        // lint results; release builds shouldn't be blocked by a broken analyzer.
-        checkReleaseBuilds = false
+        // Release builds run lintVitalRelease again (it crashed with a UAST class-loading error
+        // on AGP 8.6 and was switched off; AGP 8.13 fixed that). Errors fail the release build.
+        // Per-issue exceptions, each with its reason, live in app/lint.xml.
+        lintConfig = file("lint.xml")
     }
 
     buildFeatures {
@@ -196,6 +194,9 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    // The BOM has to be applied to this configuration too — without it ui-test-junit4 has no
+    // version, and every task touching the androidTest classpath (lint included) fails.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.test.manifest)
 }

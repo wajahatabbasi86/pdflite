@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+      Reported against Bouncy Castle's EST client (org.bouncycastle.est, pulled in by
+      PdfBox-Android), which the app never calls. R8 strips it: the release APK contains no
+      X509TrustManager implementation at all (checked with dexdump, 2026-09-27). Lint scans the
+      jar before shrinking, so it can't see that. Ignored for that jar only, so a trust-all
+      manager in the app's own code would still be caught. Re-check the release dex whenever
+      the PdfBox or Bouncy Castle version changes.
+    -->
+    <issue id="TrustAllX509TrustManager">
+        <ignore regexp="bcpkix-jdk15to18" />
+    </issue>
+</lint>

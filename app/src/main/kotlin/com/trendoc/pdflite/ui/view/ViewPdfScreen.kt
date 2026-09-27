@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.view
 
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.Role
 import android.app.Activity
@@ -246,24 +248,29 @@ fun ViewPdfScreen(
                     }
 
                     val listScaleBucket = (listScale.value * 4).roundToInt()
-                    LaunchedEffect(listScaleBucket, lazyListState.firstVisibleItemIndex) {
-                        if (listScale.value <= 1f) return@LaunchedEffect
-                        delay(250)
-                        val target = (viewportLongestSidePx * listScale.value).roundToInt().coerceIn(1100, 4500)
-                        val visibleIndices = lazyListState.layoutInfo.visibleItemsInfo.map { it.index }
-                        for (index in visibleIndices) {
-                            val cached = listCachedResolution[index] ?: 0
-                            if (target > (cached * 1.15f).roundToInt()) {
-                                val bitmap = viewModel.renderPageAtResolution(index, target)
-                                if (bitmap != null) {
-                                    if (listHighResCache.size >= 6) {
-                                        listHighResCache.keys.firstOrNull { it !in visibleIndices }?.let { evictKey ->
-                                            listHighResCache.remove(evictKey)?.recycle()
-                                            listCachedResolution.remove(evictKey)
+                    // Scroll position is read through snapshotFlow inside the effect rather than as
+                    // an effect key: as a key it was read during composition, so every page
+                    // scrolled past recomposed the whole list just to restart this effect.
+                    LaunchedEffect(listScaleBucket) {
+                        snapshotFlow { lazyListState.firstVisibleItemIndex }.collectLatest {
+                            if (listScale.value <= 1f) return@collectLatest
+                            delay(250)
+                            val target = (viewportLongestSidePx * listScale.value).roundToInt().coerceIn(1100, 4500)
+                            val visibleIndices = lazyListState.layoutInfo.visibleItemsInfo.map { it.index }
+                            for (index in visibleIndices) {
+                                val cached = listCachedResolution[index] ?: 0
+                                if (target > (cached * 1.15f).roundToInt()) {
+                                    val bitmap = viewModel.renderPageAtResolution(index, target)
+                                    if (bitmap != null) {
+                                        if (listHighResCache.size >= 6) {
+                                            listHighResCache.keys.firstOrNull { it !in visibleIndices }?.let { evictKey ->
+                                                listHighResCache.remove(evictKey)?.recycle()
+                                                listCachedResolution.remove(evictKey)
+                                            }
                                         }
+                                        listHighResCache[index] = bitmap
+                                        listCachedResolution[index] = target
                                     }
-                                    listHighResCache[index] = bitmap
-                                    listCachedResolution[index] = target
                                 }
                             }
                         }
