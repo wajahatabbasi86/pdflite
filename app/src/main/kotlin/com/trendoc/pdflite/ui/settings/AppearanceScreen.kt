@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.ui.settings
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,9 +93,10 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 SectionLabel("Accent color")
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     AccentColor.entries.forEach { accent ->
                         ColorDot(
+                            label = "Accent color ${accent.label}",
                             color = accent.color(darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK),
                             selected = accent == prefs.accent,
                             onClick = { viewModel.setAccent(accent) }
@@ -100,10 +105,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 }
 
                 SectionLabel("Card")
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
                     CardTint.entries.forEach { tint ->
                         ColorDot(
+                            label = "Card tint ${tint.label}",
                             color = tint.color(darkTheme),
                             selected = tint == prefs.cardTint,
                             onClick = { viewModel.setCardTint(tint) }
@@ -112,10 +118,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 }
 
                 SectionLabel("Border")
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
                     BorderTint.entries.forEach { tint ->
                         ColorDot(
+                            label = "Border tint ${tint.label}",
                             color = tint.color(darkTheme),
                             selected = tint == prefs.borderTint,
                             onClick = { viewModel.setBorderTint(tint) }
@@ -124,10 +131,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 }
 
                 SectionLabel("Muted")
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
                     MutedTint.entries.forEach { tint ->
                         ColorDot(
+                            label = "Muted tint ${tint.label}",
                             color = tint.color(darkTheme),
                             selected = tint == prefs.mutedTint,
                             onClick = { viewModel.setMutedTint(tint) }
@@ -249,19 +257,29 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun ColorDot(color: Color, selected: Boolean, onClick: () -> Unit) {
+private fun ColorDot(label: String, color: Color, selected: Boolean, onClick: () -> Unit) {
+    // A 48dp touch target around the 36dp swatch. selectable() with a radio role gives
+    // TalkBack the name, the selected state and "one of a group" — the colour alone, shown
+    // only by a border, told a screen-reader user nothing.
     Box(
         modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(color)
-            .then(
-                if (selected) {
-                    Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.onBackground), CircleShape)
-                } else Modifier
-            )
-            .clickable(onClick = onClick)
-    )
+            .size(48.dp)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(color)
+                .then(
+                    if (selected) {
+                        Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.onBackground), CircleShape)
+                    } else Modifier
+                )
+        )
+    }
 }
 
 @Composable
@@ -276,7 +294,8 @@ private fun BackgroundTile(
     Card(
         modifier = modifier
             .aspectRatio(1f)
-            .clickable { onClick(style) },
+            .selectable(selected = isSelected, role = Role.RadioButton) { onClick(style) }
+            .semantics(mergeDescendants = true) { contentDescription = "Background $label" },
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -309,7 +328,10 @@ private fun LayoutTile(
     Card(
         modifier = modifier
             .aspectRatio(1f)
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Home layout " + layout.name.lowercase()
+            },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
     ) {

@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.compress
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -225,7 +227,8 @@ private fun CompressionPresetCard(
         if (pct > 0) "~${formatSize(estimatedBytes)} · −$pct%" else "~${formatSize(estimatedBytes)}"
     } else null
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        // The card is the radio option, so the level name labels the radio for TalkBack.
+        modifier = Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
@@ -239,7 +242,7 @@ private fun CompressionPresetCard(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RadioButton(selected = selected, onClick = onClick, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
+            RadioButton(selected = selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
             Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Text(level.label, style = MaterialTheme.typography.titleSmall)
                 Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

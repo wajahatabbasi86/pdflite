@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.stamp
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
@@ -540,6 +542,7 @@ private fun StampEditor(
                     .width(fieldWidthDp)
                     .focusRequester(focusRequester)
                     .onFocusChanged { if (it.isFocused) onSelect() }
+                    .semantics { contentDescription = "Text on page ${stamp.pageIndex + 1}" }
             )
         }
     }

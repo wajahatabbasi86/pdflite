@@ -1,5 +1,14 @@
 package com.trendoc.pdflite.ui.fillforms
 
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -321,6 +330,7 @@ private fun FormPageView(
             Box(modifier = Modifier.offset(x = leftDp, y = topDp)) {
                 when (widget.kind) {
                     FieldKind.TEXT -> TextFieldOverlay(
+                        label = widget.label,
                         value = fieldValues[widget.groupId] ?: "",
                         width = widthDp,
                         height = heightDp,
@@ -331,18 +341,22 @@ private fun FormPageView(
                         onValueChange = { onTextChange(widget.groupId, it) }
                     )
                     FieldKind.CHECKBOX -> CheckboxOverlay(
+                        label = widget.label,
                         checked = fieldValues[widget.groupId] == widget.onValue,
                         size = maxOf(widthDp, heightDp, 20.dp),
                         enabled = !widget.isReadOnly,
                         onClick = { onCheckboxToggle(widget.groupId, widget.onValue ?: "Yes") }
                     )
                     FieldKind.RADIO -> RadioOverlay(
+                        // Option first, then its group: "Female, Gender".
+                        label = listOfNotNull(widget.onValue, widget.label).joinToString(", "),
                         selected = fieldValues[widget.groupId] == widget.onValue,
                         size = maxOf(widthDp, heightDp, 20.dp),
                         enabled = !widget.isReadOnly,
                         onClick = { onRadioSelect(widget.groupId, widget.onValue ?: return@RadioOverlay) }
                     )
                     FieldKind.CHOICE -> ChoiceOverlay(
+                        label = widget.label,
                         value = fieldValues[widget.groupId] ?: "",
                         options = widget.choiceOptions,
                         width = maxOf(widthDp, 80.dp),
@@ -356,6 +370,7 @@ private fun FormPageView(
                         }
                     )
                     FieldKind.SIGNATURE -> SignatureOverlay(
+                        label = widget.label,
                         width = maxOf(widthDp, 40.dp),
                         height = maxOf(heightDp, 20.dp)
                     )
@@ -368,6 +383,7 @@ private fun FormPageView(
 
 @Composable
 private fun TextFieldOverlay(
+    label: String,
     value: String,
     width: Dp,
     height: Dp,
@@ -399,6 +415,8 @@ private fun TextFieldOverlay(
             .background(accent.copy(alpha = 0.10f))
             .border(1.dp, accent.copy(alpha = 0.5f))
             .padding(horizontal = 2.dp)
+            // Named from the PDF field itself; a bare BasicTextField is just "edit box".
+            .semantics { contentDescription = label }
     )
 }
 
@@ -406,9 +424,10 @@ private fun TextFieldOverlay(
  * handle — but it must still be visible, otherwise a form's signature box just isn't there
  * and the user has no idea the document expects one. */
 @Composable
-private fun SignatureOverlay(width: Dp, height: Dp) {
+private fun SignatureOverlay(label: String, width: Dp, height: Dp) {
     Box(
         modifier = Modifier
+            .semantics(mergeDescendants = true) { contentDescription = "$label, signature field, sign elsewhere" }
             .width(width)
             .height(height)
             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.06f))
@@ -426,46 +445,78 @@ private fun SignatureOverlay(width: Dp, height: Dp) {
 }
 
 @Composable
-private fun CheckboxOverlay(checked: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
-    Box(
+private fun CheckboxOverlay(label: String, checked: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
+    FieldTouchTarget(
+        size = size,
         modifier = Modifier
-            .size(size)
-            .clip(RoundedCornerShape(2.dp))
-            .background(if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface)
-            .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center
+            .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onClick() })
+            .semantics { contentDescription = label }
     ) {
-        if (checked) {
-            Text("✓", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(RoundedCornerShape(2.dp))
+                .background(if (checked) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surface)
+                .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (checked) {
+                Text("✓", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
+            }
         }
     }
 }
 
+/**
+ * A touch target of at least 48dp centred on a form widget drawn at its PDF size.
+ * Checkboxes on real forms are often 8–12pt — far below what a finger (or Play's pre-launch
+ * accessibility check) needs. The drawn box keeps its exact size and position so it still
+ * lines up with the page; only the tappable area grows, shifted back by half the growth.
+ */
 @Composable
-private fun RadioOverlay(selected: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
+private fun FieldTouchTarget(size: Dp, modifier: Modifier, content: @Composable () -> Unit) {
+    val target = maxOf(size, 48.dp)
+    val shift = (target - size) / 2
     Box(
         modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
+            .offset(x = -shift, y = -shift)
+            .size(target)
+            .then(modifier),
         contentAlignment = Alignment.Center
+    ) { content() }
+}
+
+@Composable
+private fun RadioOverlay(label: String, selected: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
+    FieldTouchTarget(
+        size = size,
+        modifier = Modifier
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            .semantics { contentDescription = label }
     ) {
-        if (selected) {
-            Box(
-                modifier = Modifier
-                    .size(size * 0.5f)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .size(size * 0.5f)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun ChoiceOverlay(
+    label: String,
     value: String,
     options: List<String>,
     width: Dp,
@@ -489,7 +540,15 @@ private fun ChoiceOverlay(
                 .height(height)
                 .background(accent.copy(alpha = 0.10f))
                 .border(1.dp, accent.copy(alpha = 0.5f))
-                .then(if (enabled) Modifier.clickable { expanded = true } else Modifier)
+                // "Country, Canada, drop down list": the field name, then the current value.
+                // Set as one node — clickable() and the role otherwise land on separate
+                // semantics nodes and TalkBack reads an unnamed list.
+                .clearAndSetSemantics {
+                    contentDescription = "$label, ${selected.joinToString(", ").ifBlank { "nothing selected" }}"
+                    role = Role.DropdownList
+                    if (enabled) onClick { expanded = true; true } else disabled()
+                }
+                .clickable(enabled = enabled) { expanded = true }
                 .padding(horizontal = 4.dp),
             contentAlignment = Alignment.CenterStart
         ) {

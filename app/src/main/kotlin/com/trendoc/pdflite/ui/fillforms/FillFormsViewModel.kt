@@ -70,7 +70,9 @@ data class FormWidget(
     /** /MaxLen, or null when the field sets no limit. */
     val maxLength: Int? = null,
     /** /Ff MultiSelect on a choice field: several options may be selected at once. */
-    val isMultiSelect: Boolean = false
+    val isMultiSelect: Boolean = false,
+    /** What a screen reader announces for this field; see [fieldLabel]. */
+    val label: String = ""
 )
 
 /** One page rendered for display, alongside the scale needed to place [FormWidget] rects
@@ -173,6 +175,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                             val fieldWidgets = field.widgets
                             if (fieldWidgets.isEmpty()) continue // non-terminal node in the field tree
                             val groupId = field.fullyQualifiedName ?: continue
+                            val label = field.fieldLabel()
                             // PDField.getValueAsString() is correct for every field type
                             // except PDChoice, where it stringifies the whole List<String>
                             // (producing e.g. "[USA]" instead of "USA") rather than the one
@@ -194,6 +197,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                                     val pageIndex = pageList.indexOf(widget.page)
                                     if (pageIndex < 0) continue
                                     widgets += FormWidget(
+                                        label = label,
                                         widgetKey = groupId,
                                         groupId = groupId,
                                         pageIndex = pageIndex,
@@ -212,6 +216,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                                     val pageIndex = pageList.indexOf(widget.page)
                                     if (pageIndex < 0) continue
                                     widgets += FormWidget(
+                                        label = label,
                                         widgetKey = groupId,
                                         groupId = groupId,
                                         pageIndex = pageIndex,
@@ -226,6 +231,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                                         if (pageIndex < 0) return@forEachIndexed
                                         val onValue = widget.onValueOrNull() ?: return@forEachIndexed
                                         widgets += FormWidget(
+                                        label = label,
                                             widgetKey = "$groupId#$i",
                                             groupId = groupId,
                                             pageIndex = pageIndex,
@@ -240,6 +246,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                                     val pageIndex = pageList.indexOf(widget.page)
                                     if (pageIndex < 0) continue
                                     widgets += FormWidget(
+                                        label = label,
                                         widgetKey = groupId,
                                         groupId = groupId,
                                         pageIndex = pageIndex,
@@ -261,6 +268,7 @@ class FillFormsViewModel(application: Application) : AndroidViewModel(applicatio
                                     val pageIndex = pageList.indexOf(widget.page)
                                     if (pageIndex < 0) continue
                                     widgets += FormWidget(
+                                        label = label,
                                         widgetKey = groupId,
                                         groupId = groupId,
                                         pageIndex = pageIndex,
@@ -551,3 +559,20 @@ private const val FLAG_PASSWORD = 1 shl 13
 
 private fun PDTextField.hasFlag(flag: Int): Boolean =
     (cosObject.getInt("Ff", 0) and flag) != 0
+
+/**
+ * The name TalkBack reads for a form field. The /TU "alternate field name" exists in the PDF
+ * spec for precisely this — a human-readable name for accessibility — so it wins when present.
+ * Otherwise the field's own name, de-mangled: `patient_firstName` reads "patient first name".
+ */
+private fun com.tom_roush.pdfbox.pdmodel.interactive.form.PDField.fieldLabel(): String {
+    alternateFieldName?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
+    val raw = partialName ?: fullyQualifiedName ?: return "Form field"
+    return raw
+        .replace(Regex("([a-z])([A-Z])"), "$1 $2")
+        .replace(Regex("[_.\\-]+"), " ")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+        .lowercase()
+        .ifEmpty { "Form field" }
+}

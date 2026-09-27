@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.pdftoimage
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -211,12 +213,18 @@ fun PdfToImageScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    // The whole row toggles, so TalkBack reads "Export as ZIP, switch, off"
+                    // as one control instead of an unnamed switch beside some text.
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().toggleable(
+                            value = uiState.exportAsZip,
+                            role = Role.Switch,
+                            onValueChange = { viewModel.setExportAsZip(it) }
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text("Export as ZIP", style = MaterialTheme.typography.titleSmall)
                             Text(
                                 "Bundle all pages into one .zip instead of a folder",
@@ -224,7 +232,7 @@ fun PdfToImageScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Switch(checked = uiState.exportAsZip, onCheckedChange = { viewModel.setExportAsZip(it) })
+                        Switch(checked = uiState.exportAsZip, onCheckedChange = null)
                     }
                 }
             }

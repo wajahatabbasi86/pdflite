@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.split
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -451,9 +453,10 @@ private fun SplitModeCard(
     onClick: () -> Unit,
     extraContent: (@Composable () -> Unit)? = null
 ) {
+    // The card is the radio option: its title names the radio for TalkBack, which a
+    // separately-clickable RadioButton beside the text never got.
     Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
@@ -465,7 +468,7 @@ private fun SplitModeCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = selected, onClick = onClick)
+                RadioButton(selected = selected, onClick = null)
                 Column {
                     Text(title, style = MaterialTheme.typography.titleSmall)
                     Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
