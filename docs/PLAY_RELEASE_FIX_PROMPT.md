@@ -151,7 +151,14 @@ Shipping these means **zero ad revenue**, and AdMob flags apps serving test IDs 
 
 ---
 
-### 1.5 Add a consent flow (UMP / CMP) for EEA + UK users
+### 1.5 Add a consent flow (UMP / CMP) for EEA + UK users — ✅ DONE in code (2026-09-27)
+
+> `billing/AdConsent.kt` (UMP 4.0.0) gathers consent in `MainActivity.onCreate`; `MobileAds.initialize`
+> moved out of the Application and runs lazily only once `canRequestAds()` is true; banner and rewarded
+> ad both gated; "Privacy options" row in Appearance when UMP requires it. Verified on device: outside
+> EEA the banner loads; forced EEA with the test app ID the UMP request fails and **no ad is requested**.
+> **Still manual:** create the GDPR message in AdMob console → Privacy & messaging, then re-test the
+> form with `umpTestDeviceId` in `admob.properties` and the real app ID.
 
 **Problem.** `TrenDocApplication.kt:22` calls `MobileAds.initialize()` unconditionally, and ads load
 with no consent gathered anywhere in the codebase. Since January 2024, Google's EU user consent

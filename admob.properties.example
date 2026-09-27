@@ -9,3 +9,7 @@
 admobAppId=ca-app-pub-0000000000000000~0000000000
 bannerAdUnitId=ca-app-pub-0000000000000000/0000000000
 rewardedAdUnitId=ca-app-pub-0000000000000000/0000000000
+
+# Optional, debug only: the hashed device id UMP prints to logcat on first launch. When set,
+# debug builds force EEA geography so the consent form shows. Ignored by release builds.
+# umpTestDeviceId=

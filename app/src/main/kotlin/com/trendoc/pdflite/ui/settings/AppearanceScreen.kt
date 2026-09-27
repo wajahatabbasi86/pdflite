@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import com.trendoc.pdflite.billing.AdConsent
 import com.trendoc.pdflite.util.startActivitySafely
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -188,6 +189,16 @@ fun AppearanceScreen(onBack: () -> Unit) {
                         )
                     }
                 )
+                // UMP requires a way to revisit the consent choice wherever it applies
+                // (EEA/UK); elsewhere it reports not-required and the row stays hidden.
+                val privacyOptionsRequired by AdConsent.privacyOptionsRequired.collectAsState()
+                if (privacyOptionsRequired) {
+                    PrivacyPolicyRow(
+                        title = "Privacy options",
+                        opensExternally = false,
+                        onClick = { (context as? android.app.Activity)?.let(AdConsent::showPrivacyOptions) }
+                    )
+                }
             }
         }
     }
@@ -198,7 +209,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
 private const val PRIVACY_POLICY_URL = "https://trenbridgeit.com/trendoc/privacy-policy.html"
 
 @Composable
-private fun PrivacyPolicyRow(onClick: () -> Unit) {
+private fun PrivacyPolicyRow(
+    title: String = "Privacy Policy",
+    opensExternally: Boolean = true,
+    onClick: () -> Unit
+) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -211,13 +226,15 @@ private fun PrivacyPolicyRow(onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Privacy Policy", style = MaterialTheme.typography.titleSmall)
-            Icon(
-                Icons.AutoMirrored.Filled.OpenInNew,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            if (opensExternally) {
+                Icon(
+                    Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }

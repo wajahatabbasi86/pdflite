@@ -1,7 +1,6 @@
 package com.trendoc.pdflite
 
 import android.app.Application
-import com.google.android.gms.ads.MobileAds
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
 /**
@@ -15,10 +14,7 @@ class TrenDocApplication : Application() {
         super.onCreate()
         PDFBoxResourceLoader.init(applicationContext)
 
-        // AdMob SDK init (§7). HomeScreen only composes AdBanner when the "Remove Ads"
-        // purchase isn't active, but this one-time SDK init is cheap enough (and stateless
-        // enough) to always run here rather than gating it behind an entitlement read at
-        // startup — no ad request is made until a banner is actually shown.
-        MobileAds.initialize(applicationContext)
+        // The ads SDK is deliberately *not* initialized here: EEA/UK consent has to be
+        // gathered first, and that needs an Activity. See billing/AdConsent.kt.
     }
 }

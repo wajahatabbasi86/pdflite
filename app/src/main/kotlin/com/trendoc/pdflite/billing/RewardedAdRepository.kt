@@ -36,6 +36,7 @@ class RewardedAdRepository(context: Context) {
 
     fun load() {
         if (rewardedAd != null || _isLoading.value) return
+        if (!AdConsent.ensureAdsInitialized(appContext)) return
         _isLoading.value = true
         RewardedAd.load(
             appContext,

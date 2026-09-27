@@ -88,6 +88,10 @@ android {
             manifestPlaceholders["admobAppId"] = testAdMobAppId
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$testBannerAdUnitId\"")
             buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$testRewardedAdUnitId\"")
+            // Optional: the hashed device id UMP logs on first run ("Use new
+            // ConsentDebugSettings.Builder().addTestDeviceHashedId(...)"). When set, debug builds
+            // pretend the device is in the EEA so the consent form can be tested from anywhere.
+            buildConfigField("String", "UMP_TEST_DEVICE_ID", "\"${admobProperties.getProperty("umpTestDeviceId") ?: ""}\"")
         }
         release {
             isMinifyEnabled = true
@@ -103,6 +107,7 @@ android {
             manifestPlaceholders["admobAppId"] = releaseAdMobAppId
             buildConfigField("String", "BANNER_AD_UNIT_ID", "\"$releaseBannerAdUnitId\"")
             buildConfigField("String", "REWARDED_AD_UNIT_ID", "\"$releaseRewardedAdUnitId\"")
+            buildConfigField("String", "UMP_TEST_DEVICE_ID", "\"\"")
         }
     }
 
@@ -181,6 +186,8 @@ dependencies {
     // Monetization (build step 8, docs/REQUIREMENTS.md §7) — AdMob banner + one-time
     // "Remove Ads" purchase via Play Billing.
     implementation(libs.play.services.ads)
+    // EEA/UK consent (UMP) — gathered before the ads SDK is initialized; see AdConsent.kt.
+    implementation(libs.ump)
     implementation(libs.billing.ktx)
 
     testImplementation(libs.junit)

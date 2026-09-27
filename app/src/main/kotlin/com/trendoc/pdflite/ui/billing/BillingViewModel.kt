@@ -8,6 +8,7 @@ import com.trendoc.pdflite.billing.BillingRepository
 import com.trendoc.pdflite.billing.BillingUiState
 import com.trendoc.pdflite.billing.EntitlementRepository
 import com.trendoc.pdflite.billing.RewardedAdRepository
+import com.trendoc.pdflite.billing.AdConsent
 import com.trendoc.pdflite.billing.VIDEO_REWARD_DURATION_MILLIS
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +44,11 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         billingRepository.start()
-        rewardedAdRepository.load()
+        // Consent may arrive after this screen opens (first launch, EEA/UK), so load
+        // whenever it becomes available rather than only once up front.
+        viewModelScope.launch {
+            AdConsent.canRequestAds.collect { allowed -> if (allowed) rewardedAdRepository.load() }
+        }
     }
 
     fun buy(activity: Activity) = billingRepository.launchPurchaseFlow(activity)

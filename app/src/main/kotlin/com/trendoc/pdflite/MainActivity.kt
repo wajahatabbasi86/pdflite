@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.trendoc.pdflite.billing.AdConsent
 import com.trendoc.pdflite.nav.TrenDocNavHost
 import com.trendoc.pdflite.nav.PendingPdfIntent
 import com.trendoc.pdflite.ui.settings.AppearanceViewModel
@@ -25,6 +26,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         capturePdfViewIntent(intent)
+        // Before any ad can load: shows the EEA/UK consent form when UMP says one is needed.
+        AdConsent.gather(this)
 
         setContent {
             // Read the user's Appearance preferences at the root, once, so the whole app

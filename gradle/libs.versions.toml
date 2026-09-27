@@ -21,6 +21,8 @@ pdfboxAndroid = "2.0.27.0"
 # the app's only .so files come from AndroidX and were already 16 KB aligned. 25.4.0+ is what
 # forces minSdk 24 (24.0.0–25.3.0 require 23).
 playServicesAds = "25.5.0"
+# Google-certified CMP required before serving ads to EEA/UK users (AdMob EU consent policy).
+ump = "4.0.0"
 # Play enforces a minimum Play Billing Library version annually; 7.1.1 is below the current
 # floor. 9.x also drops the separate -ktx artifact's need for manual reconnection handling.
 billingKtx = "9.1.0"
@@ -51,6 +53,7 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+ump = { group = "com.google.android.ump", name = "user-messaging-platform", version.ref = "ump" }
 billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billingKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
