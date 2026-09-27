@@ -1,5 +1,6 @@
 package com.trendoc.pdflite
 
+import com.trendoc.pdflite.di.AppContainer
 import android.app.Application
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.trendoc.pdflite.util.CameraCaptureUtils
@@ -11,6 +12,9 @@ import com.trendoc.pdflite.util.CameraCaptureUtils
  * relies on this having already run — do it once here instead of per-screen.
  */
 class TrenDocApplication : Application() {
+    /** Shared dependencies; see [AppContainer]. */
+    val container: AppContainer by lazy { AppContainer(this) }
+
     override fun onCreate() {
         super.onCreate()
         PDFBoxResourceLoader.init(applicationContext)

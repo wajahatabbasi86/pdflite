@@ -467,7 +467,11 @@ tech-stack table lists "JUnit + Turbine (unit), Compose UI Testing" — that cla
       much easier — test tags and content descriptions are what UI tests select on).
 - [ ] Either add the tests or correct the README. Don't leave the claim standing unbacked.
 
-### 5.6 Introduce dependency injection
+### 5.6 Introduce dependency injection — ✅ DONE (2026-09-27, manual container)
+
+> `di/AppContainer` holds one instance of each repository; ViewModels take them as `@JvmOverloads`
+> constructor parameters defaulting to the container, so `viewModel()` is unchanged and tests can
+> pass their own. Billing/AdMob wrappers stay per-ViewModel (they own live client connections).
 
 Repositories are hand-constructed inside ViewModels (`RecentsRepository(application)`) and in
 `remember {}` blocks inside composables. This makes them impossible to substitute in tests. Adopt

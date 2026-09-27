@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.home
 
+import com.trendoc.pdflite.di.appContainer
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.foundation.layout.heightIn
@@ -135,7 +136,7 @@ fun HomeScreen(
     val darkGround = prefs.background == BackgroundStyle.CRYSTAL_INK
 
     val context = LocalContext.current
-    val entitlementRepository = remember { EntitlementRepository(context) }
+    val entitlementRepository = context.appContainer.entitlements
     val remainingMillis by entitlementRepository.remainingMillis.collectAsState(initial = 0L)
 
     Scaffold(
@@ -229,7 +230,7 @@ private fun RecentsPreviewStrip(
     onOpenFile: (android.net.Uri) -> Unit
 ) {
     val context = LocalContext.current
-    val recentsRepository = remember { com.trendoc.pdflite.recents.RecentsRepository(context) }
+    val recentsRepository = context.appContainer.recents
     val recents by recentsRepository.recents.collectAsState(initial = emptyList())
     if (recents.isEmpty()) return
 

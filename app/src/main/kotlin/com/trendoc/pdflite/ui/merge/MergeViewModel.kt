@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.merge
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -51,11 +52,13 @@ data class MergeUiState(
         get() = files.count { it.error == null } >= 2 && !isMerging
 }
 
-class MergeViewModel(application: Application) : AndroidViewModel(application) {
+class MergeViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(MergeUiState())
     val uiState: StateFlow<MergeUiState> = _uiState.asStateFlow()
-    private val recentsRepository = RecentsRepository(application)
 
     /** Holds the merged bytes on disk (app cache) until the user picks a save Uri. */
     private var pendingMergedFile: File? = null

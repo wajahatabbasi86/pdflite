@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.settings
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,9 +23,11 @@ import kotlinx.coroutines.launch
  * (DataStore) — there's no local "unsaved" state or a separate Save action, matching how
  * system Settings apps apply a change the moment it's picked.
  */
-class AppearanceViewModel(application: Application) : AndroidViewModel(application) {
+class AppearanceViewModel @JvmOverloads constructor(
+    application: Application,
+    private val repository: AppearanceRepository = application.appContainer.appearance
+) : AndroidViewModel(application) {
 
-    private val repository = AppearanceRepository(application)
 
     val preferences: StateFlow<AppearancePreferences> = repository.preferences.stateIn(
         scope = viewModelScope,

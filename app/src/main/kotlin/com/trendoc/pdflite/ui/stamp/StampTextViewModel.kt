@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.stamp
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -76,11 +77,13 @@ data class StampUiState(
  * Pages render on demand behind a heap-derived cache, the same approach View PDF uses — a
  * long scanned document would otherwise exhaust memory before the first page appeared.
  */
-class StampTextViewModel(application: Application) : AndroidViewModel(application) {
+class StampTextViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(StampUiState())
     val uiState: StateFlow<StampUiState> = _uiState.asStateFlow()
-    private val recentsRepository = RecentsRepository(application)
     private var pendingOutput: File? = null
 
     private val _pageCache = mutableStateMapOf<Int, Bitmap>()

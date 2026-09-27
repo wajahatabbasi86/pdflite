@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.view
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -67,11 +68,13 @@ data class ViewPdfUiState(
  * behavior — cost roughly 1.9 MB per US-Letter page held simultaneously, so a 100-page
  * document needed ~190 MB and a long manual was a guaranteed OutOfMemoryError.
  */
-class ViewPdfViewModel(application: Application) : AndroidViewModel(application) {
+class ViewPdfViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(ViewPdfUiState())
     val uiState: StateFlow<ViewPdfUiState> = _uiState.asStateFlow()
-    private val recentsRepository = RecentsRepository(application)
 
     /** Rendered base pages, keyed by page index. A snapshot map so Compose recomposes the
      * moment a page finishes rendering. Read-only to callers — [requestPage] is the only

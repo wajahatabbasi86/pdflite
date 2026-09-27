@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.nav
 
+import com.trendoc.pdflite.di.appContainer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -72,7 +73,7 @@ object Routes {
 @Composable
 fun TrenDocNavHost() {
     val context = LocalContext.current
-    val onboardingRepository = remember { OnboardingRepository(context) }
+    val onboardingRepository = context.appContainer.onboarding
     // null = "still loading from DataStore" — the NavHost's startDestination must be known
     // before its first composition, so nothing renders (a beat shorter than the fastest
     // human blink) until we know whether onboarding has already been completed.
@@ -94,7 +95,7 @@ fun TrenDocNavHost() {
     // shared instance instead of every screen composing its own, and it never eats into a
     // screen's own layout since it's a sibling below the NavHost's allotted space, not inside
     // it. Hidden entirely (not just invisible) whenever an ad-free window is active.
-    val entitlementRepository = remember { EntitlementRepository(context) }
+    val entitlementRepository = context.appContainer.entitlements
     val isAdFree by entitlementRepository.isAdFree.collectAsState(initial = false)
 
     Column(modifier = Modifier.fillMaxSize()) {

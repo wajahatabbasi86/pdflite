@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.split
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -66,9 +67,11 @@ data class SplitUiState(
             !isProcessing
 }
 
-class SplitViewModel(application: Application) : AndroidViewModel(application) {
+class SplitViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
-    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(SplitUiState())
     val uiState: StateFlow<SplitUiState> = _uiState.asStateFlow()
 

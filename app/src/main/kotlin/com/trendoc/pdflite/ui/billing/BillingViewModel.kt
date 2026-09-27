@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.billing
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -18,9 +19,11 @@ import kotlinx.coroutines.launch
 /** Backs the "Remove Ads" screen. Owns both the [BillingRepository] (the paid path) and the
  * [RewardedAdRepository] (the free path) for exactly this screen's lifetime — opened in
  * [init], closed in [onCleared]. */
-class BillingViewModel(application: Application) : AndroidViewModel(application) {
+class BillingViewModel @JvmOverloads constructor(
+    application: Application,
+    private val entitlementRepository: EntitlementRepository = application.appContainer.entitlements
+) : AndroidViewModel(application) {
 
-    private val entitlementRepository = EntitlementRepository(application)
     private val billingRepository = BillingRepository(application, entitlementRepository)
     private val rewardedAdRepository = RewardedAdRepository(application)
 

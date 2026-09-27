@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.compress
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -57,9 +58,11 @@ private data class ImageProfile(val width: Int, val height: Int, val encodedByte
  * compressible images (e.g. text-only), the result is honestly reported even if the size
  * barely changes.
  */
-class CompressViewModel(application: Application) : AndroidViewModel(application) {
+class CompressViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
-    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(CompressUiState())
     val uiState: StateFlow<CompressUiState> = _uiState.asStateFlow()
 

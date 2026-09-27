@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.imagetopdf
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -62,9 +63,11 @@ data class ImageToPdfUiState(
  * that image's own aspect ratio ("fit-to-image", the v1 default the requirements call for)
  * rather than a fixed page size.
  */
-class ImageToPdfViewModel(application: Application) : AndroidViewModel(application) {
+class ImageToPdfViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
-    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(ImageToPdfUiState())
     val uiState: StateFlow<ImageToPdfUiState> = _uiState.asStateFlow()
 

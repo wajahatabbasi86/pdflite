@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.fillforms
 
+import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -108,9 +109,11 @@ data class FillFormsUiState(
  * field widget's own rectangle. Deliberately narrower than a general PDF editor: structured
  * form fields only, never arbitrary in-place text correction (see §10's own scope notes).
  */
-class FillFormsViewModel(application: Application) : AndroidViewModel(application) {
+class FillFormsViewModel @JvmOverloads constructor(
+    application: Application,
+    private val recentsRepository: RecentsRepository = application.appContainer.recents
+) : AndroidViewModel(application) {
 
-    private val recentsRepository = RecentsRepository(application)
     private val _uiState = MutableStateFlow(FillFormsUiState())
     val uiState: StateFlow<FillFormsUiState> = _uiState.asStateFlow()
 
