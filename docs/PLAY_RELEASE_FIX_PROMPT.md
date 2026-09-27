@@ -345,7 +345,11 @@ nothing ever deletes them. These are photos of the user's documents accumulating
 
 ---
 
-### 3.3 Tighten the PDF `VIEW` intent filter
+### 3.3 Tighten the PDF `VIEW` intent filter — ✅ DONE (2026-09-27)
+
+> BROWSABLE removed; `MainActivity.isAcceptableIncomingUri` accepts only `content://` from another
+> app's provider. Verified with `am start`: `file://` and our own FileProvider rejected (stays on Home);
+> a DocumentsProvider Uri routes into View PDF.
 
 **Problem.** `AndroidManifest.xml:57` includes `android.intent.category.BROWSABLE` on a
 mimeType-only intent filter with no `<data android:scheme>`. `BROWSABLE` serves no purpose here and
@@ -358,7 +362,7 @@ needlessly widens who can hand the app a URI.
 
 ---
 
-### 3.4 Note: the entitlement trusts the device clock
+### 3.4 Note: the entitlement trusts the device clock — left as-is (informational, per this doc)
 
 `billing/EntitlementRepository.kt` uses `System.currentTimeMillis()`. Setting the clock forward,
 watching a rewarded video, then setting it back yields a long ad-free window. **Low stakes** — it

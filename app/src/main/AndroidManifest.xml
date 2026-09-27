@@ -57,7 +57,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- No BROWSABLE: this filter has no scheme, so it served no web-link purpose
+                     and only widened who could hand the app a Uri. -->
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>

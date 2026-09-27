@@ -63,7 +63,18 @@ class MainActivity : ComponentActivity() {
      * [PendingPdfIntent] for the nav graph to consume once. */
     private fun capturePdfViewIntent(intent: Intent?) {
         if (intent?.action == Intent.ACTION_VIEW && intent.type == "application/pdf") {
-            intent.data?.let { PendingPdfIntent.uri.value = it }
+            intent.data?.takeIf(::isAcceptableIncomingUri)?.let { PendingPdfIntent.uri.value = it }
         }
     }
+
+    /**
+     * Only `content://` from someone else's provider. `file://` can't be read without the
+     * storage permission TrenDoc deliberately doesn't hold (and Android 7+ blocks senders from
+     * passing it); our own FileProvider is refused so another app can't get TrenDoc to open
+     * files from its private cache.
+     */
+    private fun isAcceptableIncomingUri(uri: android.net.Uri): Boolean =
+        uri.scheme == android.content.ContentResolver.SCHEME_CONTENT &&
+            uri.authority != null &&
+            uri.authority != "$packageName.fileprovider"
 }
