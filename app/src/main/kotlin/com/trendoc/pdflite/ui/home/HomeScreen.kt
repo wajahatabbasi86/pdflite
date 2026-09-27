@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.home
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -253,6 +254,8 @@ private fun RecentsPreviewStrip(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
+                    // 48dp tall target; the text alone made it 45dp.
+                    .heightIn(min = 48.dp)
                     .clickable(role = Role.Button, onClick = onOpenRecents)
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically

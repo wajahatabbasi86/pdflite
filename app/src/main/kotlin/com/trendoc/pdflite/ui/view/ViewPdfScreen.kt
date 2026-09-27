@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.view
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.Role
 import android.app.Activity
 import android.content.Intent
@@ -698,6 +699,7 @@ private fun PageNavigatorBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
                     .clickable(role = Role.Button, onClick = onToggleExpanded)
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
