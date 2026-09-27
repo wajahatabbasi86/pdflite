@@ -42,9 +42,9 @@ data class DonationUiState(
 
 /**
  * Wraps Play Billing for the three donation tiers — kept separate from [BillingRepository]'s
- * single non-consumable "Remove Ads" product because a donation is consumable rather than an
- * entitlement: it's acknowledged by being consumed immediately after purchase, so the same
- * tier can be bought again later. Nothing in the app checks or is gated by whether a donation
+ * "Remove Ads" product because, although both are consumables, only Remove Ads grants
+ * anything (a 24-hour ad-free window). A donation is consumed immediately after purchase so
+ * the same tier can be bought again later, and grants nothing. Nothing in the app checks or is gated by whether a donation
  * was ever made — this exists purely as an optional way to support development, per the
  * app's own "nothing is paywalled" positioning.
  */

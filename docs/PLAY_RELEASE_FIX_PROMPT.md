@@ -440,7 +440,7 @@ items in this document.
 - [ ] After the AGP bump (1.1), remove `checkReleaseBuilds = false` and confirm lint runs clean.
 - [ ] Fix or explicitly baseline whatever it reports.
 
-### 5.4 Clean up the build file
+### 5.4 Clean up the build file — ✅ DONE (2026-09-26, with 1.1)
 
 - [ ] `app/build.gradle.kts:20` — `35.also { compileSdk = it }` is a no-op idiom. Write
       `compileSdk = 36`.
@@ -467,7 +467,7 @@ Repositories are hand-constructed inside ViewModels (`RecentsRepository(applicat
 `remember {}` blocks inside composables. This makes them impossible to substitute in tests. Adopt
 Hilt, or at minimum a manual service-locator + ViewModel factory, so Phase 5.5 is actually feasible.
 
-### 5.7 Fix the stale doc comment
+### 5.7 Fix the stale doc comment — ✅ DONE (2026-09-27)
 
 `billing/DonationRepository.kt:49` describes Remove Ads as *"single **non-consumable**"*, while
 `BillingRepository` correctly treats it as a consumable. Contradictory comments mislead the next
