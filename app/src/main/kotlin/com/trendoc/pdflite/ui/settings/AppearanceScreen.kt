@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.settings
 
+import androidx.annotation.StringRes
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -76,10 +79,10 @@ fun AppearanceScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Appearance") },
+                title = { Text(stringResource(R.string.appearance_appearance)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -93,11 +96,11 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                SectionLabel("Accent color")
+                SectionLabel(stringResource(R.string.appearance_section_accent))
                 Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     AccentColor.entries.forEach { accent ->
                         ColorDot(
-                            label = "Accent color ${accent.label}",
+                            label = stringResource(R.string.appearance_accent_option, stringResource(accent.label)),
                             color = accent.color(darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK),
                             selected = accent == prefs.accent,
                             onClick = { viewModel.setAccent(accent) }
@@ -105,12 +108,12 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     }
                 }
 
-                SectionLabel("Card")
+                SectionLabel(stringResource(R.string.appearance_section_card))
                 Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
                     CardTint.entries.forEach { tint ->
                         ColorDot(
-                            label = "Card tint ${tint.label}",
+                            label = stringResource(R.string.appearance_card_option, stringResource(tint.label)),
                             color = tint.color(darkTheme),
                             selected = tint == prefs.cardTint,
                             onClick = { viewModel.setCardTint(tint) }
@@ -118,12 +121,12 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     }
                 }
 
-                SectionLabel("Border")
+                SectionLabel(stringResource(R.string.appearance_section_border))
                 Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
                     BorderTint.entries.forEach { tint ->
                         ColorDot(
-                            label = "Border tint ${tint.label}",
+                            label = stringResource(R.string.appearance_border_option, stringResource(tint.label)),
                             color = tint.color(darkTheme),
                             selected = tint == prefs.borderTint,
                             onClick = { viewModel.setBorderTint(tint) }
@@ -131,12 +134,12 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     }
                 }
 
-                SectionLabel("Muted")
+                SectionLabel(stringResource(R.string.appearance_section_muted))
                 Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
                     val darkTheme = prefs.background == BackgroundStyle.CRYSTAL_INK
                     MutedTint.entries.forEach { tint ->
                         ColorDot(
-                            label = "Muted tint ${tint.label}",
+                            label = stringResource(R.string.appearance_muted_option, stringResource(tint.label)),
                             color = tint.color(darkTheme),
                             selected = tint == prefs.mutedTint,
                             onClick = { viewModel.setMutedTint(tint) }
@@ -144,20 +147,20 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     }
                 }
 
-                SectionLabel("Background")
+                SectionLabel(stringResource(R.string.appearance_section_background))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    BackgroundTile("Plain", BackgroundStyle.PLAIN, prefs.background, Modifier.weight(1f)) {
+                    BackgroundTile(stringResource(R.string.appearance_background_plain), BackgroundStyle.PLAIN, prefs.background, Modifier.weight(1f)) {
                         viewModel.setBackground(it)
                     }
-                    BackgroundTile("Crystal · light", BackgroundStyle.CRYSTAL_LIGHT, prefs.background, Modifier.weight(1f)) {
+                    BackgroundTile(stringResource(R.string.appearance_background_crystal_light), BackgroundStyle.CRYSTAL_LIGHT, prefs.background, Modifier.weight(1f)) {
                         viewModel.setBackground(it)
                     }
-                    BackgroundTile("Crystal · ink", BackgroundStyle.CRYSTAL_INK, prefs.background, Modifier.weight(1f)) {
+                    BackgroundTile(stringResource(R.string.appearance_background_crystal_ink), BackgroundStyle.CRYSTAL_INK, prefs.background, Modifier.weight(1f)) {
                         viewModel.setBackground(it)
                     }
                 }
 
-                SectionLabel("Home layout")
+                SectionLabel(stringResource(R.string.appearance_section_home_layout))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     HomeLayout.entries.forEach { layout ->
                         LayoutTile(
@@ -170,7 +173,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
                     }
                 }
 
-                SectionLabel("Theme")
+                SectionLabel(stringResource(R.string.appearance_section_theme))
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     ThemeMode.entries.forEachIndexed { index, mode ->
                         SegmentedButton(
@@ -178,23 +181,23 @@ fun AppearanceScreen(onBack: () -> Unit) {
                             onClick = { viewModel.setTheme(mode) },
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = ThemeMode.entries.size)
                         ) {
-                            Text(mode.name.lowercase().replaceFirstChar { it.uppercase() })
+                            Text(stringResource(mode.labelRes()))
                         }
                     }
                 }
 
                 TextButton(onClick = { viewModel.resetToDefaults() }) {
-                    Text("Reset to defaults")
+                    Text(stringResource(R.string.appearance_reset_to_defaults))
                 }
 
-                SectionLabel("About")
+                SectionLabel(stringResource(R.string.appearance_section_about))
                 val context = androidx.compose.ui.platform.LocalContext.current
                 PrivacyPolicyRow(
                     onClick = {
                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(PRIVACY_POLICY_URL))
                         context.startActivitySafely(
                             intent,
-                            "No app available to open the privacy policy."
+                            context.getString(R.string.appearance_no_browser)
                         )
                     }
                 )
@@ -203,7 +206,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
                 val privacyOptionsRequired by AdConsent.privacyOptionsRequired.collectAsState()
                 if (privacyOptionsRequired) {
                     PrivacyPolicyRow(
-                        title = "Privacy options",
+                        title = stringResource(R.string.appearance_privacy_options),
                         opensExternally = false,
                         onClick = { (context as? android.app.Activity)?.let(AdConsent::showPrivacyOptions) }
                     )
@@ -219,7 +222,7 @@ private const val PRIVACY_POLICY_URL = "https://trenbridgeit.com/trendoc/privacy
 
 @Composable
 private fun PrivacyPolicyRow(
-    title: String = "Privacy Policy",
+    title: String = stringResource(R.string.appearance_privacy_policy),
     opensExternally: Boolean = true,
     onClick: () -> Unit
 ) {
@@ -294,11 +297,12 @@ private fun BackgroundTile(
     onClick: (BackgroundStyle) -> Unit
 ) {
     val isSelected = style == selected
+    val description = stringResource(R.string.appearance_background_option, label)
     Card(
         modifier = modifier
             .aspectRatio(1f)
             .selectable(selected = isSelected, role = Role.RadioButton) { onClick(style) }
-            .semantics(mergeDescendants = true) { contentDescription = "Background $label" },
+            .semantics(mergeDescendants = true) { contentDescription = description },
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -328,23 +332,41 @@ private fun LayoutTile(
     onClick: () -> Unit
 ) {
     val alpha = if (enabled) 1f else 0.4f
+    val layoutName = stringResource(layout.labelRes())
+    val description = stringResource(R.string.appearance_layout_option, layoutName)
     Card(
         modifier = modifier
             .aspectRatio(1f)
             .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
             .semantics(mergeDescendants = true) {
-                contentDescription = "Home layout " + layout.name.lowercase()
+                contentDescription = description
             },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
-                text = layout.name.lowercase().replaceFirstChar { it.uppercase() } + if (!enabled) "\n(soon)" else "",
+                text = layoutName + if (!enabled) "\n" + stringResource(R.string.appearance_layout_soon) else "",
                 style = MaterialTheme.typography.labelSmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha)
             )
         }
     }
+}
+
+/** Display names for enum constants that used to be shown via `name.lowercase()`. */
+@StringRes
+private fun HomeLayout.labelRes(): Int = when (this) {
+    HomeLayout.BENTO -> R.string.appearance_layout_bento
+    HomeLayout.LIST -> R.string.appearance_layout_list
+    HomeLayout.FEATURED -> R.string.appearance_layout_featured
+    HomeLayout.CAROUSEL -> R.string.appearance_layout_carousel
+}
+
+@StringRes
+private fun ThemeMode.labelRes(): Int = when (this) {
+    ThemeMode.LIGHT -> R.string.appearance_theme_light
+    ThemeMode.DARK -> R.string.appearance_theme_dark
+    ThemeMode.SYSTEM -> R.string.appearance_theme_system
 }

@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.billing
 
+import com.trendoc.pdflite.R
 import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.BillingClient
@@ -69,7 +70,7 @@ class BillingRepository(
                 _uiState.update { it.copy(isPurchasing = false) }
             else ->
                 _uiState.update {
-                    it.copy(isPurchasing = false, errorMessage = "Purchase couldn't be completed. Please try again.")
+                    it.copy(isPurchasing = false, errorMessage = appContext.getString(R.string.billing_purchase_failed))
                 }
         }
     }

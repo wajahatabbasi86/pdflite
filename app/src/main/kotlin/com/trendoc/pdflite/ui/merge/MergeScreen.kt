@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.merge
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import com.trendoc.pdflite.ui.common.PagePreviewDialog
 import androidx.compose.runtime.setValue
@@ -119,14 +122,14 @@ fun MergeScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 title = {
                     Column {
-                        Text("Merge Documents")
+                        Text(stringResource(R.string.merge_merge_documents))
                         Text(
-                            "Combine multiple PDFs into a unified file",
+                            stringResource(R.string.merge_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -159,12 +162,12 @@ fun MergeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                "Manifest",
+                                stringResource(R.string.merge_manifest),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "${uiState.files.size} file${if (uiState.files.size == 1) "" else "s"} • $totalPages page${if (totalPages == 1) "" else "s"}",
+                                pluralStringResource(R.plurals.file_count, uiState.files.size, uiState.files.size) + " • " + pluralStringResource(R.plurals.page_count, totalPages, totalPages),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -177,9 +180,9 @@ fun MergeScreen(
                         } else {
                             GradientButton(
                                 text = if (validFiles.size >= 2) {
-                                    "Merge ${validFiles.size} PDFs ($totalPages Pages)"
+                                    stringResource(R.string.merge_action_count, pluralStringResource(R.plurals.merge_pdf_count, validFiles.size, validFiles.size), pluralStringResource(R.plurals.merge_page_count, totalPages, totalPages))
                                 } else {
-                                    "Merge"
+                                    stringResource(R.string.merge_action)
                                 },
                                 onClick = { viewModel.startMerge() },
                                 enabled = uiState.canMerge
@@ -204,9 +207,9 @@ fun MergeScreen(
             if (uiState.files.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("Select at least 2 PDFs to merge", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.merge_select_at_least_2_pdfs), color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Button(onClick = { pickFilesLauncher.launch(arrayOf("application/pdf")) }) {
-                            Text("Select PDFs")
+                            Text(stringResource(R.string.merge_select_pdfs))
                         }
                     }
                 }
@@ -217,7 +220,7 @@ fun MergeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Queue Order", style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.merge_queue_order), style = MaterialTheme.typography.titleSmall)
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
@@ -225,14 +228,14 @@ fun MergeScreen(
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                "${uiState.files.size} Document${if (uiState.files.size == 1) "" else "s"}",
+                                pluralStringResource(R.plurals.document_count, uiState.files.size, uiState.files.size),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                     TextButton(onClick = { viewModel.clearAll() }) {
-                        Text("Clear All", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.common_clear_all), color = MaterialTheme.colorScheme.error)
                     }
                 }
 
@@ -296,12 +299,12 @@ private fun AddMoreDocumentsCard(onClick: () -> Unit) {
                 Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
             Text(
-                "Add More PDF Documents",
+                stringResource(R.string.merge_add_more),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
             Text(
-                "Choose files from device storage, Downloads, or SD card",
+                stringResource(R.string.merge_add_more_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 2.dp)
@@ -310,7 +313,7 @@ private fun AddMoreDocumentsCard(onClick: () -> Unit) {
                 modifier = Modifier.padding(top = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("SAF Native Picker", "Multi-select").forEach { label ->
+                listOf(stringResource(R.string.merge_chip_native_picker), stringResource(R.string.merge_chip_multi_select)).forEach { label ->
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
@@ -365,7 +368,7 @@ private fun MergeFileRow(
         ) {
             Icon(
                 Icons.Filled.DragHandle,
-                contentDescription = "Drag to reorder",
+                contentDescription = stringResource(R.string.common_drag_to_reorder),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.pointerInput(Unit) {
                     detectDragGesturesAfterLongPress(
@@ -383,15 +386,15 @@ private fun MergeFileRow(
                             .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Filled.Warning, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.common_error), tint = MaterialTheme.colorScheme.error)
                     }
                     item.thumbnail != null -> Image(
                         bitmap = item.thumbnail.asImageBitmap(),
-                        contentDescription = "Preview ${item.pageCount}-page file",
+                        contentDescription = pluralStringResource(R.plurals.merge_preview_file, item.pageCount, item.pageCount),
                         modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
                             // Tap to open the file's pages full-screen and zoom in; the
                             // drag handle, not the thumbnail, reorders.
-                            .clickable(role = Role.Button, onClickLabel = "Preview") { showPreview = true }
+                            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.common_preview)) { showPreview = true }
                     )
                     else -> Box(
                         modifier = Modifier.size(44.dp).clip(CircleShape)
@@ -409,7 +412,7 @@ private fun MergeFileRow(
                             .padding(horizontal = 3.dp, vertical = 1.dp)
                     ) {
                         Text(
-                            "${item.pageCount}p",
+                            stringResource(R.string.merge_page_badge, item.pageCount),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
@@ -420,14 +423,14 @@ private fun MergeFileRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 Text(
-                    item.error ?: "${item.pageCount} page${if (item.pageCount == 1) "" else "s"}",
+                    item.error ?: pluralStringResource(R.plurals.page_count, item.pageCount, item.pageCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (item.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.common_remove), tint = MaterialTheme.colorScheme.error)
             }
         }
     }

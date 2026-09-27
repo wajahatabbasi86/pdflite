@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.compress
 
+import com.trendoc.pdflite.R
+import androidx.annotation.StringRes
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.net.Uri
@@ -24,10 +26,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-enum class CompressionLevel(val label: String, val jpegQuality: Float, val downscale: Float) {
-    LOW("Low", 0.85f, 1.0f),
-    MEDIUM("Medium", 0.65f, 0.85f),
-    HIGH("High", 0.4f, 0.6f)
+enum class CompressionLevel(@StringRes val label: Int, val jpegQuality: Float, val downscale: Float) {
+    LOW(R.string.common_quality_low, 0.85f, 1.0f),
+    MEDIUM(R.string.common_quality_medium, 0.65f, 0.85f),
+    HIGH(R.string.common_quality_high, 0.4f, 0.6f)
 }
 
 data class CompressUiState(
@@ -99,7 +101,7 @@ class CompressViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isLoadingFile = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -183,7 +185,7 @@ class CompressViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isCompressing = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isCompressing = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -282,7 +284,7 @@ class CompressViewModel @JvmOverloads constructor(
                 )
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
+                    it.copy(readyToSave = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_SINGLE))
                 }
             }
         }

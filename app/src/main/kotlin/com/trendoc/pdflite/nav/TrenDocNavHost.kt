@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.nav
 
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import com.trendoc.pdflite.di.appContainer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -244,25 +246,25 @@ private fun BottomNavBar(currentRoute: String?, onTabSelected: (String) -> Unit)
             selected = currentRoute == Routes.FILES,
             onClick = { onTabSelected(Routes.FILES) },
             icon = { Icon(Icons.Filled.Folder, contentDescription = null) },
-            label = { Text("Files") }
+            label = { Text(stringResource(R.string.common_files)) }
         )
         NavigationBarItem(
             selected = currentRoute in toolRoutes,
             onClick = { onTabSelected(Routes.HOME) },
             icon = { Icon(Icons.Outlined.Description, contentDescription = null) },
-            label = { Text("Tools") }
+            label = { Text(stringResource(R.string.tren_doc_nav_tools)) }
         )
         NavigationBarItem(
             selected = currentRoute == Routes.RECENTS,
             onClick = { onTabSelected(Routes.RECENTS) },
             icon = { Icon(Icons.Filled.History, contentDescription = null) },
-            label = { Text("Recents") }
+            label = { Text(stringResource(R.string.common_recents)) }
         )
         NavigationBarItem(
             selected = currentRoute == Routes.APPEARANCE,
             onClick = { onTabSelected(Routes.APPEARANCE) },
             icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-            label = { Text("Settings") }
+            label = { Text(stringResource(R.string.tren_doc_nav_settings)) }
         )
     }
 }

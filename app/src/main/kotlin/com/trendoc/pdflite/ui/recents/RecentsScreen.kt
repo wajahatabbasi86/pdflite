@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.ui.recents
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,11 +53,11 @@ fun RecentsScreen(onOpenFile: (android.net.Uri) -> Unit, viewModel: RecentsViewM
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recents") },
+                title = { Text(stringResource(R.string.common_recents)) },
                 actions = {
                     if (entries.isNotEmpty()) {
                         TextButton(onClick = { viewModel.clearAll() }) {
-                            Text("Clear All", color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.common_clear_all), color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -70,7 +74,7 @@ fun RecentsScreen(onOpenFile: (android.net.Uri) -> Unit, viewModel: RecentsViewM
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        "Files you open or create in TrenDoc will show up here",
+                        stringResource(R.string.recents_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -112,11 +116,11 @@ private fun RecentRow(entry: RecentEntry, onClick: () -> Unit, onRemove: () -> U
                 Text(entry.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        buildString {
-                            append(formatSize(entry.sizeBytes))
-                            if (entry.pageCount > 0) append(" • ${entry.pageCount} page${if (entry.pageCount == 1) "" else "s"}")
-                            append(" • ${relativeTime(entry.timestampMillis)}")
-                        },
+                        listOfNotNull(
+                            formatSize(entry.sizeBytes),
+                            if (entry.pageCount > 0) pluralStringResource(R.plurals.page_count, entry.pageCount, entry.pageCount) else null,
+                            relativeTime(entry.timestampMillis)
+                        ).joinToString(" • "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
@@ -129,31 +133,43 @@ private fun RecentRow(entry: RecentEntry, onClick: () -> Unit, onRemove: () -> U
                         .padding(horizontal = 7.dp, vertical = 1.dp)
                 ) {
                     Text(
-                        entry.sourceLabel,
+                        sourceLabelText(entry.sourceLabel),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = "Remove from Recents", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.recents_remove_from_recents), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
 
-private fun formatSize(bytes: Long): String {
-    if (bytes < 0) return "—"
-    val mb = bytes / (1024.0 * 1024.0)
-    return if (mb >= 0.1) "%.1f MB".format(mb) else "${bytes / 1024} KB"
-}
+/** Localised "1.2 MB" — the platform formatter picks units and decimal marks. */
+@Composable
+private fun formatSize(bytes: Long): String =
+    if (bytes < 0) "—" else android.text.format.Formatter.formatShortFileSize(LocalContext.current, bytes)
 
-private fun relativeTime(timestampMillis: Long): String {
-    val diffMinutes = ((System.currentTimeMillis() - timestampMillis) / 60_000.0).roundToInt()
-    return when {
-        diffMinutes < 1 -> "just now"
-        diffMinutes < 60 -> "${diffMinutes}m ago"
-        diffMinutes < 60 * 24 -> "${diffMinutes / 60}h ago"
-        else -> "${diffMinutes / (60 * 24)}d ago"
-    }
+/** "5 minutes ago", "Yesterday"… — already translated by the platform for every locale. */
+private fun relativeTime(timestampMillis: Long): String =
+    android.text.format.DateUtils.getRelativeTimeSpanString(
+        timestampMillis,
+        System.currentTimeMillis(),
+        android.text.format.DateUtils.MINUTE_IN_MILLIS
+    ).toString()
+
+/** The source tag is stored as a fixed English identifier ("Merge", "Split"…) — storing
+ * translated text would freeze each entry in whatever language was active when it was saved.
+ * Translate it here, at display time; anything unknown is shown as stored. */
+@Composable
+private fun sourceLabelText(stored: String): String = when (stored) {
+    "View PDF" -> stringResource(R.string.recents_source_view_pdf)
+    "Merge" -> stringResource(R.string.recents_source_merge)
+    "Split" -> stringResource(R.string.recents_source_split)
+    "Compress" -> stringResource(R.string.recents_source_compress)
+    "Image to PDF" -> stringResource(R.string.recents_source_image_to_pdf)
+    "Fill Forms" -> stringResource(R.string.recents_source_fill_forms)
+    "Add Text" -> stringResource(R.string.recents_source_add_text)
+    else -> stored
 }

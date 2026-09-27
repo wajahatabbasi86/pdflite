@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.view
 
+import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
@@ -128,9 +129,9 @@ class ViewPdfViewModel @JvmOverloads constructor(
                         it.copy(
                             isLoading = false,
                             errorMessage = if (error is PermissionDeniedException) {
-                                "TrenDoc wasn't given permission to open this file. Try again from the app that shared it, or select it from within TrenDoc instead."
+                                getApplication<Application>().getString(R.string.view_permission_denied)
                             } else {
-                                PdfErrorMessages.forOpenFailure(error)
+                                getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error))
                             }
                         )
                     }

@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.common
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
@@ -61,17 +64,17 @@ fun PagePreviewDialog(uri: Uri, initialPageIndex: Int, pageCount: Int, onDismiss
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = "Close preview") }
+                IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.page_preview_close_preview)) }
                 Text(
-                    "Page ${pageIndex + 1} of $pageCount",
+                    stringResource(R.string.common_page_of, pageIndex + 1, pageCount),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = { pageIndex-- }, enabled = pageIndex > 0) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous page")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.common_previous_page))
                 }
                 IconButton(onClick = { pageIndex++ }, enabled = pageIndex < pageCount - 1) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next page")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.common_next_page))
                 }
             }
 
@@ -103,7 +106,7 @@ fun PagePreviewDialog(uri: Uri, initialPageIndex: Int, pageCount: Int, onDismiss
                     ZoomPanBox(state = zoomState, modifier = Modifier.size(widthDp, heightDp)) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Page ${pageIndex + 1}",
+                            contentDescription = stringResource(R.string.common_page_number, pageIndex + 1),
                             contentScale = ContentScale.FillBounds,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -124,10 +127,10 @@ fun PagePreviewDialog(uri: Uri, initialPageIndex: Int, pageCount: Int, onDismiss
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = { zoomState.zoomBy(1f / 1.5f) }) { Text("Zoom out") }
-                Text("${(zoomState.scale * 100).toInt()}%", style = MaterialTheme.typography.labelLarge)
-                TextButton(onClick = { zoomState.zoomBy(1.5f) }) { Text("Zoom in") }
-                TextButton(onClick = { zoomState.reset() }) { Text("Fit") }
+                TextButton(onClick = { zoomState.zoomBy(1f / 1.5f) }) { Text(stringResource(R.string.common_zoom_out)) }
+                Text(stringResource(R.string.common_percent, (zoomState.scale * 100).toInt()), style = MaterialTheme.typography.labelLarge)
+                TextButton(onClick = { zoomState.zoomBy(1.5f) }) { Text(stringResource(R.string.common_zoom_in)) }
+                TextButton(onClick = { zoomState.reset() }) { Text(stringResource(R.string.page_preview_fit)) }
             }
         }
     }

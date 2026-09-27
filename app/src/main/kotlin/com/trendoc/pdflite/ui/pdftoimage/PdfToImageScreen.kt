@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.pdftoimage
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.Role
@@ -75,10 +78,10 @@ fun PdfToImageScreen(
     if (uiState.savedResultUris.isNotEmpty()) {
         val isZip = uiState.exportAsZip
         ResultScreen(
-            fileName = if (isZip) uiState.defaultZipName else "${uiState.savedResultUris.size} image${if (uiState.savedResultUris.size == 1) "" else "s"}",
+            fileName = if (isZip) uiState.defaultZipName else pluralStringResource(R.plurals.image_count, uiState.savedResultUris.size, uiState.savedResultUris.size),
             resultUri = uiState.savedResultUris.first(),
             mimeType = if (isZip) "application/zip" else uiState.format.mimeType,
-            subtitle = if (isZip) "Zipped ${uiState.convertedCount} images" else "${uiState.savedResultUris.size} files saved",
+            subtitle = if (isZip) pluralStringResource(R.plurals.pdf_to_image_zipped, uiState.convertedCount, uiState.convertedCount) else pluralStringResource(R.plurals.split_files_saved, uiState.savedResultUris.size, uiState.savedResultUris.size),
             onDone = onDone
         )
         return
@@ -89,10 +92,10 @@ fun PdfToImageScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                title = { Text("PDF → Image(s)") }
+                title = { Text(stringResource(R.string.pdf_to_image_pdf_image_s)) }
             )
         },
         bottomBar = {
@@ -110,14 +113,14 @@ fun PdfToImageScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                                 CircularProgressIndicator()
                                 Text(
-                                    "Converting page ${uiState.convertedCount} of ${uiState.pageCount}",
+                                    stringResource(R.string.pdf_to_image_progress, uiState.convertedCount, uiState.pageCount),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
                             com.trendoc.pdflite.ui.common.GradientButton(
-                                text = "Convert ${uiState.pageCount} Page${if (uiState.pageCount == 1) "" else "s"} (${uiState.format.label})",
+                                text = stringResource(R.string.pdf_to_image_action, pluralStringResource(R.plurals.pdf_to_image_page_count, uiState.pageCount, uiState.pageCount), uiState.format.label),
                                 onClick = {
                                     if (uiState.exportAsZip) {
                                         pickZipLauncher.launch(uiState.defaultZipName)
@@ -144,7 +147,7 @@ fun PdfToImageScreen(
             } else if (uiState.fileName == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                        Text("Select PDF")
+                        Text(stringResource(R.string.common_select_pdf))
                     }
                 }
             } else {
@@ -165,7 +168,7 @@ fun PdfToImageScreen(
                         Column {
                             Text(uiState.fileName ?: "", style = MaterialTheme.typography.titleSmall, maxLines = 1)
                             Text(
-                                "${uiState.pageCount} page${if (uiState.pageCount == 1) "" else "s"} total",
+                                pluralStringResource(R.plurals.page_count_total, uiState.pageCount, uiState.pageCount),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -184,7 +187,7 @@ fun PdfToImageScreen(
                 }
 
                 if (uiState.pageCount > 0) {
-                    Text("FORMAT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() })
+                    Text(stringResource(R.string.pdf_to_image_format), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() })
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         ImageFormat.entries.forEachIndexed { index, format ->
                             SegmentedButton(
@@ -195,21 +198,21 @@ fun PdfToImageScreen(
                         }
                     }
 
-                    Text("QUALITY", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() })
+                    Text(stringResource(R.string.pdf_to_image_quality), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.semantics { heading() })
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         ImageQuality.entries.forEachIndexed { index, quality ->
                             SegmentedButton(
                                 selected = quality == uiState.quality,
                                 onClick = { viewModel.setQuality(quality) },
                                 shape = SegmentedButtonDefaults.itemShape(index = index, count = ImageQuality.entries.size)
-                            ) { Text(quality.label) }
+                            ) { Text(stringResource(quality.label)) }
                         }
                     }
 
                     OutlinedTextField(
                         value = uiState.rangeInput,
                         onValueChange = { viewModel.onRangeInputChanged(it) },
-                        label = { Text("Pages (blank = all), e.g. 1-3, 5") },
+                        label = { Text(stringResource(R.string.pdf_to_image_pages_blank_all_e_g)) },
                         isError = uiState.rangeError != null,
                         supportingText = { uiState.rangeError?.let { Text(it) } },
                         modifier = Modifier.fillMaxWidth()
@@ -227,9 +230,9 @@ fun PdfToImageScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Export as ZIP", style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.pdf_to_image_export_as_zip), style = MaterialTheme.typography.titleSmall)
                             Text(
-                                "Bundle all pages into one .zip instead of a folder",
+                                stringResource(R.string.pdf_to_image_zip_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -255,12 +258,12 @@ private fun PdfToImageStatusStrip(pageCount: Int) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "100% Offline",
+            stringResource(R.string.common_offline_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
-            "$pageCount page${if (pageCount == 1) "" else "s"}",
+            pluralStringResource(R.plurals.page_count, pageCount, pageCount),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )

@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.pdftoimage
 
+import com.trendoc.pdflite.ui.split.PageRanges
+import com.trendoc.pdflite.R
+import androidx.annotation.StringRes
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
@@ -26,10 +29,10 @@ enum class ImageFormat(val label: String, val mimeType: String, val extension: S
     PNG("PNG", "image/png", "png")
 }
 
-enum class ImageQuality(val label: String, val jpegQuality: Int, val renderScale: Float) {
-    LOW("Low", 60, 1.0f),
-    MEDIUM("Medium", 80, 1.5f),
-    HIGH("High", 95, 2.0f)
+enum class ImageQuality(@StringRes val label: Int, val jpegQuality: Int, val renderScale: Float) {
+    LOW(R.string.common_quality_low, 60, 1.0f),
+    MEDIUM(R.string.common_quality_medium, 80, 1.5f),
+    HIGH(R.string.common_quality_high, 95, 2.0f)
 }
 
 data class PdfToImageUiState(
@@ -88,7 +91,7 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isLoadingFile = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -116,30 +119,8 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
     fun setExportAsZip(zip: Boolean) = _uiState.update { it.copy(exportAsZip = zip) }
 
     fun onRangeInputChanged(input: String) {
-        val error = if (input.isBlank()) null else validateRanges(input, _uiState.value.pageCount)
+        val error = PageRanges.validate(input, _uiState.value.pageCount)?.resolve(getApplication())
         _uiState.update { it.copy(rangeInput = input, rangeError = error) }
-    }
-
-    private fun validateRanges(input: String, pageCount: Int): String? {
-        val parts = input.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        if (parts.isEmpty()) return "Enter at least one page or range."
-        for (part in parts) {
-            val range = part.split("-").map { it.trim() }
-            when (range.size) {
-                1 -> {
-                    val page = range[0].toIntOrNull() ?: return "\"$part\" isn't a valid page number."
-                    if (page < 1 || page > pageCount) return "Page $page is out of range (1-$pageCount)."
-                }
-                2 -> {
-                    val start = range[0].toIntOrNull()
-                    val end = range[1].toIntOrNull()
-                    if (start == null || end == null) return "\"$part\" isn't a valid range."
-                    if (start < 1 || end > pageCount || start > end) return "\"$part\" is out of range (1-$pageCount)."
-                }
-                else -> return "\"$part\" isn't a valid range."
-            }
-        }
-        return null
     }
 
     /** Zero-based page indices to convert — every page if [rangeInput] is blank. */
@@ -147,14 +128,7 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
         val input = _uiState.value.rangeInput
         val pageCount = _uiState.value.pageCount
         if (input.isBlank()) return (0 until pageCount).toList()
-        return input.split(",").map { it.trim() }.filter { it.isNotEmpty() }.flatMap { part ->
-            val range = part.split("-").map { it.trim() }
-            if (range.size == 1) {
-                listOf(range[0].toInt() - 1)
-            } else {
-                (range[0].toInt() - 1..range[1].toInt() - 1).toList()
-            }
-        }.distinct().sorted()
+        return PageRanges.toPageGroups(input).flatten().distinct().sorted()
     }
 
     fun startConvert(directoryUri: Uri?) {
@@ -186,7 +160,7 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
                     // failure here is far more likely to be an output problem (destination
                     // folder permission revoked, disk full) than the source file itself.
                     _uiState.update {
-                        it.copy(isConverting = false, errorMessage = PdfErrorMessages.SAVE_FAILED_OUTPUT_FOLDER)
+                        it.copy(isConverting = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_OUTPUT_FOLDER))
                     }
                 }
             )
@@ -219,7 +193,7 @@ class PdfToImageViewModel(application: Application) : AndroidViewModel(applicati
                 },
                 onFailure = {
                     _uiState.update {
-                        it.copy(isConverting = false, errorMessage = PdfErrorMessages.SAVE_FAILED_OUTPUT_FOLDER)
+                        it.copy(isConverting = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_OUTPUT_FOLDER))
                     }
                 }
             )

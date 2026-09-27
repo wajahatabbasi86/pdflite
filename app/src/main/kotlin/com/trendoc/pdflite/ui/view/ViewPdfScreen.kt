@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.view
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.layout.heightIn
@@ -167,10 +170,10 @@ fun ViewPdfScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                title = { Text(uiState.fileName ?: "View PDF") }
+                title = { Text(uiState.fileName ?: stringResource(R.string.tool_view_pdf_label)) }
             )
         }
     ) { innerPadding ->
@@ -193,8 +196,8 @@ fun ViewPdfScreen(
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
                             context.startActivitySafely(
-                                Intent.createChooser(intent, "Share"),
-                                "No app available to share this file."
+                                Intent.createChooser(intent, context.getString(R.string.common_share)),
+                                context.getString(R.string.common_no_app_to_share)
                             )
                         }
                     )
@@ -212,7 +215,7 @@ fun ViewPdfScreen(
             } else if (uiState.pageCount == 0) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                        Text("Select PDF")
+                        Text(stringResource(R.string.common_select_pdf))
                     }
                 }
             } else {
@@ -348,7 +351,7 @@ fun ViewPdfScreen(
                                     if (bitmap != null) {
                                         Image(
                                             bitmap = bitmap.asImageBitmap(),
-                                            contentDescription = "Page ${index + 1} of ${uiState.pageCount}",
+                                            contentDescription = stringResource(R.string.common_page_of, index + 1, uiState.pageCount),
                                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
                                         )
                                     } else {
@@ -375,7 +378,7 @@ fun ViewPdfScreen(
                                         .padding(horizontal = 8.dp, vertical = 3.dp)
                                 ) {
                                     Text(
-                                        "p. ${(index + 1).toString().padStart(2, '0')}",
+                                        stringResource(R.string.view_page_badge, index + 1),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -388,7 +391,7 @@ fun ViewPdfScreen(
                             onClick = { listScale.value = 1f; listOffset.value = Offset.Zero },
                             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
                         ) {
-                            Text("Reset zoom (${(listScale.value * 100).roundToInt()}%)")
+                            Text(stringResource(R.string.view_reset_zoom_percent, (listScale.value * 100).roundToInt()))
                         }
                     }
                 }
@@ -416,16 +419,16 @@ private fun QuickActionRow(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        QuickActionChip(text = "Extract Page", icon = Icons.AutoMirrored.Filled.KeyboardArrowRight, onClick = onExtractPage)
-        QuickActionChip(text = "Compress", icon = Icons.Filled.Compress, onClick = onCompress)
+        QuickActionChip(text = stringResource(R.string.view_chip_extract_page), icon = Icons.AutoMirrored.Filled.KeyboardArrowRight, onClick = onExtractPage)
+        QuickActionChip(text = stringResource(R.string.tool_compress_label), icon = Icons.Filled.Compress, onClick = onCompress)
         if (onFillForms != null) {
-            QuickActionChip(text = "Fill Forms", icon = Icons.Filled.EditNote, onClick = onFillForms)
+            QuickActionChip(text = stringResource(R.string.tool_fill_forms_label), icon = Icons.Filled.EditNote, onClick = onFillForms)
         }
         // Offered for every document, not just ones without form fields: a form can need a
         // note written in a margin, and a scanned form has no fields to offer in the first
         // place — which is exactly the case Fill Forms cannot serve.
-        QuickActionChip(text = "Add Text", icon = Icons.Filled.TextFields, onClick = onAddText)
-        QuickActionChip(text = "Share", icon = Icons.Filled.Share, onClick = onShare)
+        QuickActionChip(text = stringResource(R.string.tool_add_text_label), icon = Icons.Filled.TextFields, onClick = onAddText)
+        QuickActionChip(text = stringResource(R.string.common_share), icon = Icons.Filled.Share, onClick = onShare)
     }
 }
 
@@ -458,14 +461,14 @@ private fun EngineStatusStrip(pageCount: Int) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "100% Offline · Local Engine",
+            stringResource(R.string.view_offline_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
             // Not "rendered": pages are rasterized on demand as they scroll into view,
             // so at any moment only a handful of these actually exist as bitmaps.
-            "$pageCount page${if (pageCount == 1) "" else "s"}",
+            pluralStringResource(R.plurals.page_count, pageCount, pageCount),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -560,21 +563,21 @@ private fun PageDetailScreen(
         topBar = {
             if (!presentationMode) {
                 TopAppBar(
-                    title = { Text("${currentIndex + 1} / $pageCount") },
+                    title = { Text(stringResource(R.string.common_position, currentIndex + 1, pageCount)) },
                     navigationIcon = {
                         IconButton(onClick = onClose) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                         }
                     },
                     actions = {
                         IconButton(onClick = { currentIndex-- }, enabled = currentIndex > 0) {
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous page")
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.common_previous_page))
                         }
                         IconButton(onClick = { currentIndex++ }, enabled = currentIndex < lastIndex) {
-                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next page")
+                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.common_next_page))
                         }
                         IconButton(onClick = { presentationMode = true }) {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = "Presentation mode")
+                            Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.view_pdf_presentation_mode))
                         }
                     }
                 )
@@ -637,7 +640,7 @@ private fun PageDetailScreen(
                 ) {
                     Icon(
                         Icons.Filled.Close,
-                        contentDescription = "Exit presentation mode",
+                        contentDescription = stringResource(R.string.view_pdf_exit_presentation_mode),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -665,18 +668,18 @@ private fun ZoomControlPanel(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(4.dp)) {
             IconButton(onClick = onZoomIn, enabled = scale < 5f) {
-                Icon(Icons.Filled.Add, contentDescription = "Zoom in")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.common_zoom_in))
             }
             Text(
-                "${(scale * 100).roundToInt()}%",
+                stringResource(R.string.common_percent, (scale * 100).roundToInt()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             IconButton(onClick = onZoomOut, enabled = scale > 1f) {
-                Icon(Icons.Filled.Remove, contentDescription = "Zoom out")
+                Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.common_zoom_out))
             }
             IconButton(onClick = onReset) {
-                Icon(Icons.Filled.FitScreen, contentDescription = "Reset zoom")
+                Icon(Icons.Filled.FitScreen, contentDescription = stringResource(R.string.view_pdf_reset_zoom))
             }
         }
     }
@@ -712,9 +715,9 @@ private fun PageNavigatorBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Page Navigator", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.view_pdf_page_navigator), style = MaterialTheme.typography.labelMedium)
                 Text(
-                    "${currentIndex + 1} / $pageCount",
+                    stringResource(R.string.common_position, currentIndex + 1, pageCount),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -746,7 +749,7 @@ private fun PageNavigatorBar(
                             if (thumb != null) {
                                 Image(
                                     bitmap = thumb.asImageBitmap(),
-                                    contentDescription = "Page ${index + 1}",
+                                    contentDescription = stringResource(R.string.common_page_number, index + 1),
                                     modifier = Modifier.size(56.dp)
                                 )
                             } else {

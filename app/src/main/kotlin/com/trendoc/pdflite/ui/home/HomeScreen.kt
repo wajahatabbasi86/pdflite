@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.ui.home
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.annotation.StringRes
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import com.trendoc.pdflite.di.appContainer
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
@@ -70,10 +74,10 @@ import com.trendoc.pdflite.ui.settings.AppearanceViewModel
  * [linkText] is the short colored CTA line at the bottom of a Document Utilities card
  * (e.g. "Organize", "Select Pages"), matching the design reference's card footer. */
 private data class ToolCard(
-    val label: String,
-    val description: String,
-    val badge: String,
-    val linkText: String,
+    @StringRes val label: Int,
+    @StringRes val description: Int,
+    @StringRes val badge: Int,
+    @StringRes val linkText: Int,
     val route: String,
     val tint: Color,
     val glyph: ImageVector
@@ -98,29 +102,45 @@ private data class ToolCard(
  */
 // View PDF is the core feature (read/zoom/pan/swipe/presentation) — it gets the hero card.
 private val bigTool = ToolCard(
-    "View PDF", "Open and read any PDF, no editing", "Quick view", "Open PDF",
+    R.string.tool_view_pdf_label, R.string.tool_view_pdf_desc, R.string.tool_view_pdf_badge, R.string.tool_view_pdf_link,
     "view_pdf", Color(0xFF3B7FB5), Icons.Filled.Visibility
 )
 private val documentTools = listOf(
-    ToolCard("Merge PDFs", "Combine multiple files with instant page reorder", "Fast", "Organize", "merge", Color(0xFFB7091B), Icons.Filled.SwapVert),
-    ToolCard("Split & Extract", "Extract specific single pages or custom ranges", "Custom range", "Select Pages", "split", Color(0xFF4C5FD5), Icons.AutoMirrored.Filled.CallSplit),
-    ToolCard("Compress", "Shrink files by re-encoding embedded images", "Size preview", "Reduce Size", "compress", Color(0xFF2F8F82), Icons.Filled.Compress),
-    ToolCard("Image to PDF", "Convert photo gallery with fit-to-page margins", "JPG/PNG", "Batch Pick", "image_to_pdf", Color(0xFFC98A2E), Icons.Filled.PermMedia),
-    ToolCard("PDF to Image", "Export pages as JPG or PNG images", "Up to 2×", "Render", "pdf_to_image", Color(0xFF7A4B8A), Icons.Filled.Image),
+    ToolCard(
+    R.string.tool_merge_label, R.string.tool_merge_desc, R.string.tool_merge_badge, R.string.tool_merge_link,
+    "merge", Color(0xFFB7091B), Icons.Filled.SwapVert),
+    ToolCard(
+    R.string.tool_split_label, R.string.tool_split_desc, R.string.tool_split_badge, R.string.tool_split_link,
+    "split", Color(0xFF4C5FD5), Icons.AutoMirrored.Filled.CallSplit),
+    ToolCard(
+    R.string.tool_compress_label, R.string.tool_compress_desc, R.string.tool_compress_badge, R.string.tool_compress_link,
+    "compress", Color(0xFF2F8F82), Icons.Filled.Compress),
+    ToolCard(
+    R.string.tool_image_to_pdf_label, R.string.tool_image_to_pdf_desc, R.string.tool_image_to_pdf_badge, R.string.tool_image_to_pdf_link,
+    "image_to_pdf", Color(0xFFC98A2E), Icons.Filled.PermMedia),
+    ToolCard(
+    R.string.tool_pdf_to_image_label, R.string.tool_pdf_to_image_desc, R.string.tool_pdf_to_image_badge, R.string.tool_pdf_to_image_link,
+    "pdf_to_image", Color(0xFF7A4B8A), Icons.Filled.Image),
     // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
-    ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "Fill Fields", "fill_forms", Color(0xFF4A8B5C), Icons.Filled.EditNote),
+    ToolCard(
+    R.string.tool_fill_forms_label, R.string.tool_fill_forms_desc, R.string.tool_fill_forms_badge, R.string.tool_fill_forms_link,
+    "fill_forms", Color(0xFF4A8B5C), Icons.Filled.EditNote),
     // Works where Fill Forms cannot: a scanned claim or application form carries no AcroForm
     // fields at all, so there is nothing to fill — this types straight onto the page instead.
-    ToolCard("Add Text", "Type onto scanned forms with no fillable fields", "Any PDF", "Start Typing", "add_text", Color(0xFFB5643B), Icons.Filled.TextFields),
+    ToolCard(
+    R.string.tool_add_text_label, R.string.tool_add_text_desc, R.string.tool_add_text_badge, R.string.tool_add_text_link,
+    "add_text", Color(0xFFB5643B), Icons.Filled.TextFields),
 )
 private val allTools = listOf(bigTool) + documentTools
 
 /** "2h 14m" / "38m" for the top bar's "Ad-free (...)" label. */
+@Composable
 private fun formatRemaining(millis: Long): String {
     val totalMinutes = millis / 60_000
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+    return if (hours > 0) stringResource(R.string.duration_hours_minutes, hours, minutes)
+    else stringResource(R.string.duration_minutes, minutes)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,12 +165,12 @@ fun HomeScreen(
                 title = {
                     Column {
                         Text(
-                            "TrenDoc",
+                            stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            "BY TRENBRIDGE IT · Offline PDF Toolkit",
+                            stringResource(R.string.home_byline),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -163,7 +183,7 @@ fun HomeScreen(
                     // not owned by this screen. Appearance is reached via the bottom nav's
                     // "Settings" tab now, not a separate top-bar icon.
                     TextButton(onClick = onOpenBilling) {
-                        Text(if (remainingMillis > 0) "Ad-free (${formatRemaining(remainingMillis)})" else "Remove Ads")
+                        Text(if (remainingMillis > 0) stringResource(R.string.home_ad_free_remaining, formatRemaining(remainingMillis)) else stringResource(R.string.common_remove_ads))
                     }
                 }
             )
@@ -200,7 +220,7 @@ private fun HomeBento(
             onClick = { onToolSelected(bigTool.route) },
             onCrystal = darkGround
         )
-        SectionHeader("Document Utilities", darkGround)
+        SectionHeader(stringResource(R.string.home_document_utilities), darkGround)
         documentTools.chunked(2).forEach { rowTools ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 rowTools.forEach { tool ->
@@ -244,7 +264,7 @@ private fun RecentsPreviewStrip(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("On-Device Recents", style = MaterialTheme.typography.titleSmall, color = titleColor, modifier = Modifier.semantics { heading() })
+                Text(stringResource(R.string.home_on_device_recents), style = MaterialTheme.typography.titleSmall, color = titleColor, modifier = Modifier.semantics { heading() })
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -263,7 +283,7 @@ private fun RecentsPreviewStrip(
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("View All", style = MaterialTheme.typography.labelMedium, color = accent)
+                Text(stringResource(R.string.home_view_all), style = MaterialTheme.typography.labelMedium, color = accent)
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
             }
         }
@@ -284,12 +304,13 @@ private fun RecentsPreviewStrip(
                         com.trendoc.pdflite.ui.common.FileIconAvatar()
                         Column(modifier = Modifier.weight(1f)) {
                             Text(entry.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
+                            val size = if (entry.sizeBytes >= 0) formatBytes(entry.sizeBytes) else null
+                            val pages = if (entry.pageCount > 0) {
+                                pluralStringResource(R.plurals.page_count, entry.pageCount, entry.pageCount)
+                            } else null
+                            val local = stringResource(R.string.home_recent_local)
                             Text(
-                                buildString {
-                                    if (entry.sizeBytes >= 0) append(formatBytes(entry.sizeBytes))
-                                    if (entry.pageCount > 0) append(" • ${entry.pageCount} Page${if (entry.pageCount == 1) "" else "s"}")
-                                    append(" • Local")
-                                },
+                                listOfNotNull(size, pages, local).joinToString(" • "),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1
@@ -302,10 +323,10 @@ private fun RecentsPreviewStrip(
     }
 }
 
-private fun formatBytes(bytes: Long): String {
-    val mb = bytes / (1024.0 * 1024.0)
-    return if (mb >= 0.1) "%.1f MB".format(mb) else "${bytes / 1024} KB"
-}
+/** Localised "1.2 MB" / "340 kB" — the platform formatter picks units and decimal marks. */
+@Composable
+private fun formatBytes(bytes: Long): String =
+    android.text.format.Formatter.formatShortFileSize(LocalContext.current, bytes)
 
 /** The single hero card — View PDF, the app's core feature. White/surface card with an
  * icon-square + badge header, title, description, and a full-width primary button,
@@ -327,21 +348,21 @@ private fun HeroToolCard(tool: ToolCard, onClick: () -> Unit, onCrystal: Boolean
                 ToolAvatar(icon = tool.glyph, tint = tool.tint, size = 40.dp, shape = RoundedCornerShape(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(tool.label, style = MaterialTheme.typography.titleMedium, color = contentColor)
+                        Text(stringResource(tool.label), style = MaterialTheme.typography.titleMedium, color = contentColor)
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .background(tool.tint.copy(alpha = 0.16f))
                                 .padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            Text(tool.badge, style = MaterialTheme.typography.labelSmall, color = tool.tint)
+                            Text(stringResource(tool.badge), style = MaterialTheme.typography.labelSmall, color = tool.tint)
                         }
                     }
-                    Text(tool.description, style = MaterialTheme.typography.bodySmall, color = descColor)
+                    Text(stringResource(tool.description), style = MaterialTheme.typography.bodySmall, color = descColor)
                 }
             }
             GradientButton(
-                text = tool.linkText,
+                text = stringResource(tool.linkText),
                 onClick = onClick,
                 modifier = Modifier.padding(top = 14.dp)
             )
@@ -356,9 +377,9 @@ private fun HeroToolCard(tool: ToolCard, onClick: () -> Unit, onCrystal: Boolean
 private fun OfflineBadgeStrip(darkGround: Boolean) {
     val contentColor = if (darkGround) Color(0xFFD7D3C8) else MaterialTheme.colorScheme.onSurfaceVariant
     val badges = listOf(
-        Icons.Filled.CloudOff to "No Cloud Upload",
-        Icons.Filled.Bookmark to "Zero Watermark",
-        Icons.Filled.Block to "No Interstitial Ads"
+        Icons.Filled.CloudOff to stringResource(R.string.home_badge_no_cloud_upload),
+        Icons.Filled.Bookmark to stringResource(R.string.home_badge_zero_watermark),
+        Icons.Filled.Block to stringResource(R.string.home_badge_no_interstitial_ads)
     )
     Row(
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -392,7 +413,7 @@ private fun SectionHeader(title: String, darkGround: Boolean, modifier: Modifier
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(title, style = MaterialTheme.typography.titleSmall, color = titleColor, modifier = Modifier.semantics { heading() })
-        Text("Local Execution", style = MaterialTheme.typography.labelSmall, color = accent)
+        Text(stringResource(R.string.home_local_execution), style = MaterialTheme.typography.labelSmall, color = accent)
     }
 }
 
@@ -403,7 +424,7 @@ private fun HomeList(onToolSelected: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         OfflineBadgeStrip(darkGround = false)
-        SectionHeader("Document Utilities", darkGround = false)
+        SectionHeader(stringResource(R.string.home_document_utilities), darkGround = false)
         allTools.forEach { tool ->
             ListRow(tool = tool, onClick = { onToolSelected(tool.route) })
         }
@@ -425,7 +446,7 @@ private fun HomeFeatured(
     ) {
         OfflineBadgeStrip(darkGround = false)
         HeroToolCard(tool = bigTool, onClick = { onToolSelected(bigTool.route) }, onCrystal = false)
-        SectionHeader("Document Utilities", darkGround = false)
+        SectionHeader(stringResource(R.string.home_document_utilities), darkGround = false)
         documentTools.forEach { tool -> FeaturedToolCard(tool = tool, onClick = { onToolSelected(tool.route) }) }
         RecentsPreviewStrip(darkGround = false, onOpenRecents = onOpenRecents, onOpenFile = onOpenFile)
     }
@@ -448,9 +469,9 @@ private fun FeaturedToolCard(tool: ToolCard, onClick: () -> Unit) {
         ) {
             ToolAvatar(icon = tool.glyph, tint = Color.White.copy(alpha = 0.24f), size = 44.dp, shape = RoundedCornerShape(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(tool.label, style = MaterialTheme.typography.titleSmall, color = Color.White)
+                Text(stringResource(tool.label), style = MaterialTheme.typography.titleSmall, color = Color.White)
                 Text(
-                    tool.description,
+                    stringResource(tool.description),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.85f),
                     maxLines = 2,
@@ -481,7 +502,7 @@ private fun HomeCarousel(
                 HeroToolCard(tool = bigTool, onClick = { onToolSelected(bigTool.route) }, onCrystal = darkGround)
             }
         }
-        SectionHeader("Document Utilities", darkGround, modifier = Modifier.padding(horizontal = 16.dp))
+        SectionHeader(stringResource(R.string.home_document_utilities), darkGround, modifier = Modifier.padding(horizontal = 16.dp))
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp)
@@ -540,7 +561,7 @@ private fun DocumentUtilityCard(
                         .padding(horizontal = 7.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        tool.badge,
+                        stringResource(tool.badge),
                         style = MaterialTheme.typography.labelSmall,
                         color = descColor,
                         maxLines = 1,
@@ -549,7 +570,7 @@ private fun DocumentUtilityCard(
                 }
             }
             Text(
-                tool.label,
+                stringResource(tool.label),
                 style = MaterialTheme.typography.titleSmall,
                 color = contentColor,
                 maxLines = 1,
@@ -557,7 +578,7 @@ private fun DocumentUtilityCard(
                 modifier = Modifier.padding(top = 8.dp)
             )
             Text(
-                tool.description,
+                stringResource(tool.description),
                 style = MaterialTheme.typography.bodySmall,
                 color = descColor,
                 maxLines = 2,
@@ -568,7 +589,7 @@ private fun DocumentUtilityCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(top = 8.dp)
             ) {
-                Text(tool.linkText, style = MaterialTheme.typography.labelMedium, color = tool.tint)
+                Text(stringResource(tool.linkText), style = MaterialTheme.typography.labelMedium, color = tool.tint)
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
@@ -605,7 +626,7 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        tool.label,
+                        stringResource(tool.label),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -615,11 +636,11 @@ private fun ListRow(tool: ToolCard, onClick: () -> Unit) {
                             .background(tool.tint.copy(alpha = 0.14f))
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        Text(tool.badge, style = MaterialTheme.typography.labelSmall, color = tool.tint)
+                        Text(stringResource(tool.badge), style = MaterialTheme.typography.labelSmall, color = tool.tint)
                     }
                 }
                 Text(
-                    tool.description,
+                    stringResource(tool.description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

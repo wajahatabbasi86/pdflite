@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.billing
 
+import com.trendoc.pdflite.R
 import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.BillingClient
@@ -22,10 +23,10 @@ import kotlinx.coroutines.flow.update
  * listing, same as [REMOVE_ADS_PRODUCT_ID]. */
 val DONATION_PRODUCT_IDS = listOf("donate_small", "donate_medium", "donate_large")
 
-private fun tierLabel(productId: String) = when (productId) {
-    "donate_small" -> "Small"
-    "donate_medium" -> "Medium"
-    "donate_large" -> "Generous"
+private fun tierLabel(context: Context, productId: String) = when (productId) {
+    "donate_small" -> context.getString(R.string.donate_tier_small)
+    "donate_medium" -> context.getString(R.string.donate_tier_medium)
+    "donate_large" -> context.getString(R.string.donate_tier_large)
     else -> productId
 }
 
@@ -33,7 +34,8 @@ data class DonationTier(val productId: String, val label: String, val priceText:
 
 data class DonationUiState(
     val isConnecting: Boolean = true,
-    val tiers: List<DonationTier> = DONATION_PRODUCT_IDS.map { DonationTier(it, tierLabel(it), null) },
+    /** Filled by [DonationRepository] with localised tier names before prices arrive. */
+    val tiers: List<DonationTier> = emptyList(),
     val purchasingProductId: String? = null,
     val thankYouVisible: Boolean = false,
     val billingUnavailable: Boolean = false,
@@ -51,7 +53,9 @@ data class DonationUiState(
 class DonationRepository(context: Context) {
     private val appContext = context.applicationContext
 
-    private val _uiState = MutableStateFlow(DonationUiState())
+    private val _uiState = MutableStateFlow(
+        DonationUiState(tiers = DONATION_PRODUCT_IDS.map { DonationTier(it, tierLabel(appContext, it), null) })
+    )
     val uiState: StateFlow<DonationUiState> = _uiState.asStateFlow()
 
     private var productDetailsById: Map<String, ProductDetails> = emptyMap()
@@ -64,7 +68,7 @@ class DonationRepository(context: Context) {
                 _uiState.update { it.copy(purchasingProductId = null) }
             else ->
                 _uiState.update {
-                    it.copy(purchasingProductId = null, errorMessage = "Purchase couldn't be completed. Please try again.")
+                    it.copy(purchasingProductId = null, errorMessage = appContext.getString(R.string.billing_purchase_failed))
                 }
         }
     }
@@ -117,7 +121,7 @@ class DonationRepository(context: Context) {
                         tiers = DONATION_PRODUCT_IDS.map { id ->
                             DonationTier(
                                 productId = id,
-                                label = tierLabel(id),
+                                label = tierLabel(appContext, id),
                                 priceText = productDetailsById[id]?.oneTimePurchaseOfferDetails?.formattedPrice
                             )
                         }

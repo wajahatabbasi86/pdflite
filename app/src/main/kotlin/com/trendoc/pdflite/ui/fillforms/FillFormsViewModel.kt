@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.fillforms
 
+import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
@@ -147,7 +148,7 @@ class FillFormsViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isLoadingFile = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -178,7 +179,7 @@ class FillFormsViewModel @JvmOverloads constructor(
                             val fieldWidgets = field.widgets
                             if (fieldWidgets.isEmpty()) continue // non-terminal node in the field tree
                             val groupId = field.fullyQualifiedName ?: continue
-                            val label = field.fieldLabel()
+                            val label = field.fieldLabel(fallback = getApplication<Application>().getString(R.string.fill_forms_unnamed_field))
                             // PDField.getValueAsString() is correct for every field type
                             // except PDChoice, where it stringifies the whole List<String>
                             // (producing e.g. "[USA]" instead of "USA") rather than the one
@@ -401,7 +402,7 @@ class FillFormsViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isProcessing = false, errorMessage = PdfErrorMessages.WRITE_FAILED)
+                        it.copy(isProcessing = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.WRITE_FAILED))
                     }
                 }
             )
@@ -530,7 +531,7 @@ class FillFormsViewModel @JvmOverloads constructor(
                 )
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
+                    it.copy(readyToSave = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_SINGLE))
                 }
             }
         }
@@ -568,14 +569,14 @@ private fun PDTextField.hasFlag(flag: Int): Boolean =
  * spec for precisely this — a human-readable name for accessibility — so it wins when present.
  * Otherwise the field's own name, de-mangled: `patient_firstName` reads "patient first name".
  */
-private fun com.tom_roush.pdfbox.pdmodel.interactive.form.PDField.fieldLabel(): String {
+private fun com.tom_roush.pdfbox.pdmodel.interactive.form.PDField.fieldLabel(fallback: String): String {
     alternateFieldName?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
-    val raw = partialName ?: fullyQualifiedName ?: return "Form field"
+    val raw = partialName ?: fullyQualifiedName ?: return fallback
     return raw
         .replace(Regex("([a-z])([A-Z])"), "$1 $2")
         .replace(Regex("[_.\\-]+"), " ")
         .replace(Regex("\\s+"), " ")
         .trim()
         .lowercase()
-        .ifEmpty { "Form field" }
+        .ifEmpty { fallback }
 }

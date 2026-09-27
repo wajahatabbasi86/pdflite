@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.ui.common
 
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,7 +26,7 @@ fun ErrorCard(message: String, onRetry: () -> Unit, modifier: Modifier = Modifie
         Column(modifier = Modifier.padding(16.dp)) {
             Text(message)
             Button(onClick = onRetry) {
-                Text("Try Again")
+                Text(stringResource(R.string.error_try_again))
             }
         }
     }

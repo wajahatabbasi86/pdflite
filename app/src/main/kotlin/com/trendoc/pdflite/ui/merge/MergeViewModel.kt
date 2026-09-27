@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.merge
 
+import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
@@ -100,9 +101,9 @@ class MergeViewModel @JvmOverloads constructor(
                                         // protected file.
                                         item.copy(
                                             error = if (error is SecurityException) {
-                                                "Password-protected. Remove the password and try again."
+                                                getApplication<Application>().getString(R.string.merge_item_password_protected)
                                             } else {
-                                                "Couldn't read this file. It may be corrupted or password-protected."
+                                                getApplication<Application>().getString(PdfErrorMessages.CORRUPTED_OR_PASSWORD_PROTECTED)
                                             }
                                         )
                                     }
@@ -188,7 +189,7 @@ class MergeViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isMerging = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isMerging = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -265,7 +266,7 @@ class MergeViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(
                         readyToSave = false,
-                        errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE
+                        errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_SINGLE)
                     )
                 }
             }

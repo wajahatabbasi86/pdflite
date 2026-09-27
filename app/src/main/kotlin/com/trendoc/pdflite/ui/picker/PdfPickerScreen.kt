@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.picker
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +53,7 @@ fun PdfPickerScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("PDF Picker (Step 1 demo)") })
+            TopAppBar(title = { Text(stringResource(R.string.pdf_picker_pdf_picker_step_1_demo)) })
         }
     ) { innerPadding ->
         Column(
@@ -61,11 +64,11 @@ fun PdfPickerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(onClick = { pickDocumentLauncher.launch(arrayOf("application/pdf")) }) {
-                Text("Select PDF")
+                Text(stringResource(R.string.common_select_pdf))
             }
 
             uiState.fileName?.let { name ->
-                Text("$name — ${uiState.pageCount} page(s)")
+                Text(stringResource(R.string.picker_name_and_pages, name, pluralStringResource(R.plurals.page_count, uiState.pageCount, uiState.pageCount)))
             }
 
             uiState.errorMessage?.let { message ->

@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.stamp
 
+import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
@@ -124,7 +125,7 @@ class StampTextViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isLoading = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -363,7 +364,7 @@ class StampTextViewModel @JvmOverloads constructor(
         // rewrote the file.
         val stamps = _uiState.value.stamps.filter { it.text.isNotBlank() }
         if (stamps.isEmpty()) {
-            _uiState.update { it.copy(errorMessage = "Add some text to the page first.") }
+            _uiState.update { it.copy(errorMessage = getApplication<Application>().getString(R.string.add_text_nothing_to_save)) }
             return
         }
         _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
@@ -378,7 +379,7 @@ class StampTextViewModel @JvmOverloads constructor(
                 onFailure = { error ->
                     android.util.Log.w("StampText", "Writing stamps failed", error)
                     _uiState.update {
-                        it.copy(isProcessing = false, errorMessage = PdfErrorMessages.WRITE_FAILED)
+                        it.copy(isProcessing = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.WRITE_FAILED))
                     }
                 }
             )
@@ -457,7 +458,7 @@ class StampTextViewModel @JvmOverloads constructor(
                 )
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
+                    it.copy(readyToSave = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_SINGLE))
                 }
             }
         }

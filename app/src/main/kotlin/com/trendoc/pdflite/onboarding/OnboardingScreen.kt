@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.onboarding
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.annotation.StringRes
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,23 +37,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-private data class OnboardingPage(val icon: ImageVector, val title: String, val body: String)
+private data class OnboardingPage(val icon: ImageVector, @StringRes val title: Int, @StringRes val body: Int)
 
 private val pages = listOf(
     OnboardingPage(
         Icons.Filled.CloudOff,
-        "100% Offline",
-        "Every tool runs entirely on your device — nothing you open or convert is ever uploaded anywhere."
+        R.string.onboarding_1_title,
+        R.string.onboarding_1_body
     ),
     OnboardingPage(
         Icons.Filled.Visibility,
-        "View, Merge, Split & More",
-        "View, merge, split, compress, fill forms, and convert between PDF and images — all in one app."
+        R.string.onboarding_2_title,
+        R.string.onboarding_2_body
     ),
     OnboardingPage(
         Icons.Filled.Compress,
-        "Fast & Private",
-        "No accounts, no cloud sync, no tracking of your files. Your documents stay yours."
+        R.string.onboarding_3_title,
+        R.string.onboarding_3_body
     )
 )
 
@@ -67,7 +71,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDone) { Text("Skip") }
+                TextButton(onClick = onDone) { Text(stringResource(R.string.onboarding_skip)) }
             }
 
             HorizontalPager(
@@ -95,13 +99,13 @@ fun OnboardingScreen(onDone: () -> Unit) {
                         }
                     }
                     Text(
-                        item.title,
+                        stringResource(item.title),
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 24.dp)
                     )
                     Text(
-                        item.body,
+                        stringResource(item.body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -135,7 +139,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (pagerState.currentPage < pages.lastIndex) "Next" else "Get Started")
+                Text(if (pagerState.currentPage < pages.lastIndex) stringResource(R.string.onboarding_next) else stringResource(R.string.onboarding_get_started))
             }
         }
     }

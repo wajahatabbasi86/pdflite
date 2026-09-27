@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.ui.files
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.BorderStroke
@@ -60,15 +64,15 @@ fun FilesScreen(onOpenFile: (Uri) -> Unit, viewModel: FilesViewModel = viewModel
                 navigationIcon = {
                     if (uiState.canGoUp) {
                         IconButton(onClick = { viewModel.goUp() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Up one folder")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.files_up_one_folder))
                         }
                     }
                 },
-                title = { Text("Files") },
+                title = { Text(stringResource(R.string.common_files)) },
                 actions = {
                     if (uiState.rootUri != null) {
                         TextButton(onClick = { viewModel.changeRoot() }) {
-                            Text("Change Folder")
+                            Text(stringResource(R.string.files_change_folder))
                         }
                     }
                 }
@@ -86,7 +90,7 @@ fun FilesScreen(onOpenFile: (Uri) -> Unit, viewModel: FilesViewModel = viewModel
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
                         Text(
-                            "Grant access to a folder to browse its PDFs",
+                            stringResource(R.string.files_grant_access),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -94,7 +98,7 @@ fun FilesScreen(onOpenFile: (Uri) -> Unit, viewModel: FilesViewModel = viewModel
                             onClick = { pickTreeLauncher.launch(null) },
                             modifier = Modifier.padding(top = 16.dp)
                         ) {
-                            Text("Choose Folder")
+                            Text(stringResource(R.string.files_choose_folder))
                         }
                     }
                 }
@@ -103,7 +107,7 @@ fun FilesScreen(onOpenFile: (Uri) -> Unit, viewModel: FilesViewModel = viewModel
                 }
                 uiState.entries.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        "No PDFs or folders here",
+                        stringResource(R.string.files_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -151,8 +155,7 @@ fun FilesScreen(onOpenFile: (Uri) -> Unit, viewModel: FilesViewModel = viewModel
     }
 }
 
-private fun formatSize(bytes: Long): String {
-    if (bytes < 0) return "—"
-    val mb = bytes / (1024.0 * 1024.0)
-    return if (mb >= 0.1) "%.1f MB".format(mb) else "${bytes / 1024} KB"
-}
+/** Localised "1.2 MB" — the platform formatter picks units and decimal marks. */
+@Composable
+private fun formatSize(bytes: Long): String =
+    if (bytes < 0) "—" else android.text.format.Formatter.formatShortFileSize(LocalContext.current, bytes)

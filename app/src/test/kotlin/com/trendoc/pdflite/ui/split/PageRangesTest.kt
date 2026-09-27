@@ -1,8 +1,8 @@
 package com.trendoc.pdflite.ui.split
 
+import com.trendoc.pdflite.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PageRangesTest {
@@ -35,23 +35,23 @@ class PageRangesTest {
     }
 
     @Test fun `only separators asks for a page`() {
-        assertEquals("Enter at least one page or range.", PageRanges.validate(", ,", 5))
+        assertEquals(RangeProblem(R.string.range_empty), PageRanges.validate(", ,", 5))
     }
 
     @Test fun `pages outside the document are rejected`() {
-        assertEquals("Page 6 is out of range (1-5).", PageRanges.validate("6", 5))
-        assertEquals("Page 0 is out of range (1-5).", PageRanges.validate("0", 5))
-        assertEquals("\"4-6\" is out of range (1-5).", PageRanges.validate("4-6", 5))
+        assertEquals(RangeProblem(R.string.range_page_out_of_range, listOf(6, 5)), PageRanges.validate("6", 5))
+        assertEquals(RangeProblem(R.string.range_page_out_of_range, listOf(0, 5)), PageRanges.validate("0", 5))
+        assertEquals(RangeProblem(R.string.range_range_out_of_range, listOf("4-6", 5)), PageRanges.validate("4-6", 5))
     }
 
     @Test fun `a reversed range is rejected`() {
-        assertEquals("\"5-2\" is out of range (1-5).", PageRanges.validate("5-2", 5))
+        assertEquals(RangeProblem(R.string.range_range_out_of_range, listOf("5-2", 5)), PageRanges.validate("5-2", 5))
     }
 
     @Test fun `malformed input names the offending part`() {
-        assertEquals("\"abc\" isn't a valid page number.", PageRanges.validate("1, abc", 5))
-        assertEquals("\"1-x\" isn't a valid range.", PageRanges.validate("1-x", 5))
-        assertEquals("\"1-2-3\" isn't a valid range.", PageRanges.validate("1-2-3", 5))
-        assertTrue(PageRanges.validate("-3", 5)!!.contains("-3"))
+        assertEquals(RangeProblem(R.string.range_bad_page, listOf("abc")), PageRanges.validate("1, abc", 5))
+        assertEquals(RangeProblem(R.string.range_bad_range, listOf("1-x")), PageRanges.validate("1-x", 5))
+        assertEquals(RangeProblem(R.string.range_bad_range, listOf("1-2-3")), PageRanges.validate("1-2-3", 5))
+        assertEquals(listOf<Any>("-3"), PageRanges.validate("-3", 5)!!.args)
     }
 }

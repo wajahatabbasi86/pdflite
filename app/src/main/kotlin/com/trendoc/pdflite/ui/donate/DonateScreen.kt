@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.donate
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,10 +39,9 @@ fun DonationSection(viewModel: DonationViewModel = viewModel()) {
     val context = LocalContext.current
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Support TrenDoc", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.donate_support_trendoc), style = MaterialTheme.typography.titleMedium)
         Text(
-            "Nothing here is paywalled. If the app's been useful, a one-time donation helps " +
-                "keep it that way — entirely optional, and it doesn't unlock or change anything.",
+            stringResource(R.string.donate_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -50,7 +52,7 @@ fun DonationSection(viewModel: DonationViewModel = viewModel()) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
                 Text(
-                    "Thank you!",
+                    stringResource(R.string.donate_thanks),
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -109,7 +111,7 @@ private fun DonationTierCard(tier: DonationTier, isPurchasing: Boolean, onDonate
                 }
             }
             Button(onClick = onDonate, enabled = !isPurchasing && tier.priceText != null) {
-                Text(if (isPurchasing) "Processing…" else "Donate")
+                Text(if (isPurchasing) stringResource(R.string.common_processing) else stringResource(R.string.donate_action))
             }
         }
     }
@@ -126,9 +128,9 @@ private fun LoadingIndicator() {
 private fun BillingUnavailableCard() {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Billing isn't available right now", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.common_billing_isn_t_available_right), style = MaterialTheme.typography.titleSmall)
             Text(
-                "Make sure you're signed in to the Play Store and connected to the internet, then come back to this screen.",
+                stringResource(R.string.donate_unavailable_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

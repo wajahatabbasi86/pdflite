@@ -1,5 +1,7 @@
 package com.trendoc.pdflite.appearance
 
+import com.trendoc.pdflite.R
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -7,13 +9,13 @@ import androidx.compose.ui.graphics.Color
  * and dark-theme value (mirroring the design system's Stamp Red → light/dark pair) so accent
  * choice and light/dark theme stay independent of each other.
  */
-enum class AccentColor(val label: String, val light: Color, val dark: Color) {
-    STAMP_RED("Stamp Red", light = Color(0xFFB7091B), dark = Color(0xFFFFB3AD)),
-    INDIGO("Indigo", light = Color(0xFF4C5FD5), dark = Color(0xFF7C89E0)),
-    TEAL("Teal", light = Color(0xFF2F8F82), dark = Color(0xFF5FB3A6)),
-    AMBER("Amber", light = Color(0xFFC98A2E), dark = Color(0xFFE0A94F)),
-    PLUM("Plum", light = Color(0xFF7A4B8A), dark = Color(0xFFA576B3)),
-    FOREST("Forest", light = Color(0xFF3F7A50), dark = Color(0xFF6BA97C));
+enum class AccentColor(@StringRes val label: Int, val light: Color, val dark: Color) {
+    STAMP_RED(R.string.appearance_colour_stamp_red, light = Color(0xFFB7091B), dark = Color(0xFFFFB3AD)),
+    INDIGO(R.string.appearance_colour_indigo, light = Color(0xFF4C5FD5), dark = Color(0xFF7C89E0)),
+    TEAL(R.string.appearance_colour_teal, light = Color(0xFF2F8F82), dark = Color(0xFF5FB3A6)),
+    AMBER(R.string.appearance_colour_amber, light = Color(0xFFC98A2E), dark = Color(0xFFE0A94F)),
+    PLUM(R.string.appearance_colour_plum, light = Color(0xFF7A4B8A), dark = Color(0xFFA576B3)),
+    FOREST(R.string.appearance_colour_forest, light = Color(0xFF3F7A50), dark = Color(0xFF6BA97C));
 
     fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
 }
@@ -27,26 +29,26 @@ enum class BackgroundStyle { PLAIN, CRYSTAL_LIGHT, CRYSTAL_INK }
  * Secondary/Muted/Accent/Card/Border/Input), covering just the roles that visibly change
  * a card's surface, its edge, and its secondary/disabled text.
  */
-enum class CardTint(val label: String, val light: Color, val dark: Color) {
-    PAPER("Paper", light = Color(0xFFFFFFFF), dark = Color(0xFF23262E)),
-    IVORY("Ivory", light = Color(0xFFFBF7EE), dark = Color(0xFF2A2620)),
-    SLATE("Slate", light = Color(0xFFF1F3F6), dark = Color(0xFF20242C));
+enum class CardTint(@StringRes val label: Int, val light: Color, val dark: Color) {
+    PAPER(R.string.appearance_colour_paper, light = Color(0xFFFFFFFF), dark = Color(0xFF23262E)),
+    IVORY(R.string.appearance_colour_ivory, light = Color(0xFFFBF7EE), dark = Color(0xFF2A2620)),
+    SLATE(R.string.appearance_colour_slate, light = Color(0xFFF1F3F6), dark = Color(0xFF20242C));
 
     fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
 }
 
-enum class BorderTint(val label: String, val light: Color, val dark: Color) {
-    SOFT("Soft", light = Color(0xFFE2E8F0), dark = Color(0xFF333947)),
-    CRISP("Crisp", light = Color(0xFFC7C2B4), dark = Color(0xFF4A5262)),
-    INK("Ink", light = Color(0xFF8A8F9B), dark = Color(0xFF6B7280));
+enum class BorderTint(@StringRes val label: Int, val light: Color, val dark: Color) {
+    SOFT(R.string.appearance_colour_soft, light = Color(0xFFE2E8F0), dark = Color(0xFF333947)),
+    CRISP(R.string.appearance_colour_crisp, light = Color(0xFFC7C2B4), dark = Color(0xFF4A5262)),
+    INK(R.string.appearance_colour_ink, light = Color(0xFF8A8F9B), dark = Color(0xFF6B7280));
 
     fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
 }
 
-enum class MutedTint(val label: String, val light: Color, val dark: Color) {
-    WARM("Warm", light = Color(0xFF64748B), dark = Color(0xFFB7BCC6)),
-    COOL("Cool", light = Color(0xFF6B7280), dark = Color(0xFFA4A9B6)),
-    GRAY("Gray", light = Color(0xFF75797F), dark = Color(0xFF9CA3AF));
+enum class MutedTint(@StringRes val label: Int, val light: Color, val dark: Color) {
+    WARM(R.string.appearance_colour_warm, light = Color(0xFF64748B), dark = Color(0xFFB7BCC6)),
+    COOL(R.string.appearance_colour_cool, light = Color(0xFF6B7280), dark = Color(0xFFA4A9B6)),
+    GRAY(R.string.appearance_colour_gray, light = Color(0xFF75797F), dark = Color(0xFF9CA3AF));
 
     fun color(darkTheme: Boolean): Color = if (darkTheme) dark else light
 }

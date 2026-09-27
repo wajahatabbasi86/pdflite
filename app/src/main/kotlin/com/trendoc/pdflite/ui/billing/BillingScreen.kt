@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.billing
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,10 +54,10 @@ fun BillingScreen(onDone: () -> Unit, viewModel: BillingViewModel = viewModel())
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Remove Ads") },
+                title = { Text(stringResource(R.string.billing_remove_ads)) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -73,8 +76,7 @@ fun BillingScreen(onDone: () -> Unit, viewModel: BillingViewModel = viewModel())
             }
 
             Text(
-                "One small banner, only ever on-screen — clear it for a while for free, or pay " +
-                    "to clear it for longer. No subscription, and nothing else in the app changes.",
+                stringResource(R.string.billing_intro),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -82,9 +84,9 @@ fun BillingScreen(onDone: () -> Unit, viewModel: BillingViewModel = viewModel())
             // The rewarded video is an AdMob ad, not a Play purchase, so it stays available
             // when billing is not — it used to sit inside the billing branch and vanish with it.
             OptionCard(
-                title = "Watch a video",
-                subtitle = "2 hours ad-free, free",
-                buttonText = if (rewardedAdReady) "Watch" else "Loading…",
+                title = stringResource(R.string.billing_video_title),
+                subtitle = stringResource(R.string.billing_video_subtitle),
+                buttonText = if (rewardedAdReady) stringResource(R.string.billing_video_watch) else stringResource(R.string.common_loading),
                 enabled = rewardedAdReady,
                 onClick = { (context as? Activity)?.let(viewModel::watchRewardedAd) }
             )
@@ -95,9 +97,9 @@ fun BillingScreen(onDone: () -> Unit, viewModel: BillingViewModel = viewModel())
                 else -> {
                     GradientButton(
                         text = if (uiState.isPurchasing) {
-                            "Processing…"
+                            stringResource(R.string.common_processing)
                         } else {
-                            "Buy — 1 day ad-free${uiState.priceText?.let { " ($it)" } ?: ""}"
+                            uiState.priceText?.let { stringResource(R.string.billing_buy_with_price, it) } ?: stringResource(R.string.billing_buy)
                         },
                         onClick = { (context as? Activity)?.let(viewModel::buy) },
                         enabled = !uiState.isPurchasing && uiState.priceText != null
@@ -109,7 +111,7 @@ fun BillingScreen(onDone: () -> Unit, viewModel: BillingViewModel = viewModel())
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
                             Text(
-                                "Ads removed for the next day — thank you!",
+                                stringResource(R.string.billing_thanks),
                                 modifier = Modifier.padding(16.dp),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -145,8 +147,8 @@ private fun ActiveWindowCard(remainingMillis: Long) {
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
     val text = when {
-        hours > 0 -> "Ad-free for ${hours}h ${minutes}m"
-        else -> "Ad-free for ${minutes}m"
+        hours > 0 -> stringResource(R.string.billing_active_hours, stringResource(R.string.duration_hours_minutes, hours, minutes))
+        else -> stringResource(R.string.billing_active_hours, stringResource(R.string.duration_minutes, minutes))
     }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -189,9 +191,9 @@ private fun LoadingIndicator() {
 private fun BillingUnavailableCard() {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Billing isn't available right now", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.common_billing_isn_t_available_right), style = MaterialTheme.typography.titleSmall)
             Text(
-                "Make sure you're signed in to the Play Store and connected to the internet, then come back to this screen. Buying is unavailable until then — watching a video above still works.",
+                stringResource(R.string.billing_unavailable_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

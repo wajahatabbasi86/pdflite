@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.split
 
+import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
@@ -121,7 +122,7 @@ class SplitViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isLoadingFile = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isLoadingFile = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -270,7 +271,7 @@ class SplitViewModel @JvmOverloads constructor(
     /** Validates as the user types (§4 edge case: reject bad ranges before enabling the action). */
     fun onRangeInputChanged(input: String) {
         val pageCount = _uiState.value.pages.size
-        val error = PageRanges.validate(input, pageCount)
+        val error = PageRanges.validate(input, pageCount)?.resolve(getApplication())
         _uiState.update { it.copy(rangeInput = input, rangeError = error) }
     }
 
@@ -292,7 +293,7 @@ class SplitViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isProcessing = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isProcessing = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -318,7 +319,7 @@ class SplitViewModel @JvmOverloads constructor(
                 },
                 onFailure = { error ->
                     _uiState.update {
-                        it.copy(isProcessing = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isProcessing = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )
@@ -407,7 +408,7 @@ class SplitViewModel @JvmOverloads constructor(
                 )
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
+                    it.copy(readyToSave = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_SINGLE))
                 }
             }
         }
@@ -445,12 +446,12 @@ class SplitViewModel @JvmOverloads constructor(
                     it.copy(
                         readyToSave = false,
                         savedResultUris = writtenUris,
-                        savedFileName = "${writtenUris.size} files"
+                        savedFileName = getApplication<Application>().resources.getQuantityString(R.plurals.file_count, writtenUris.size, writtenUris.size)
                     )
                 }
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_PLURAL)
+                    it.copy(readyToSave = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_PLURAL))
                 }
             }
         }

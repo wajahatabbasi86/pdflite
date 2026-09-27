@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.common
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
@@ -60,7 +63,7 @@ fun ResultScreen(
     val context = LocalContext.current
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Done") }) }
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.result_done)) }) }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -92,7 +95,7 @@ fun ResultScreen(
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
-                    "Saved On-Device",
+                    stringResource(R.string.result_saved_on_device),
                     style = MaterialTheme.typography.labelSmall,
                     color = ApprovedGreen
                 )
@@ -120,7 +123,7 @@ fun ResultScreen(
             }
 
             GradientButton(
-                text = "Open",
+                text = stringResource(R.string.common_open),
                 onClick = {
                     val intent = Intent(Intent.ACTION_VIEW).apply {
                         setDataAndType(resultUri, mimeType)
@@ -128,7 +131,7 @@ fun ResultScreen(
                     }
                     context.startActivitySafely(
                         Intent.createChooser(intent, null),
-                        "No app on this device can open this file."
+                        context.getString(R.string.result_no_app_to_open)
                     )
                 }
             )
@@ -141,17 +144,17 @@ fun ResultScreen(
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     context.startActivitySafely(
-                        Intent.createChooser(intent, "Share"),
-                        "No app available to share this file."
+                        Intent.createChooser(intent, context.getString(R.string.common_share)),
+                        context.getString(R.string.common_no_app_to_share)
                     )
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Share")
+                Text(stringResource(R.string.result_share))
             }
 
             TextButton(onClick = onDone) {
-                Text("Done", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.result_done), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

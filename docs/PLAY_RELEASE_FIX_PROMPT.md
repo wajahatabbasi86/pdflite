@@ -413,7 +413,13 @@ the accessibility section is clean.
 
 ## Phase 5 — Code quality and polish
 
-### 5.1 Extract all user-facing strings
+### 5.1 Extract all user-facing strings — ✅ DONE (2026-09-27)
+
+> ~300 strings/plurals in `res/values/strings.xml`; counts use `<plurals>`; file sizes use
+> `Formatter.formatShortFileSize` and Recents' times `DateUtils.getRelativeTimeSpanString`, both
+> already localised by the platform. Static check: all 297 `R.string`/`R.plurals` calls pass the right
+> number of format args. Deliberately untranslated: PDF form values ("Yes"/"Off"), Recents' stored
+> source tags (translated at display), output file names.
 
 **Problem.** There are **zero** `stringResource` calls in the codebase. Every string is hardcoded
 in Kotlin; `res/values/strings.xml` contains only `app_name`. This blocks localization entirely and

@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.stamp
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import android.net.Uri
@@ -141,10 +144,10 @@ fun StampTextScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                title = { Text(uiState.fileName ?: "Add Text") }
+                title = { Text(uiState.fileName ?: stringResource(R.string.tool_add_text_label)) }
             )
         },
         bottomBar = {
@@ -164,7 +167,7 @@ fun StampTextScreen(
                             )
                         }
                         GradientButton(
-                            text = if (uiState.isProcessing) "Saving…" else "Save PDF",
+                            text = if (uiState.isProcessing) stringResource(R.string.common_saving) else stringResource(R.string.common_save_pdf),
                             onClick = { viewModel.startSave() },
                             enabled = !uiState.isProcessing
                         )
@@ -191,13 +194,13 @@ fun StampTextScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            "Type onto any PDF — including scanned forms that have no fillable fields.",
+                            stringResource(R.string.add_text_intro),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                         Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                            Text("Select PDF")
+                            Text(stringResource(R.string.common_select_pdf))
                         }
                     }
                 }
@@ -207,8 +210,8 @@ fun StampTextScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            if (zoomFocus == null) "Tap anywhere on a page to add text."
-                            else "Zoomed in — tap another spot to move, or fit the page.",
+                            if (zoomFocus == null) stringResource(R.string.add_text_hint)
+                            else stringResource(R.string.add_text_hint_zoomed),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f)
@@ -217,7 +220,7 @@ fun StampTextScreen(
                             TextButton(onClick = {
                                 zoomFocus = null
                                 viewModel.clearZoomRender()
-                            }) { Text("Fit page") }
+                            }) { Text(stringResource(R.string.stamp_text_fit_page)) }
                         }
                     }
                     LazyColumn(
@@ -271,20 +274,20 @@ private fun SelectedStampBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text("Position", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.stamp_text_position), style = MaterialTheme.typography.labelMedium)
             Box(Modifier.weight(1f))
             IconButton(onClick = { onNudge(-NUDGE_STEP_PT, 0f) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Move left")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.stamp_text_move_left))
             }
             // Positive y is up the page, matching PDF's bottom-left origin.
             IconButton(onClick = { onNudge(0f, NUDGE_STEP_PT) }) {
-                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Move up")
+                Icon(Icons.Filled.KeyboardArrowUp, contentDescription = stringResource(R.string.common_move_up))
             }
             IconButton(onClick = { onNudge(0f, -NUDGE_STEP_PT) }) {
-                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Move down")
+                Icon(Icons.Filled.KeyboardArrowDown, contentDescription = stringResource(R.string.common_move_down))
             }
             IconButton(onClick = { onNudge(NUDGE_STEP_PT, 0f) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Move right")
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.stamp_text_move_right))
             }
         }
         Row(
@@ -292,19 +295,19 @@ private fun SelectedStampBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Text size", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.stamp_text_text_size), style = MaterialTheme.typography.labelMedium)
             IconButton(onClick = onSmaller) {
-                Icon(Icons.Filled.Remove, contentDescription = "Smaller text")
+                Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.stamp_text_smaller_text))
             }
             Text("${fontSizePt.toInt()}", style = MaterialTheme.typography.labelLarge)
             IconButton(onClick = onLarger) {
-                Icon(Icons.Filled.Add, contentDescription = "Larger text")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.stamp_text_larger_text))
             }
             Box(Modifier.weight(1f))
             IconButton(onClick = onDelete) {
                 Icon(
                     Icons.Filled.Delete,
-                    contentDescription = "Delete this text",
+                    contentDescription = stringResource(R.string.stamp_text_delete_this_text),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -405,7 +408,7 @@ private fun StampPageView(
                     if (bitmap != null) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Page ${pageIndex + 1}",
+                            contentDescription = stringResource(R.string.common_page_number, pageIndex + 1),
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.FillBounds
                         )
@@ -473,6 +476,7 @@ private fun StampEditor(
     onDrag: (Float, Float) -> Unit
 ) {
     val density = LocalDensity.current
+    val editorDescription = stringResource(R.string.add_text_editor_description, stamp.pageIndex + 1)
     // The on-screen glyph size has to track the PDF point size, or what the user positions
     // is not what gets written.
     val fontSizeSp = with(density) { (stamp.fontSizePt * pointsToPx).toSp() }
@@ -516,7 +520,7 @@ private fun StampEditor(
             ) {
                 Icon(
                     Icons.Filled.DragIndicator,
-                    contentDescription = "Drag to move this text",
+                    contentDescription = stringResource(R.string.stamp_text_drag_to_move_this_text),
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(handleSize * 0.7f)
                 )
@@ -542,7 +546,7 @@ private fun StampEditor(
                     .width(fieldWidthDp)
                     .focusRequester(focusRequester)
                     .onFocusChanged { if (it.isFocused) onSelect() }
-                    .semantics { contentDescription = "Text on page ${stamp.pageIndex + 1}" }
+                    .semantics { contentDescription = editorDescription }
             )
         }
     }

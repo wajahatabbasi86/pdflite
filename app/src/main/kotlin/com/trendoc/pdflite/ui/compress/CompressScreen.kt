@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.ui.compress
 
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.selectable
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -85,7 +89,7 @@ fun CompressScreen(
         val compressed = uiState.compressedSizeBytes
         val subtitle = if (original > 0 && compressed >= 0) {
             val pct = ((1.0 - compressed.toDouble() / original) * 100).roundToInt()
-            "${formatSize(original)} → ${formatSize(compressed)} · ${if (pct > 0) "−$pct%" else "no size reduction"}"
+            stringResource(R.string.compress_result_summary, formatSize(original), formatSize(compressed), if (pct > 0) stringResource(R.string.compress_reduction_percent, pct) else stringResource(R.string.compress_no_reduction))
         } else null
         ResultScreen(
             fileName = uiState.savedFileName ?: uiState.defaultSaveName,
@@ -101,10 +105,10 @@ fun CompressScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                title = { Text("Compress PDF") }
+                title = { Text(stringResource(R.string.compress_compress_pdf)) }
             )
         },
         bottomBar = {
@@ -124,7 +128,7 @@ fun CompressScreen(
                             }
                         } else {
                             GradientButton(
-                                text = "Compress (${uiState.level.label})",
+                                text = stringResource(R.string.compress_action, stringResource(uiState.level.label)),
                                 onClick = { viewModel.startCompress() },
                                 enabled = uiState.canCompress
                             )
@@ -149,7 +153,7 @@ fun CompressScreen(
             } else if (uiState.fileName == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                        Text("Select PDF")
+                        Text(stringResource(R.string.common_select_pdf))
                     }
                 }
             } else {
@@ -185,7 +189,7 @@ fun CompressScreen(
                 }
 
                 Text(
-                    "Compression Preset",
+                    stringResource(R.string.compress_preset),
                     style = MaterialTheme.typography.titleSmall
                 )
 
@@ -218,13 +222,13 @@ private fun CompressionPresetCard(
     val downscalePct = (level.downscale * 100).roundToInt()
     val qualityPct = (level.jpegQuality * 100).roundToInt()
     val description = if (downscalePct >= 100) {
-        "$qualityPct% JPEG quality · original resolution"
+        stringResource(R.string.compress_level_full_res, qualityPct)
     } else {
-        "$qualityPct% JPEG quality · downscaled to $downscalePct%"
+        stringResource(R.string.compress_level_downscaled, qualityPct, downscalePct)
     }
     val estimateLabel = if (estimatedBytes != null && originalBytes > 0) {
         val pct = ((1.0 - estimatedBytes.toDouble() / originalBytes) * 100).roundToInt()
-        if (pct > 0) "~${formatSize(estimatedBytes)} · −$pct%" else "~${formatSize(estimatedBytes)}"
+        if (pct > 0) stringResource(R.string.compress_estimate_percent, formatSize(estimatedBytes), pct) else stringResource(R.string.compress_estimate, formatSize(estimatedBytes))
     } else null
     Card(
         // The card is the radio option, so the level name labels the radio for TalkBack.
@@ -244,7 +248,7 @@ private fun CompressionPresetCard(
         ) {
             RadioButton(selected = selected, onClick = null, colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
             Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
-                Text(level.label, style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(level.label), style = MaterialTheme.typography.titleSmall)
                 Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (estimateLabel != null) {
@@ -271,7 +275,7 @@ private fun CompressStatusStrip(sizeLabel: String) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "100% On-Device",
+            stringResource(R.string.compress_on_device_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -283,8 +287,7 @@ private fun CompressStatusStrip(sizeLabel: String) {
     }
 }
 
-private fun formatSize(bytes: Long): String {
-    if (bytes < 0) return "—"
-    val mb = bytes / (1024.0 * 1024.0)
-    return if (mb >= 0.1) "%.1f MB".format(mb) else "${bytes / 1024} KB"
-}
+/** Localised "1.2 MB" — the platform formatter picks units and decimal marks. */
+@Composable
+private fun formatSize(bytes: Long): String =
+    if (bytes < 0) "—" else android.text.format.Formatter.formatShortFileSize(LocalContext.current, bytes)

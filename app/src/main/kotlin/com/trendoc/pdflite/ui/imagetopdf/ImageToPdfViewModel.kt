@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.imagetopdf
 
+import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
 import android.graphics.Bitmap
@@ -103,7 +104,7 @@ class ImageToPdfViewModel @JvmOverloads constructor(
                     if (current.uri == uri) {
                         result.fold(
                             onSuccess = { current.copy(thumbnail = it, error = null) },
-                            onFailure = { current.copy(error = "Couldn't read this image.") }
+                            onFailure = { current.copy(error = getApplication<Application>().getString(R.string.image_unreadable)) }
                         )
                     } else current
                 })
@@ -257,7 +258,7 @@ class ImageToPdfViewModel @JvmOverloads constructor(
                     _uiState.update {
                         it.copy(
                             isCreating = false,
-                            errorMessage = "Couldn't create the PDF. One of the images may be unreadable."
+                            errorMessage = getApplication<Application>().getString(R.string.image_create_failed)
                         )
                     }
                 }
@@ -345,7 +346,7 @@ class ImageToPdfViewModel @JvmOverloads constructor(
                 )
             } else {
                 _uiState.update {
-                    it.copy(readyToSave = false, errorMessage = PdfErrorMessages.SAVE_FAILED_SINGLE)
+                    it.copy(readyToSave = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.SAVE_FAILED_SINGLE))
                 }
             }
         }

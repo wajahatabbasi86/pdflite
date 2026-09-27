@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.split
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.semantics.toggleableState
@@ -125,9 +128,9 @@ fun SplitScreen(
         // now show the first file with a summary; a dedicated multi-file result view is a
         // reasonable later refinement once this flow is validated with real users.
         ResultScreen(
-            fileName = uiState.savedFileName ?: "Split files",
+            fileName = uiState.savedFileName ?: stringResource(R.string.split_result_name),
             resultUri = uiState.savedResultUris.first(),
-            subtitle = "${uiState.savedResultUris.size} files saved",
+            subtitle = pluralStringResource(R.plurals.split_files_saved, uiState.savedResultUris.size, uiState.savedResultUris.size),
             onDone = onDone
         )
         return
@@ -140,10 +143,10 @@ fun SplitScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                title = { Text("Split / Extract Pages") }
+                title = { Text(stringResource(R.string.split_split_extract_pages)) }
             )
         },
         bottomBar = {
@@ -164,8 +167,8 @@ fun SplitScreen(
                         } else {
                             GradientButton(
                                 text = when (uiState.mode) {
-                                    SplitMode.EXTRACT_SELECTED -> "Extract $selectedCount Page${if (selectedCount == 1) "" else "s"}"
-                                    SplitMode.SPLIT_BY_RANGES -> "Split"
+                                    SplitMode.EXTRACT_SELECTED -> pluralStringResource(R.plurals.split_extract_pages, selectedCount, selectedCount)
+                                    SplitMode.SPLIT_BY_RANGES -> stringResource(R.string.split_action_split)
                                 },
                                 onClick = {
                                     if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
@@ -200,7 +203,7 @@ fun SplitScreen(
             } else if (uiState.fileName == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                        Text("Select PDF")
+                        Text(stringResource(R.string.common_select_pdf))
                     }
                 }
             } else {
@@ -224,21 +227,21 @@ fun SplitScreen(
 
             if (uiState.pages.isNotEmpty()) {
                 Text(
-                    "CHOOSE SPLIT MODE",
+                    stringResource(R.string.split_choose_mode),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.semantics { heading() }
                 )
 
                 SplitModeCard(
-                    title = "Extract selected pages",
-                    description = "Pick individual pages below to pull into one new PDF.",
+                    title = stringResource(R.string.split_mode_extract_title),
+                    description = stringResource(R.string.split_mode_extract_desc),
                     selected = uiState.mode == SplitMode.EXTRACT_SELECTED,
                     onClick = { viewModel.setMode(SplitMode.EXTRACT_SELECTED) }
                 )
                 SplitModeCard(
-                    title = "Split into ranges",
-                    description = "Type ranges (e.g. 1-3, 5, 7-9); each range becomes its own file.",
+                    title = stringResource(R.string.split_mode_ranges_title),
+                    description = stringResource(R.string.split_mode_ranges_desc),
                     selected = uiState.mode == SplitMode.SPLIT_BY_RANGES,
                     onClick = { viewModel.setMode(SplitMode.SPLIT_BY_RANGES) }
                 ) {
@@ -262,9 +265,9 @@ fun SplitScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Tap pages to select", style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+                        Text(stringResource(R.string.split_tap_pages_to_select), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
                         Text(
-                            "$selectedCount / ${uiState.pages.size} chosen",
+                            stringResource(R.string.split_chosen_count, selectedCount, uiState.pages.size),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -273,10 +276,10 @@ fun SplitScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        FilterChip(text = "Odd (${(uiState.pages.size + 1) / 2})", onClick = { viewModel.selectOdd() })
-                        FilterChip(text = "Even (${uiState.pages.size / 2})", onClick = { viewModel.selectEven() })
-                        FilterChip(text = "Invert", onClick = { viewModel.invertSelection() })
-                        FilterChip(text = "Clear", onClick = { viewModel.clearSelection() })
+                        FilterChip(text = stringResource(R.string.split_select_odd, (uiState.pages.size + 1) / 2), onClick = { viewModel.selectOdd() })
+                        FilterChip(text = stringResource(R.string.split_select_even, uiState.pages.size / 2), onClick = { viewModel.selectEven() })
+                        FilterChip(text = stringResource(R.string.split_select_invert), onClick = { viewModel.invertSelection() })
+                        FilterChip(text = stringResource(R.string.common_clear), onClick = { viewModel.clearSelection() })
                     }
                 }
 
@@ -290,7 +293,7 @@ fun SplitScreen(
                     )
                 }
                 Text(
-                    "Long-press a page to preview and zoom.",
+                    stringResource(R.string.split_long_press_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -315,7 +318,7 @@ fun SplitScreen(
                                         if (uiState.mode == SplitMode.EXTRACT_SELECTED) viewModel.togglePage(page.index)
                                     },
                                     onLongClick = { previewPage = page.index },
-                                    onLongClickLabel = "Preview page",
+                                    onLongClickLabel = stringResource(R.string.common_preview_page),
                                     // A page is a checkbox: tapping includes or excludes it. The
                                     // state was shown only by a border before.
                                     role = if (uiState.mode == SplitMode.EXTRACT_SELECTED) Role.Checkbox else null
@@ -336,7 +339,7 @@ fun SplitScreen(
                                 if (bmp != null) {
                                     Image(
                                         bitmap = bmp.asImageBitmap(),
-                                        contentDescription = "Page ${page.index + 1}",
+                                        contentDescription = stringResource(R.string.common_page_number, page.index + 1),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .size(120.dp)
@@ -353,7 +356,7 @@ fun SplitScreen(
                                     )
                                 }
                                 Text(
-                                    "Page ${page.index + 1}",
+                                    stringResource(R.string.common_page_number, page.index + 1),
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                                 )
@@ -402,12 +405,12 @@ private fun SplitStatusStrip(pageCount: Int) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "100% Offline",
+            stringResource(R.string.common_offline_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
-            "$pageCount page${if (pageCount == 1) "" else "s"}",
+            pluralStringResource(R.plurals.page_count, pageCount, pageCount),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -448,12 +451,12 @@ private fun SourceDocumentCard(fileName: String, pageCount: Int, onChange: () ->
             Column(modifier = Modifier.weight(1f)) {
                 Text(fileName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 Text(
-                    "$pageCount page${if (pageCount == 1) "" else "s"} total",
+                    pluralStringResource(R.plurals.page_count_total, pageCount, pageCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            TextButton(onClick = onChange) { Text("Change") }
+            TextButton(onClick = onChange) { Text(stringResource(R.string.split_change)) }
         }
     }
 }

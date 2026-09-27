@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.imagetopdf
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -170,15 +173,15 @@ fun ImageToPdfScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 title = {
                     Column {
-                        Text("Image(s) → PDF")
+                        Text(stringResource(R.string.image_to_pdf_image_s_pdf))
                         if (uiState.images.isNotEmpty()) {
                             Text(
-                                "${uiState.images.size} image${if (uiState.images.size == 1) "" else "s"} selected",
+                                pluralStringResource(R.plurals.image_selected_count, uiState.images.size, uiState.images.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -207,12 +210,12 @@ fun ImageToPdfScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                "Manifest",
+                                stringResource(R.string.merge_manifest),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                "$validCount image${if (validCount == 1) "" else "s"} ready",
+                                pluralStringResource(R.plurals.image_ready_count, validCount, validCount),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -224,7 +227,7 @@ fun ImageToPdfScreen(
                             }
                         } else {
                             GradientButton(
-                                text = if (validCount > 0) "Create PDF ($validCount image${if (validCount == 1) "" else "s"})" else "Create PDF",
+                                text = if (validCount > 0) pluralStringResource(R.plurals.image_create_pdf_count, validCount, validCount) else stringResource(R.string.image_create_pdf),
                                 onClick = { viewModel.startCreate() },
                                 enabled = uiState.canCreate
                             )
@@ -246,10 +249,10 @@ fun ImageToPdfScreen(
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Button(onClick = { pickImagesLauncher.launch(arrayOf("image/*")) }) {
-                            Text("Select Images")
+                            Text(stringResource(R.string.image_to_pdf_select_images))
                         }
                         OutlinedButton(onClick = launchCamera) {
-                            Text("Take Photo")
+                            Text(stringResource(R.string.image_to_pdf_take_photo))
                         }
                     }
                 }
@@ -258,17 +261,17 @@ fun ImageToPdfScreen(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     DashedAddButton(
-                        text = "Add More Images",
+                        text = stringResource(R.string.image_add_more),
                         onClick = { pickImagesLauncher.launch(arrayOf("image/*")) },
                         modifier = Modifier.weight(1f)
                     )
                     OutlinedButton(onClick = launchCamera) {
-                        Text("Camera")
+                        Text(stringResource(R.string.image_to_pdf_camera))
                     }
                 }
 
                 Text(
-                    "PAGE ORDER (${uiState.images.size})",
+                    stringResource(R.string.image_page_order, uiState.images.size),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -320,12 +323,12 @@ private fun ImageToPdfStatusStrip(imageCount: Int) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "100% Offline",
+            stringResource(R.string.common_offline_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
-            "$imageCount image${if (imageCount == 1) "" else "s"} queued",
+            pluralStringResource(R.plurals.image_queued_count, imageCount, imageCount),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -366,7 +369,7 @@ private fun ImageRow(
         ) {
             Icon(
                 Icons.Filled.DragHandle,
-                contentDescription = "Drag to reorder",
+                contentDescription = stringResource(R.string.common_drag_to_reorder),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.pointerInput(Unit) {
                     detectDragGesturesAfterLongPress(
@@ -381,14 +384,14 @@ private fun ImageRow(
                 IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(24.dp)) {
                     Icon(
                         Icons.Filled.KeyboardArrowUp,
-                        contentDescription = "Move up",
+                        contentDescription = stringResource(R.string.common_move_up),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(24.dp)) {
                     Icon(
                         Icons.Filled.KeyboardArrowDown,
-                        contentDescription = "Move down",
+                        contentDescription = stringResource(R.string.common_move_down),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -399,11 +402,11 @@ private fun ImageRow(
                         .background(MaterialTheme.colorScheme.error.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.Warning, contentDescription = "Error", tint = MaterialTheme.colorScheme.error)
+                    Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.common_error), tint = MaterialTheme.colorScheme.error)
                 }
                 item.thumbnail != null -> Image(
                     bitmap = item.thumbnail.asImageBitmap(),
-                    contentDescription = "View and edit ${item.displayName}",
+                    contentDescription = stringResource(R.string.image_view_and_edit, item.displayName),
                     modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onView)
                 )
                 else -> Box(
@@ -419,14 +422,14 @@ private fun ImageRow(
                 item.error?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 } ?: Text(
-                    "Tap to view / edit",
+                    stringResource(R.string.image_tap_to_edit),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             IconButton(onClick = onRemove) {
-                Icon(Icons.Filled.Close, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.common_remove), tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -453,16 +456,16 @@ private fun ImageEditScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onClose) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 title = { Text(item.displayName, maxLines = 1) },
                 actions = {
                     IconButton(onClick = onRotate) {
-                        Icon(Icons.Filled.RotateRight, contentDescription = "Rotate")
+                        Icon(Icons.Filled.RotateRight, contentDescription = stringResource(R.string.image_to_pdf_rotate))
                     }
                     IconButton(onClick = { showTextField = !showTextField }) {
-                        Icon(Icons.Filled.TextFields, contentDescription = "Add text")
+                        Icon(Icons.Filled.TextFields, contentDescription = stringResource(R.string.image_to_pdf_add_text))
                     }
                 }
             )
@@ -478,7 +481,7 @@ private fun ImageEditScreen(
                         OutlinedTextField(
                             value = textDraft,
                             onValueChange = { textDraft = it },
-                            label = { Text("Caption") },
+                            label = { Text(stringResource(R.string.image_to_pdf_caption)) },
                             singleLine = true,
                             modifier = Modifier.weight(1f)
                         )
@@ -486,7 +489,7 @@ private fun ImageEditScreen(
                             onTextChanged(textDraft)
                             showTextField = false
                         }) {
-                            Text("Apply")
+                            Text(stringResource(R.string.image_to_pdf_apply))
                         }
                     }
                 }

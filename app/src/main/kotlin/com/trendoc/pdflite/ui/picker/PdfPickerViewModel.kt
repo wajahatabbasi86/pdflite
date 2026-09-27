@@ -69,7 +69,7 @@ class PdfPickerViewModel(application: Application) : AndroidViewModel(applicatio
                     // Per §1.4: plain-language error, never a raw stack trace — and a
                     // distinct message when the cause is specifically a password-protected PDF.
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = PdfErrorMessages.forOpenFailure(error))
+                        it.copy(isLoading = false, errorMessage = getApplication<Application>().getString(PdfErrorMessages.forOpenFailure(error)))
                     }
                 }
             )

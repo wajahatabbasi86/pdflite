@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.fillforms
 
+import androidx.compose.ui.res.pluralStringResource
+import com.trendoc.pdflite.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -123,10 +126,10 @@ fun FillFormsScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
-                title = { Text("Fill PDF Form") }
+                title = { Text(stringResource(R.string.fill_forms_fill_pdf_form)) }
             )
         },
         bottomBar = {
@@ -146,7 +149,7 @@ fun FillFormsScreen(
                             }
                         } else {
                             GradientButton(
-                                text = "Save Filled PDF",
+                                text = stringResource(R.string.fill_forms_save),
                                 onClick = { viewModel.startSave() },
                                 enabled = uiState.canSave
                             )
@@ -173,7 +176,7 @@ fun FillFormsScreen(
                 uiState.fileName == null -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Button(onClick = { pickFileLauncher.launch(arrayOf("application/pdf")) }) {
-                            Text("Select PDF")
+                            Text(stringResource(R.string.common_select_pdf))
                         }
                     }
                 }
@@ -189,18 +192,18 @@ fun FillFormsScreen(
                             modifier = Modifier.padding(24.dp)
                         ) {
                             Text(
-                                "This PDF doesn't have any fillable fields.",
+                                stringResource(R.string.fill_forms_no_fields),
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center
                             )
                             Text(
-                                "It's most likely a scan. You can still type onto the page itself.",
+                                stringResource(R.string.fill_forms_no_fields_hint),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
                             uiState.sourceUri?.let { uri ->
-                                Button(onClick = { onAddText(uri) }) { Text("Add text instead") }
+                                Button(onClick = { onAddText(uri) }) { Text(stringResource(R.string.fill_forms_add_text_instead)) }
                             }
                         }
                     }
@@ -249,12 +252,12 @@ private fun FillFormsStatusStrip(fieldCount: Int, pageCount: Int) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            "100% Offline",
+            stringResource(R.string.common_offline_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
         Text(
-            "$fieldCount field${if (fieldCount == 1) "" else "s"} · $pageCount page${if (pageCount == 1) "" else "s"}",
+            pluralStringResource(R.plurals.fill_forms_field_count, fieldCount, fieldCount) + " · " + pluralStringResource(R.plurals.page_count, pageCount, pageCount),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer
         )
@@ -425,9 +428,10 @@ private fun TextFieldOverlay(
  * and the user has no idea the document expects one. */
 @Composable
 private fun SignatureOverlay(label: String, width: Dp, height: Dp) {
+    val signatureDescription = stringResource(R.string.fill_forms_signature_description, label)
     Box(
         modifier = Modifier
-            .semantics(mergeDescendants = true) { contentDescription = "$label, signature field, sign elsewhere" }
+            .semantics(mergeDescendants = true) { contentDescription = signatureDescription }
             .width(width)
             .height(height)
             .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.06f))
@@ -436,7 +440,7 @@ private fun SignatureOverlay(label: String, width: Dp, height: Dp) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            "Signature — sign elsewhere",
+            stringResource(R.string.fill_forms_signature_placeholder),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1
@@ -533,6 +537,11 @@ private fun ChoiceOverlay(
     }
     val accent =
         if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val choiceDescription = stringResource(
+        R.string.fill_forms_choice_description,
+        label,
+        selected.joinToString(", ").ifBlank { stringResource(R.string.fill_forms_nothing_selected) }
+    )
     Box {
         Box(
             modifier = Modifier
@@ -544,7 +553,7 @@ private fun ChoiceOverlay(
                 // Set as one node — clickable() and the role otherwise land on separate
                 // semantics nodes and TalkBack reads an unnamed list.
                 .clearAndSetSemantics {
-                    contentDescription = "$label, ${selected.joinToString(", ").ifBlank { "nothing selected" }}"
+                    contentDescription = choiceDescription
                     role = Role.DropdownList
                     if (enabled) onClick { expanded = true; true } else disabled()
                 }
@@ -553,7 +562,7 @@ private fun ChoiceOverlay(
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
-                selected.joinToString(", ").ifBlank { "Select…" },
+                selected.joinToString(", ").ifBlank { stringResource(R.string.fill_forms_select) },
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1
             )
