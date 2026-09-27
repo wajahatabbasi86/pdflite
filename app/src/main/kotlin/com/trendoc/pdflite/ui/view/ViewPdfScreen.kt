@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.view
 
+import androidx.compose.ui.semantics.Role
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -329,7 +330,7 @@ fun ViewPdfScreen(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { selectedPageIndex = index },
+                                        .clickable(role = Role.Button) { selectedPageIndex = index },
                                     shape = RoundedCornerShape(12.dp),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                     border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x14191C1E)),
@@ -426,7 +427,7 @@ private fun QuickActionChip(text: String, icon: androidx.compose.ui.graphics.vec
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -697,7 +698,7 @@ private fun PageNavigatorBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onToggleExpanded)
+                    .clickable(role = Role.Button, onClick = onToggleExpanded)
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -730,7 +731,7 @@ private fun PageNavigatorBar(
                                     color = if (index == currentIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     shape = RoundedCornerShape(8.dp)
                                 )
-                                .clickable { onJumpTo(index) }
+                                .clickable(role = Role.Button) { onJumpTo(index) }
                         ) {
                             val thumb = thumbnailFor(index)
                             if (thumb != null) {

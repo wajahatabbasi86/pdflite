@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.common
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,7 +44,7 @@ fun GradientButton(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(if (enabled) gradient else Brush.horizontalGradient(listOf(disabledColor, disabledColor)))
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (enabled) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
             .padding(vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically

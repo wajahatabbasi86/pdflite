@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.common
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,7 +80,7 @@ fun DashedAddButton(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .border(1.dp, accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {

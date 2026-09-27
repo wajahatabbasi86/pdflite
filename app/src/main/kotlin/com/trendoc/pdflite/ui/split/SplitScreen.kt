@@ -1,5 +1,8 @@
 package com.trendoc.pdflite.ui.split
 
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.selectable
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -310,8 +313,16 @@ fun SplitScreen(
                                         if (uiState.mode == SplitMode.EXTRACT_SELECTED) viewModel.togglePage(page.index)
                                     },
                                     onLongClick = { previewPage = page.index },
-                                    onLongClickLabel = "Preview page"
+                                    onLongClickLabel = "Preview page",
+                                    // A page is a checkbox: tapping includes or excludes it. The
+                                    // state was shown only by a border before.
+                                    role = if (uiState.mode == SplitMode.EXTRACT_SELECTED) Role.Checkbox else null
                                 )
+                                .semantics {
+                                    if (uiState.mode == SplitMode.EXTRACT_SELECTED) {
+                                        toggleableState = ToggleableState(page.isSelected)
+                                    }
+                                }
                                 .border(
                                     width = if (page.isSelected) 2.dp else 1.dp,
                                     color = if (page.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
@@ -410,7 +421,7 @@ private fun FilterChip(text: String, onClick: () -> Unit) {
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)

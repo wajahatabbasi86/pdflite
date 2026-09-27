@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.imagetopdf
 
+import androidx.compose.ui.semantics.Role
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -403,7 +404,7 @@ private fun ImageRow(
                 item.thumbnail != null -> Image(
                     bitmap = item.thumbnail.asImageBitmap(),
                     contentDescription = "View and edit ${item.displayName}",
-                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onView)
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClick = onView)
                 )
                 else -> Box(
                     modifier = Modifier.size(44.dp).clip(CircleShape)
@@ -412,7 +413,7 @@ private fun ImageRow(
             }
 
             Column(
-                modifier = Modifier.weight(1f).clickable(enabled = item.thumbnail != null, onClick = onView)
+                modifier = Modifier.weight(1f).clickable(role = Role.Button, enabled = item.thumbnail != null, onClick = onView)
             ) {
                 Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1)
                 item.error?.let {

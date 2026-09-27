@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.home
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -252,7 +253,7 @@ private fun RecentsPreviewStrip(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
-                    .clickable(onClick = onOpenRecents)
+                    .clickable(role = Role.Button, onClick = onOpenRecents)
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

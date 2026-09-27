@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.merge
 
+import androidx.compose.ui.semantics.Role
 import com.trendoc.pdflite.ui.common.PagePreviewDialog
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -390,7 +391,7 @@ private fun MergeFileRow(
                         modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
                             // Tap to open the file's pages full-screen and zoom in; the
                             // drag handle, not the thumbnail, reorders.
-                            .clickable(onClickLabel = "Preview") { showPreview = true }
+                            .clickable(role = Role.Button, onClickLabel = "Preview") { showPreview = true }
                     )
                     else -> Box(
                         modifier = Modifier.size(44.dp).clip(CircleShape)
