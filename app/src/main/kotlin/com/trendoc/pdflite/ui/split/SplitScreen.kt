@@ -5,6 +5,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.trendoc.pdflite.ui.common.PagePreviewDialog
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.FileIconAvatar
 import com.trendoc.pdflite.ui.common.GradientButton
@@ -60,7 +65,7 @@ import com.trendoc.pdflite.util.SafFileUtils
  * Split / Extract Pages screen, per docs/REQUIREMENTS.md §4. Two modes toggled at the
  * top: extract checked pages into one PDF, or split by typed ranges into several.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun SplitScreen(
     onDone: () -> Unit,
@@ -68,6 +73,7 @@ fun SplitScreen(
     viewModel: SplitViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var previewPage by remember { mutableStateOf<Int?>(null) }
 
     val pickFileLauncher = rememberLauncherForActivityResult(
         contract = SafFileUtils.openSingleDocument
@@ -267,6 +273,21 @@ fun SplitScreen(
                     }
                 }
 
+                val previewUri = uiState.sourceUri
+                if (previewPage != null && previewUri != null) {
+                    PagePreviewDialog(
+                        uri = previewUri,
+                        initialPageIndex = previewPage ?: 0,
+                        pageCount = uiState.pages.size,
+                        onDismiss = { previewPage = null }
+                    )
+                }
+                Text(
+                    "Long-press a page to preview and zoom.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     modifier = Modifier.weight(1f),
@@ -280,9 +301,15 @@ fun SplitScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .clickable(enabled = uiState.mode == SplitMode.EXTRACT_SELECTED) {
-                                    viewModel.togglePage(page.index)
-                                }
+                                // Tap selects; long-press opens the page full-screen to zoom
+                                // in and check it before extracting.
+                                .combinedClickable(
+                                    onClick = {
+                                        if (uiState.mode == SplitMode.EXTRACT_SELECTED) viewModel.togglePage(page.index)
+                                    },
+                                    onLongClick = { previewPage = page.index },
+                                    onLongClickLabel = "Preview page"
+                                )
                                 .border(
                                     width = if (page.isSelected) 2.dp else 1.dp,
                                     color = if (page.isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,

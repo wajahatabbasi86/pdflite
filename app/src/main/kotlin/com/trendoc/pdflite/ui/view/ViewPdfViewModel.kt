@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.trendoc.pdflite.util.fitPageSize
 
 /** Thrown to open the file descriptor itself — a genuine permission problem (e.g. a caller
  * that handed us a Uri without granting read access), which is a different failure from a
@@ -205,11 +206,11 @@ class ViewPdfViewModel(application: Application) : AndroidViewModel(application)
             if (index !in 0 until renderer.pageCount) return null
             renderer.openPage(index).use { page ->
                 // Display resolution, not thumbnail — this is the actual reading surface.
-                val bitmap = Bitmap.createBitmap(
-                    page.width.coerceAtMost(MAX_RENDER_WIDTH),
-                    page.height.coerceAtMost(MAX_RENDER_HEIGHT),
-                    Bitmap.Config.ARGB_8888
-                )
+                // Fitted with aspect kept — page sizes are in points, so rendering at
+                // page.width drew a Letter page 612px wide and stretched it to the screen.
+                val (renderWidth, renderHeight) =
+                    fitPageSize(page.width, page.height, MAX_RENDER_WIDTH, MAX_RENDER_HEIGHT)
+                val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(android.graphics.Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 bitmap

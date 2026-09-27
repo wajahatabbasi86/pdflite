@@ -22,6 +22,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import com.trendoc.pdflite.util.fitPageSize
+import com.trendoc.pdflite.util.renderPageBitmap
 
 /** One row in the Merge file list (docs/REQUIREMENTS.md §3). */
 data class MergeFileItem(
@@ -121,13 +123,10 @@ class MergeViewModel(application: Application) : AndroidViewModel(application) {
             val pageCount = renderer.pageCount
             val thumbnail = if (pageCount > 0) {
                 renderer.openPage(0).use { page ->
-                    val bitmap = Bitmap.createBitmap(
-                        page.width.coerceAtMost(300),
-                        page.height.coerceAtMost(400),
-                        Bitmap.Config.ARGB_8888
-                    )
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    bitmap
+                    // Aspect kept, and onto white — without eraseColor a page with no
+                    // background of its own rendered onto transparent pixels.
+                    val (thumbWidth, thumbHeight) = fitPageSize(page.width, page.height, 300, 400)
+                    renderPageBitmap(page = page, width = thumbWidth, height = thumbHeight)
                 }
             } else null
             Result.success(pageCount to thumbnail)

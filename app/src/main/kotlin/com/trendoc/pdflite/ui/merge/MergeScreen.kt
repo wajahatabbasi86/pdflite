@@ -1,5 +1,9 @@
 package com.trendoc.pdflite.ui.merge
 
+import com.trendoc.pdflite.ui.common.PagePreviewDialog
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -330,6 +334,15 @@ private fun MergeFileRow(
     onDragEnd: () -> Unit,
     onRemove: () -> Unit
 ) {
+    var showPreview by remember { mutableStateOf(false) }
+    if (showPreview && item.error == null && item.pageCount > 0) {
+        PagePreviewDialog(
+            uri = item.uri,
+            initialPageIndex = 0,
+            pageCount = item.pageCount,
+            onDismiss = { showPreview = false }
+        )
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -373,8 +386,11 @@ private fun MergeFileRow(
                     }
                     item.thumbnail != null -> Image(
                         bitmap = item.thumbnail.asImageBitmap(),
-                        contentDescription = null,
+                        contentDescription = "Preview ${item.pageCount}-page file",
                         modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp))
+                            // Tap to open the file's pages full-screen and zoom in; the
+                            // drag handle, not the thumbnail, reorders.
+                            .clickable(onClickLabel = "Preview") { showPreview = true }
                     )
                     else -> Box(
                         modifier = Modifier.size(44.dp).clip(CircleShape)

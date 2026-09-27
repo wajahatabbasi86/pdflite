@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
+import com.trendoc.pdflite.util.fitPageSize
 
 /** A page's size in PDF points, used to lay out placeholders and to convert taps. */
 data class StampPageSize(val width: Int, val height: Int) {
@@ -180,11 +181,11 @@ class StampTextViewModel(application: Application) : AndroidViewModel(applicatio
             renderer = PdfRenderer(pfd)
             if (index !in 0 until renderer.pageCount) return null
             renderer.openPage(index).use { page ->
-                val bitmap = Bitmap.createBitmap(
-                    page.width.coerceAtMost(MAX_RENDER_WIDTH),
-                    page.height.coerceAtMost(MAX_RENDER_HEIGHT),
-                    Bitmap.Config.ARGB_8888
-                )
+                // Fitted with aspect kept — page sizes are in points, so rendering at
+                // page.width drew a Letter page 612px wide and stretched it to the screen.
+                val (renderWidth, renderHeight) =
+                    fitPageSize(page.width, page.height, MAX_RENDER_WIDTH, MAX_RENDER_HEIGHT)
+                val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(android.graphics.Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
                 bitmap

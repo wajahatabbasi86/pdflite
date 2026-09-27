@@ -36,3 +36,54 @@ fun renderPageBitmap(
     rendered.recycle()
     return compact
 }
+
+/**
+ * Pixel size for rendering a [pageWidthPt] x [pageHeightPt] page to fit inside [maxWidthPx] x
+ * [maxHeightPx] **with its aspect ratio kept**, scaling up as well as down.
+ *
+ * Replaces `page.width.coerceAtMost(max)` / `page.height.coerceAtMost(max)`, which had two
+ * faults: PdfRenderer page sizes are in points, so a US Letter page (612pt wide) rendered at
+ * 612px and was then stretched to a 1080px screen, soft before any zoom; and capping each
+ * side separately squashed any page wider or taller than the cap.
+ */
+fun fitPageSize(pageWidthPt: Int, pageHeightPt: Int, maxWidthPx: Int, maxHeightPx: Int): Pair<Int, Int> {
+    val w = pageWidthPt.coerceAtLeast(1).toFloat()
+    val h = pageHeightPt.coerceAtLeast(1).toFloat()
+    val factor = minOf(maxWidthPx / w, maxHeightPx / h)
+    return (w * factor).toInt().coerceAtLeast(1) to (h * factor).toInt().coerceAtLeast(1)
+}
+
+/**
+ * Renders just a region of one page into a [widthPx] x [heightPx] bitmap, with [transform]
+ * mapping page points (top-left origin) to bitmap pixels. Opens its own renderer so it can
+ * run on a background thread alongside any other render. Null on any failure, including OOM.
+ */
+fun renderPdfRegion(
+    context: android.content.Context,
+    uri: android.net.Uri,
+    pageIndex: Int,
+    widthPx: Int,
+    heightPx: Int,
+    transform: android.graphics.Matrix
+): Bitmap? {
+    var pfd: android.os.ParcelFileDescriptor? = null
+    var renderer: PdfRenderer? = null
+    return try {
+        pfd = SafFileUtils.openFileDescriptor(context, uri) ?: return null
+        renderer = PdfRenderer(pfd)
+        if (pageIndex !in 0 until renderer.pageCount) return null
+        renderer.openPage(pageIndex).use { page ->
+            val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+            bitmap.eraseColor(Color.WHITE)
+            page.render(bitmap, null, transform, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            bitmap
+        }
+    } catch (e: Exception) {
+        null
+    } catch (e: OutOfMemoryError) {
+        null
+    } finally {
+        renderer?.close()
+        pfd?.close()
+    }
+}

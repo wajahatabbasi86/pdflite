@@ -1,7 +1,6 @@
 package com.trendoc.pdflite.ui.common
 
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
@@ -20,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
+import kotlin.math.abs
 
 /**
  * Zoom and pan state for one [ZoomPanBox]. Hoisted so a screen can drive it itself —
@@ -39,6 +39,14 @@ class ZoomPanState(
     fun reset() {
         scale = 1f
         offset = Offset.Zero
+    }
+
+    /** Zooms about the viewport centre by [factor], for zoom buttons. The offset scales with
+     * it so whatever is in the middle of the screen stays there. */
+    fun zoomBy(factor: Float) {
+        val newScale = (scale * factor).coerceIn(minScale, maxScale)
+        offset = if (newScale <= minScale) Offset.Zero else offset * (newScale / scale)
+        scale = newScale
     }
 
     /**
@@ -167,11 +175,21 @@ fun ZoomPanBox(
                                     if (travelled > slop) transforming = true
                                 }
                                 if (transforming) {
-                                    state.offset = state.clampOffset(
-                                        state.offset + pan,
+                                    val before = state.offset
+                                    val after = state.clampOffset(
+                                        before + pan,
                                         state.scale, viewportWidthPx, viewportHeightPx
                                     )
-                                    event.changes.forEach { if (it.positionChanged()) it.consume() }
+                                    state.offset = after
+                                    // At the page's top or bottom edge a mostly-vertical drag
+                                    // can't move the page any further — leave it unconsumed so
+                                    // an enclosing list scrolls to the next page instead of the
+                                    // gesture dying here and forcing a zoom-out first.
+                                    val blockedVertically = abs(pan.y) > abs(pan.x) &&
+                                        abs(after.y - before.y) < 0.5f
+                                    if (!blockedVertically) {
+                                        event.changes.forEach { if (it.positionChanged()) it.consume() }
+                                    }
                                 }
                             }
                         } while (event.changes.any { it.pressed })

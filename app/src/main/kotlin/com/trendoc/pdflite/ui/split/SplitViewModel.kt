@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import com.trendoc.pdflite.util.fitPageSize
 
 /** Which of the two modes (§4) the user currently has selected. */
 enum class SplitMode { EXTRACT_SELECTED, SPLIT_BY_RANGES }
@@ -49,7 +50,9 @@ data class SplitUiState(
     val savedFileName: String? = null,
     /** Split-into-ranges produces >1 file; those are written straight to a chosen
      * SAF directory rather than via a single CreateDocument save dialog (§4.4). */
-    val savedResultUris: List<Uri> = emptyList()
+    val savedResultUris: List<Uri> = emptyList(),
+    /** The open document, for the zoomable page preview. */
+    val sourceUri: Uri? = null
 ) {
     val canExtract: Boolean
         get() = mode == SplitMode.EXTRACT_SELECTED &&
@@ -91,7 +94,7 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
         sourceUri = uri
         val context = getApplication<Application>()
         _uiState.update {
-            it.copy(isLoadingFile = true, errorMessage = null, pages = emptyList())
+            it.copy(isLoadingFile = true, errorMessage = null, pages = emptyList(), sourceUri = uri)
         }
 
         viewModelScope.launch {
@@ -187,12 +190,9 @@ class SplitViewModel(application: Application) : AndroidViewModel(application) {
                 // then kept as RGB_565. A page on white has no alpha, and the reduced depth
                 // isn't visible at thumbnail size — the full-quality render is Split's
                 // output file, not this grid.
-                renderPageBitmap(
-                    page = page,
-                    width = page.width.coerceAtMost(THUMBNAIL_WIDTH),
-                    height = page.height.coerceAtMost(THUMBNAIL_HEIGHT),
-                    halveMemory = true
-                )
+                val (thumbWidth, thumbHeight) =
+                    fitPageSize(page.width, page.height, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)
+                renderPageBitmap(page = page, width = thumbWidth, height = thumbHeight, halveMemory = true)
             }
         } catch (e: Exception) {
             null

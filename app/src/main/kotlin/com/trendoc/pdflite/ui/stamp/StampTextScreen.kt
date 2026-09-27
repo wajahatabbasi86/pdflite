@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.rememberZoomPanState
+import com.trendoc.pdflite.ui.common.SharpZoomLayer
 import com.trendoc.pdflite.ui.common.ZoomPanBox
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
@@ -223,6 +224,7 @@ fun StampTextScreen(
                     ) {
                         items(uiState.pageCount, key = { it }) { index ->
                             StampPageView(
+                                sourceUri = uiState.sourceUri,
                                 pageIndex = index,
                                 pageSize = uiState.pageSizes[index],
                                 bitmapProvider = {
@@ -319,6 +321,7 @@ private fun SelectedStampBar(
  */
 @Composable
 private fun StampPageView(
+    sourceUri: android.net.Uri?,
     pageIndex: Int,
     pageSize: StampPageSize,
     bitmapProvider: () -> android.graphics.Bitmap?,
@@ -404,6 +407,16 @@ private fun StampPageView(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.FillBounds
                         )
+                        if (sourceUri != null) {
+                            SharpZoomLayer(
+                                state = zoomState,
+                                uri = sourceUri,
+                                pageIndex = pageIndex,
+                                pageWidthPt = pageSize.width.toFloat(),
+                                contentWidthPx = viewportWidthPx,
+                                contentHeightPx = pageHeightPx
+                            )
+                        }
                     } else {
                         Box(
                             modifier = Modifier

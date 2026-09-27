@@ -61,6 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trendoc.pdflite.ui.common.ErrorCard
 import com.trendoc.pdflite.ui.common.GradientButton
 import com.trendoc.pdflite.ui.common.ResultScreen
+import com.trendoc.pdflite.ui.common.SharpZoomLayer
 import com.trendoc.pdflite.ui.common.ZoomPanBox
 import com.trendoc.pdflite.ui.common.rememberZoomPanState
 import com.trendoc.pdflite.util.SafFileUtils
@@ -208,6 +209,7 @@ fun FillFormsScreen(
                     ) {
                         items(uiState.pages, key = { it.pageIndex }) { page ->
                             FormPageView(
+                                sourceUri = uiState.sourceUri,
                                 page = page,
                                 widgets = uiState.widgets.filter { it.pageIndex == page.pageIndex },
                                 fieldValues = uiState.fieldValues,
@@ -252,6 +254,7 @@ private fun FillFormsStatusStrip(fieldCount: Int, pageCount: Int) {
 
 @Composable
 private fun FormPageView(
+    sourceUri: android.net.Uri?,
     page: FormPage,
     widgets: List<FormWidget>,
     fieldValues: Map<String, String>,
@@ -293,6 +296,16 @@ private fun FormPageView(
             // against a rounding difference reintroducing letterboxing.
             contentScale = ContentScale.FillBounds
         )
+        if (sourceUri != null) {
+            SharpZoomLayer(
+                state = zoomState,
+                uri = sourceUri,
+                pageIndex = page.pageIndex,
+                pageWidthPt = page.bitmap.width / page.pxPerPoint,
+                contentWidthPx = displayWidthPx,
+                contentHeightPx = page.bitmap.height * displayScale
+            )
+        }
         widgets.forEach { widget ->
             // PDF rects are bottom-left-origin points; flip to the bitmap's top-left-origin
             // pixel space, then to dp, using this specific page's own render scale.
