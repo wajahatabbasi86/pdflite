@@ -34,4 +34,4 @@ Anyone who needs to quickly merge a few PDFs before emailing them, pull one page
 
 TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. Every tool is free to use. If you'd like to support development, there is an optional one-off donation in the app — it unlocks nothing and changes nothing.
 
-TrenDoc is built by TrenBridge IT.
+TrenDoc is built by Trenovasys.

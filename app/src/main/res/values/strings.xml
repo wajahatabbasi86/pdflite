@@ -109,7 +109,7 @@
     <string name="tool_add_text_desc">Type onto scanned forms with no fillable fields</string>
     <string name="tool_add_text_badge">Any PDF</string>
     <string name="tool_add_text_link">Start Typing</string>
-    <string name="home_byline">BY TRENBRIDGE IT · Offline PDF Toolkit</string>
+    <string name="home_byline">BY TRENOVASYS · Offline PDF Toolkit</string>
     <string name="home_ad_free_remaining">Ad-free (%1$s)</string>
     <string name="common_remove_ads">Remove Ads</string>
     <string name="duration_hours_minutes">%1$dh %2$dm</string>

@@ -65,8 +65,8 @@ py = 320
 for label in ("No pop-ups", "No subscription", "Nothing shared"):
     px_cursor = pill(px_cursor, py, label) + 14
 
-# --- "by TrenBridge IT" byline, bottom-right ---
-byline = "by TrenBridge IT"
+# --- "by Trenovasys" byline, bottom-right ---
+byline = "by Trenovasys"
 bbox = draw.textbbox((0, 0), byline, font=byline_font)
 bw = bbox[2] - bbox[0]
 draw.text((W - bw - 40, H - 50), byline, font=byline_font, fill=(120, 128, 140, 255))
