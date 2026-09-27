@@ -260,7 +260,11 @@ class ViewPdfViewModel @JvmOverloads constructor(
 
     override fun onCleared() {
         super.onCleared()
+        // Final teardown: nothing can draw these any more, so free the pixels now rather
+        // than 10–15 s later when GC reaches them.
+        val bitmaps = _pageCache.values.toList()
         clearPageCache()
+        bitmaps.forEach { if (!it.isRecycled) it.recycle() }
     }
 
     fun clearError() {

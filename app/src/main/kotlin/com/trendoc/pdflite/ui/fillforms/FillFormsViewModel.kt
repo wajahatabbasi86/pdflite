@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.fillforms
 
+import com.trendoc.pdflite.util.PageBitmapCache
 import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
@@ -77,9 +78,13 @@ data class FormWidget(
     val label: String = ""
 )
 
-/** One page rendered for display, alongside the scale needed to place [FormWidget] rects
- * (given in PDF points) at the right pixel position over this specific bitmap. */
-data class FormPage(val pageIndex: Int, val bitmap: Bitmap, val pxPerPoint: Float, val heightPt: Float)
+/**
+ * One page that carries form fields — its size in PDF points only. The rendered bitmap is held
+ * separately in [FillFormsViewModel.pageBitmaps], so a page can be laid out, and its fields
+ * placed and filled, before (or without) its image being in memory. Field rects are in the
+ * same points, so layout depends on this geometry alone, never on a bitmap's pixel size.
+ */
+data class FormPage(val pageIndex: Int, val widthPt: Float, val heightPt: Float)
 
 data class FillFormsUiState(
     val fileName: String? = null,
@@ -98,7 +103,10 @@ data class FillFormsUiState(
     val savedFileName: String? = null,
     /** The document being filled. Exposed so the screen can hand it to Add Text when the
      * PDF turns out to have no fields — see [hasNoFields]. */
-    val sourceUri: Uri? = null
+    val sourceUri: Uri? = null,
+    /** Large file: pages render on demand as they scroll into view instead of all up front.
+     * See [LAZY_THRESHOLD_BYTES]. */
+    val isLazy: Boolean = false
 ) {
     val canSave: Boolean get() = widgets.isNotEmpty() && !isProcessing
 }
@@ -121,9 +129,20 @@ class FillFormsViewModel @JvmOverloads constructor(
     private var sourceUri: Uri? = null
     private var pendingOutput: File? = null
 
+    /**
+     * Rendered pages. For a small file every field page is rendered at load and held (the
+     * original behaviour — instant scrolling, and such a file can't hold many pages); for a
+     * large one only pages near the viewport, bounded by the heap. Replaced per document so
+     * the budget matches the mode, and cleared whenever the work on a file ends.
+     */
+    private var cache = PageBitmapCache(maxPages = 1)
+    val pageBitmaps: Map<Int, Bitmap> get() = cache.pages
+
     fun onDocumentPicked(uri: Uri?) {
         if (uri == null) return
         sourceUri = uri
+        // The previous file's pages go now, not when the new one finishes loading.
+        releasePages()
         val context = getApplication<Application>()
         _uiState.update {
             FillFormsUiState(isLoadingFile = true, fileName = null, sourceUri = uri)
@@ -131,7 +150,12 @@ class FillFormsViewModel @JvmOverloads constructor(
 
         viewModelScope.launch {
             val fileName = SafFileUtils.displayName(context, uri)
-            val result = withContext(Dispatchers.IO) { loadForm(uri) }
+            // Unknown size (a provider that doesn't report one) is treated as large: the safe
+            // side, since the eager path is the one that can run out of memory.
+            val sizeBytes = SafFileUtils.fileSize(context, uri)
+            val lazy = sizeBytes < 0 || sizeBytes > LAZY_THRESHOLD_BYTES
+            val result = withContext(Dispatchers.IO) { loadForm(uri, lazy) }
+            if (sourceUri != uri) return@launch // another file was picked meanwhile
             result.fold(
                 onSuccess = { (pages, widgets, values) ->
                     _uiState.update {
@@ -142,7 +166,8 @@ class FillFormsViewModel @JvmOverloads constructor(
                             pages = pages,
                             widgets = widgets,
                             fieldValues = values,
-                            defaultSaveName = defaultNameFor(fileName)
+                            defaultSaveName = defaultNameFor(fileName),
+                            isLazy = lazy
                         )
                     }
                 },
@@ -164,7 +189,7 @@ class FillFormsViewModel @JvmOverloads constructor(
      * [PdfRenderer], separately, same as every other tool screen — only the pages that
      * actually contain a field, so a 40-page form with fields on 2 pages doesn't render 38
      * pages nobody needs to see. */
-    private fun loadForm(uri: Uri): Result<Triple<List<FormPage>, List<FormWidget>, Map<String, String>>> {
+    private fun loadForm(uri: Uri, lazy: Boolean): Result<Triple<List<FormPage>, List<FormWidget>, Map<String, String>>> {
         val context = getApplication<Application>()
         return try {
             val widgets = mutableListOf<FormWidget>()
@@ -289,66 +314,105 @@ class FillFormsViewModel @JvmOverloads constructor(
             } ?: return Result.failure(IllegalStateException("Unable to open $uri"))
 
             val pagesWithFields = widgets.map { it.pageIndex }.toSortedSet()
-            val pages = if (pagesWithFields.isEmpty()) emptyList() else renderPages(uri, pagesWithFields)
+            val pages = if (pagesWithFields.isEmpty()) emptyList() else readGeometry(uri, pagesWithFields)
+            if (lazy) {
+                cache = PageBitmapCache(PageBitmapCache.budgetFor(RENDER_WIDTH_PX.toLong() * RENDER_WIDTH_PX * 3 / 2 * 2))
+            } else {
+                cache = PageBitmapCache(maxPages = pages.size.coerceAtLeast(1))
+                renderAll(uri, pages)
+            }
             Result.success(Triple(pages, widgets, values))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Renders every page that carries a form field, all held at once.
-     *
-     * Bounded in practice by how many pages actually have fields rather than by the
-     * document's length, but a long form (a multi-page tax or insurance packet) still
-     * reaches a real memory ceiling: at 1080px wide these are several MB each. RGB_565
-     * halves that versus ARGB_8888 with no visible loss on what is a white-background
-     * document, and the OutOfMemoryError catch keeps a pathological file from taking the
-     * process down. A full fix — rendering on demand the way View PDF and Split now do —
-     * is tracked as item 2.5 in docs/PLAY_RELEASE_FIX_PROMPT.md; it is more involved here
-     * because each page's bitmap is the coordinate space its field overlays are placed in.
-     */
-    private fun renderPages(uri: Uri, pageIndices: Set<Int>): List<FormPage> {
-        val context = getApplication<Application>()
-        val pfd = SafFileUtils.openFileDescriptor(context, uri) ?: return emptyList()
-        return try {
-            renderPagesInto(pfd, pageIndices)
-        } catch (e: OutOfMemoryError) {
-            emptyList()
-        }
-    }
-
-    private fun renderPagesInto(
-        pfd: android.os.ParcelFileDescriptor,
-        pageIndices: Set<Int>
-    ): List<FormPage> {
+    /** Each field page's size in points — cheap: pages are opened, never rendered. */
+    private fun readGeometry(uri: Uri, pageIndices: Set<Int>): List<FormPage> {
+        val pfd = SafFileUtils.openFileDescriptor(getApplication(), uri) ?: return emptyList()
         return pfd.use {
             PdfRenderer(it).use { renderer ->
-                pageIndices.mapNotNull { index ->
-                    if (index !in 0 until renderer.pageCount) return@mapNotNull null
+                pageIndices.filter { index -> index in 0 until renderer.pageCount }.map { index ->
                     renderer.openPage(index).use { page ->
-                        // A fixed target width (a common phone width) keeps every page at a
-                        // consistent, legible on-screen size regardless of the PDF's own
-                        // page size; pxPerPoint is derived from it so field rects (in PDF
-                        // points) land in the right place over this exact bitmap.
-                        val targetWidthPx = 1080
-                        val pxPerPoint = targetWidthPx / page.width.toFloat()
-                        val targetHeightPx = (page.height * pxPerPoint).toInt().coerceAtLeast(1)
-                        // halveMemory: rendered at ARGB_8888 (the only config PdfRenderer
-                        // accepts) then kept as RGB_565, which halves what stays resident
-                        // per page. Dimensions are unchanged, so pxPerPoint and the field
-                        // overlay coordinates built on it are unaffected.
-                        val bitmap = renderPageBitmap(
-                            page = page,
-                            width = targetWidthPx,
-                            height = targetHeightPx,
-                            halveMemory = true
-                        )
-                        FormPage(pageIndex = index, bitmap = bitmap, pxPerPoint = pxPerPoint, heightPt = page.height.toFloat())
+                        FormPage(index, page.width.toFloat(), page.height.toFloat())
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Small file: every field page up front, as before. One renderer for the lot. An
+     * OutOfMemoryError (a small file can still have huge pages) drops what was rendered and
+     * leaves the rest to on-demand rendering rather than taking the process down.
+     */
+    private fun renderAll(uri: Uri, pages: List<FormPage>) {
+        val pfd = SafFileUtils.openFileDescriptor(getApplication(), uri) ?: return
+        try {
+            pfd.use {
+                PdfRenderer(it).use { renderer ->
+                    for (page in pages) {
+                        if (!cache.beginRender(page.pageIndex)) continue
+                        cache.put(page.pageIndex, renderOne(renderer, page))
+                    }
+                }
+            }
+        } catch (e: OutOfMemoryError) {
+            cache.clear()
+        } catch (e: Exception) {
+            // Pages that didn't render here are rendered on demand when shown.
+        }
+    }
+
+    /**
+     * Ensures [pageIndex] is rendered, off the main thread. Called from composition as a page
+     * comes into view; an already-cached or in-flight page returns immediately. In eager mode
+     * this only ever fills a page that failed at load.
+     */
+    fun requestPage(pageIndex: Int) {
+        val uri = sourceUri ?: return
+        val page = _uiState.value.pages.firstOrNull { it.pageIndex == pageIndex } ?: return
+        val target = cache
+        if (!target.beginRender(pageIndex)) return
+        viewModelScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                try {
+                    SafFileUtils.openFileDescriptor(getApplication(), uri)?.use { pfd ->
+                        PdfRenderer(pfd).use { renderer -> renderOne(renderer, page) }
+                    }
+                } catch (e: Exception) {
+                    null
+                } catch (e: OutOfMemoryError) {
+                    null
+                }
+            }
+            // Only into the cache it was requested for: a new file replaces the cache.
+            if (bitmap != null && target === cache && sourceUri == uri) target.put(pageIndex, bitmap) else target.failed(pageIndex)
+        }
+    }
+
+    /**
+     * One page at [RENDER_WIDTH_PX] wide. Rendered at ARGB_8888 (the only config PdfRenderer
+     * accepts) then kept as RGB_565, which halves what stays resident with no visible loss on
+     * a white-background document.
+     */
+    private fun renderOne(renderer: PdfRenderer, page: FormPage): Bitmap =
+        renderer.openPage(page.pageIndex).use { p ->
+            val height = (page.heightPt * RENDER_WIDTH_PX / page.widthPt).toInt().coerceAtLeast(1)
+            renderPageBitmap(page = p, width = RENDER_WIDTH_PX, height = height, halveMemory = true)
+        }
+
+    /** Lets go of every rendered page for the current file. */
+    private fun releasePages() {
+        cache.clear()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Final teardown: the screen is gone, so the pixels can be freed immediately.
+        cache.recycleAll()
+        pendingOutput?.delete()
+        pendingOutput = null
     }
 
     fun setTextValue(groupId: String, value: String) {
@@ -522,6 +586,8 @@ class FillFormsViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                // The work on this file is finished — only the result screen is shown now.
+                releasePages()
                 recentsRepository.record(
                     uri = destination,
                     displayName = fileName,
@@ -580,3 +646,9 @@ private fun com.tom_roush.pdfbox.pdmodel.interactive.form.PDField.fieldLabel(fal
         .lowercase()
         .ifEmpty { fallback }
 }
+
+/** Above this size a form renders its pages on demand rather than all at load. */
+const val LAZY_THRESHOLD_BYTES = 10L * 1024 * 1024
+
+/** Render width for form pages; field positions scale from points to this. */
+private const val RENDER_WIDTH_PX = 1080

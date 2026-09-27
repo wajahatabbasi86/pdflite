@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.merge
 
+import com.trendoc.pdflite.util.TempFiles
 import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
@@ -255,6 +256,7 @@ class MergeViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                releaseThumbnails() // done with these files
                 recentsRepository.record(
                     uri = destination,
                     displayName = fileName,
@@ -275,5 +277,20 @@ class MergeViewModel @JvmOverloads constructor(
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    private fun releaseThumbnails() {
+        _uiState.update { state -> state.copy(files = state.files.map { it.copy(thumbnail = null) }) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Final teardown: nothing can draw these any more, so free the pixels now rather
+        // than 10–15 s later when GC reaches them.
+        val bitmaps = _uiState.value.files.mapNotNull { it.thumbnail }
+        releaseThumbnails()
+        bitmaps.forEach { if (!it.isRecycled) it.recycle() }
+        TempFiles.discard(pendingMergedFile)
+        pendingMergedFile = null
     }
 }

@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.stamp
 
+import com.trendoc.pdflite.util.TempFiles
 import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
@@ -284,7 +285,14 @@ class StampTextViewModel @JvmOverloads constructor(
 
     override fun onCleared() {
         super.onCleared()
+        // Final teardown: nothing can draw these any more, so free the pixels now rather
+        // than 10–15 s later when GC reaches them.
+        val bitmaps = _pageCache.values.toList() + listOfNotNull(_zoomRender.value?.bitmap)
         clearPageCache()
+        _zoomRender.value = null
+        bitmaps.forEach { if (!it.isRecycled) it.recycle() }
+        TempFiles.discard(pendingOutput)
+        pendingOutput = null
     }
 
     // ---------------------------------------------------------------- editing
@@ -449,6 +457,9 @@ class StampTextViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                // Done with this file: only the result screen is shown now.
+                clearPageCache()
+                _zoomRender.value = null
                 recentsRepository.record(
                     uri = destination,
                     displayName = fileName,

@@ -283,7 +283,17 @@ Survivable longer, but a 500-page file still reaches ~240 MB.
       `onAdFailedToShowFullScreenContent`. A failed show leaves `rewardedAd` non-null and
       `_isReady` false forever. Implement the callback: null the ad, reload, surface the failure.
 
-### 2.5 Render Fill Forms pages on demand — ⚠️ PARTIALLY MITIGATED (2026-09-26)
+### 2.5 Render Fill Forms pages on demand — ✅ DONE (2026-09-27)
+
+> Files over 10 MB (or of unknown size) render pages on demand into a heap-bounded
+> `PageBitmapCache`; smaller files keep rendering every field page up front. Page geometry is
+> separate from bitmaps, so fields lay out and fill before a page's image exists. Measured on a
+> 60-page, 11.7 MB form: memory plateaus at ~84 MB scrolled end to end (eager would need ~186 MB
+> of page bitmaps). Every tool now frees its bitmaps and temp output on leaving (recycled in
+> `onCleared`), on opening another file, and after saving; stale temp outputs are swept at start.
+> Repeated visits to View PDF / Add Text show no growth — no leak.
+>
+> Original notes:
 
 **Found while doing 2.1/2.2; not in the original audit.** `FillFormsViewModel.renderPages`
 has the same shape as the two bugs above: it renders *every* page carrying a form field, all

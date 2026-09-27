@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.compress
 
+import com.trendoc.pdflite.util.TempFiles
 import com.trendoc.pdflite.R
 import androidx.annotation.StringRes
 import com.trendoc.pdflite.di.appContainer
@@ -292,5 +293,11 @@ class CompressViewModel @JvmOverloads constructor(
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        TempFiles.discard(pendingFile)
+        pendingFile = null
     }
 }

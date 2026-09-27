@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.split
 
+import com.trendoc.pdflite.util.TempFiles
 import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
@@ -399,6 +400,7 @@ class SplitViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(readyToSave = false, savedResultUri = destination, savedFileName = fileName)
                 }
+                releaseThumbnails() // done with this file; the result screen needs none
                 recentsRepository.record(
                     uri = destination,
                     displayName = fileName,
@@ -446,6 +448,7 @@ class SplitViewModel @JvmOverloads constructor(
                     it.copy(
                         readyToSave = false,
                         savedResultUris = writtenUris,
+                        pages = it.pages.map { page -> page.copy(thumbnail = null) },
                         savedFileName = getApplication<Application>().resources.getQuantityString(R.plurals.file_count, writtenUris.size, writtenUris.size)
                     )
                 }
@@ -459,6 +462,23 @@ class SplitViewModel @JvmOverloads constructor(
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    /** Drops every thumbnail bitmap but keeps the page list (and selection) itself. */
+    private fun releaseThumbnails() {
+        thumbnailOrder.clear()
+        _uiState.update { state -> state.copy(pages = state.pages.map { it.copy(thumbnail = null) }) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Final teardown: nothing can draw these any more, so free the pixels now rather
+        // than 10–15 s later when GC reaches them.
+        val bitmaps = _uiState.value.pages.mapNotNull { it.thumbnail }
+        releaseThumbnails()
+        bitmaps.forEach { if (!it.isRecycled) it.recycle() }
+        TempFiles.discard(pendingSingleOutput)
+        pendingSingleOutput = null
     }
 }
 

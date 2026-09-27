@@ -1,5 +1,6 @@
 package com.trendoc.pdflite.ui.imagetopdf
 
+import com.trendoc.pdflite.util.TempFiles
 import com.trendoc.pdflite.R
 import com.trendoc.pdflite.di.appContainer
 import android.app.Application
@@ -205,6 +206,11 @@ class ImageToPdfViewModel @JvmOverloads constructor(
         super.onCleared()
         val context = getApplication<Application>()
         _uiState.value.images.forEach { CameraCaptureUtils.deleteIfCapture(context, it.uri) }
+        val bitmaps = _uiState.value.images.mapNotNull { it.thumbnail }
+        _uiState.update { state -> state.copy(images = state.images.map { it.copy(thumbnail = null) }) }
+        bitmaps.forEach { if (!it.isRecycled) it.recycle() }
+        TempFiles.discard(pendingFile)
+        pendingFile = null
     }
 
     /** Rotates one image a further 90° clockwise (cumulative — four taps return to normal)

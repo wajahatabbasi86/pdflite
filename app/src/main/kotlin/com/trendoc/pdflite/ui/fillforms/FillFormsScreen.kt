@@ -220,9 +220,13 @@ fun FillFormsScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(uiState.pages, key = { it.pageIndex }) { page ->
+                            // Composed only near the viewport, so in lazy mode only those pages
+                            // are ever rendered; a no-op for a page already in hand.
+                            LaunchedEffect(page.pageIndex) { viewModel.requestPage(page.pageIndex) }
                             FormPageView(
                                 sourceUri = uiState.sourceUri,
                                 page = page,
+                                bitmap = viewModel.pageBitmaps[page.pageIndex],
                                 widgets = uiState.widgets.filter { it.pageIndex == page.pageIndex },
                                 fieldValues = uiState.fieldValues,
                                 onTextChange = viewModel::setTextValue,
@@ -268,6 +272,8 @@ private fun FillFormsStatusStrip(fieldCount: Int, pageCount: Int) {
 private fun FormPageView(
     sourceUri: android.net.Uri?,
     page: FormPage,
+    /** Null while the page renders (lazy mode) — layout and fields don't wait for it. */
+    bitmap: android.graphics.Bitmap?,
     widgets: List<FormWidget>,
     fieldValues: Map<String, String>,
     onTextChange: (String, String) -> Unit,
@@ -289,33 +295,40 @@ private fun FormPageView(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val displayWidthDp = maxWidth
         val displayWidthPx = with(density) { displayWidthDp.toPx() }
-        val displayScale = displayWidthPx / page.bitmap.width.coerceAtLeast(1)
-        val displayHeightDp = with(density) { (page.bitmap.height * displayScale).toDp() }
-        // Points -> displayed pixels, folding in both the render scale and the fit-to-width
-        // scale, so a rect in PDF points lands exactly on the same spot the bitmap draws it.
-        val pointsToPx = page.pxPerPoint * displayScale
+        // Points -> displayed pixels straight from the page's own size, so layout and every
+        // field position are the same whether or not the page image is in memory yet.
+        val pointsToPx = displayWidthPx / page.widthPt.coerceAtLeast(1f)
+        val displayHeightPx = page.heightPt * pointsToPx
+        val displayHeightDp = with(density) { displayHeightPx.toDp() }
 
         val zoomState = rememberZoomPanState(maxScale = 6f)
         ZoomPanBox(
             state = zoomState,
             modifier = Modifier.width(displayWidthDp).height(displayHeightDp)
         ) {
-        Image(
-            bitmap = page.bitmap.asImageBitmap(),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            // The container is already the bitmap's aspect ratio, so this only guards
-            // against a rounding difference reintroducing letterboxing.
-            contentScale = ContentScale.FillBounds
-        )
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                // The container is already the page's aspect ratio, so this only guards
+                // against a rounding difference reintroducing letterboxing.
+                contentScale = ContentScale.FillBounds
+            )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator(modifier = Modifier.size(28.dp)) }
+        }
         if (sourceUri != null) {
             SharpZoomLayer(
                 state = zoomState,
                 uri = sourceUri,
                 pageIndex = page.pageIndex,
-                pageWidthPt = page.bitmap.width / page.pxPerPoint,
+                pageWidthPt = page.widthPt,
                 contentWidthPx = displayWidthPx,
-                contentHeightPx = page.bitmap.height * displayScale
+                contentHeightPx = displayHeightPx
             )
         }
         widgets.forEach { widget ->

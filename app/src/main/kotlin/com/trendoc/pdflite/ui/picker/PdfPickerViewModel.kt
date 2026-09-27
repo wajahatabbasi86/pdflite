@@ -111,4 +111,9 @@ class PdfPickerViewModel(application: Application) : AndroidViewModel(applicatio
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        _uiState.update { it.copy(thumbnails = emptyList()) }
+    }
 }

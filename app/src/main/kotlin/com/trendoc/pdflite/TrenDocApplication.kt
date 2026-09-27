@@ -1,5 +1,6 @@
 package com.trendoc.pdflite
 
+import com.trendoc.pdflite.util.TempFiles
 import com.trendoc.pdflite.di.AppContainer
 import android.app.Application
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
@@ -20,6 +21,8 @@ class TrenDocApplication : Application() {
         PDFBoxResourceLoader.init(applicationContext)
         // Photos of documents from a session that never cleaned up (killed mid-flow).
         CameraCaptureUtils.sweepStale(applicationContext)
+        // Unsaved tool outputs from sessions that were killed before cleaning up.
+        TempFiles.sweepStale(applicationContext)
 
         // The ads SDK is deliberately *not* initialized here: EEA/UK consent has to be
         // gathered first, and that needs an Activity. See billing/AdConsent.kt.
