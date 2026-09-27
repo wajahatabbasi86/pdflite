@@ -49,7 +49,11 @@ This is a toolchain upgrade, not a one-line edit:
 
 ---
 
-### 1.2 Make the store listing describe the app that actually exists
+### 1.2 Make the store listing describe the app that actually exists — ✅ DONE (2026-09-27)
+
+> Decision taken: kept the recommended default — "Remove Ads" stays a 24-hour consumable and the
+> listing now says so plainly. Banner-on-every-screen, the rewarded video and the first-launch
+> introduction are all disclosed; Fill Forms and Add Text added to the feature list.
 
 **Problem.** `store-listing/full-description.txt` makes four claims the code contradicts. This is
 the highest-risk item in this document: misrepresented in-app purchases fall under Play's

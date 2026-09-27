@@ -1,1 +1,1 @@
-Merge, split, compress PDFs. No pop-ups, no subscription, no account.
+Merge, split, compress, fill PDFs on-device. No subscription, no account.

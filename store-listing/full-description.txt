@@ -1,28 +1,37 @@
-Ever open a "free" PDF app just to read one document, and instead get a pop-up, a "your file is out of date" warning, a welcome screen, or a paywall before you've even seen your file? TrenDoc doesn't do that. Pick a tool, do the job, get your file. That's the entire app.
+Ever open a "free" PDF app just to read one document, and instead get a pop-up, a "your file is out of date" warning, or a paywall before you've even seen your file? TrenDoc doesn't do that. Pick a tool, do the job, get your file. That's the entire app.
 
 WHAT YOU CAN DO
 • Merge PDFs — combine multiple documents into one, in the order you choose
 • Split / Extract pages — pull out specific pages or burst a document into ranges
 • Compress PDF — shrink file size by re-encoding embedded images, with an honest before/after size (never a fabricated number)
-• Image(s) → PDF — turn photos or scans into a PDF, one page per image
+• Image(s) → PDF — turn photos or scans into a PDF, one page per image, or take a photo with the camera
 • PDF → Image(s) — export pages as high-resolution JPG or PNG
-• View PDF — open and read any PDF, including straight from your file manager's "Open with" menu
+• View PDF — open and read any PDF, including straight from your file manager's "Open with" menu, with pinch-to-zoom
+• Fill Forms — type into a PDF's fillable form fields and save a flattened copy
+• Add Text — tap anywhere on a page, including a scanned paper form with no fillable fields, and type onto it
 
 NOTHING BETWEEN YOU AND YOUR FILE
-• No pop-ups, no "welcome" screens, no fake system warnings, no interruptions — ever, on any screen
-• No account or sign-up, so there's nothing to crash into and nothing to log in to
-• No subscription. Ever. If removing the one small ad is worth it to you, it's a single one-time payment — not a recurring charge, not a free trial that quietly needs a card number first
+• No pop-ups, no fake system warnings, no interruptions mid-task. A short introduction is shown once on first launch, and never again
+• No account or sign-up, so there's nothing to log in to
+• No subscription and no auto-renewal. Ever
 • No watermark on any output, whether you've paid or not
-• One small banner ad on the home screen only. No interstitials, no video ads, no ad breaks mid-task
+
+ABOUT THE ADS — PLAINLY
+• TrenDoc shows one small banner ad at the bottom of the screen. It appears on every screen while ads are on
+• No interstitials and no ad breaks mid-task
+• Want a break from the banner? Two options, both optional:
+  – Watch one rewarded video ad, only when you choose to, for 2 hours without the banner
+  – Or make a one-off purchase for 1 day (24 hours) without the banner. It is not permanent, it is not a subscription, and it never renews or charges you again — buy it again only if you want another day
 
 WHERE YOUR FILES ACTUALLY GO: NOWHERE ELSE
 • Every file is processed entirely on your device — nothing is ever uploaded to a server, including compression and conversion
-• TrenDoc shares nothing with anyone. Not app activity, not device identifiers, not analytics — there's no tracking SDK in this app to share it with
-• Uses Android's Storage Access Framework, so TrenDoc never asks for broad storage permissions — you choose exactly which file it can see, one file at a time
+• Your documents and photos are never collected or shared. The ad provider (Google AdMob) receives your device's advertising ID to serve ads; you can reset or delete it in your Android settings, and users in the EEA and UK are asked for consent first
+• No analytics or tracking SDK beyond the ad provider
+• Uses Android's Storage Access Framework, so TrenDoc never asks for broad storage permissions — you choose exactly which file it can see, one file at a time. The camera is only used when you tap "Take Photo"
 
 WHO IT'S FOR
-Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, or turn a stack of photos into a single PDF — without wading through ads, accounts, or a paywall to do it.
+Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, fill in a form, or turn a stack of photos into a single PDF — without wading through accounts or a paywall to do it.
 
-TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. If you've ever uninstalled a "free" PDF app because of what it put between you and your document, this is built for you.
+TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. Every tool is free to use.
 
 TrenDoc is built by TrenBridge IT.

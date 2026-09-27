@@ -1,5 +1,6 @@
 First release of TrenDoc:
-• Merge PDFs, Split/Extract pages, Compress, Image(s) → PDF, PDF → Image(s), and a read-only PDF viewer
+• Merge PDFs, Split/Extract pages, Compress, Image(s) → PDF, PDF → Image(s), and a PDF viewer with pinch-to-zoom
+• Fill Forms for fillable PDFs, and Add Text for scanned forms with no fillable fields
 • Open any PDF directly from your file manager's "Open with" menu
 • Pick your own accent color and background style in Appearance
-• One small banner ad, with an optional one-time "Remove Ads" purchase
+• One small banner ad; optionally remove it for 1 day with a one-off purchase (no subscription), or for 2 hours by watching a rewarded video
