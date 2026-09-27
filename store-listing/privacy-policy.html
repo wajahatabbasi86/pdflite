@@ -305,11 +305,11 @@
 
   <h1 class="title">Privacy Policy</h1>
   <div class="meta-row">
-    <span>Effective <b>September 15, 2026</b></span>
+    <span>Effective <b>September 27, 2026</b></span>
     <span>Applies to package <span class="mono">com.trendoc.pdflite</span></span>
   </div>
   <p class="lede">
-    TrenDoc merges, splits, compresses, and converts PDFs entirely on your device. This
+    TrenDoc merges, splits, compresses, converts and fills in PDFs entirely on your device. This
     page explains, plainly, what that means for your data — most of which is that there
     isn't any to explain, since your files never leave your phone.
   </p>
@@ -347,7 +347,7 @@
         </div>
         <div class="card">
           <div class="card-title"><span class="dot local"></span>Stored only on your device</div>
-          <p>Your Appearance preferences (accent color, theme) and whether you've purchased Remove Ads — both in local app storage, never transmitted anywhere.</p>
+          <p>Your Appearance preferences, your recent-files list, and when any ad-free period ends — all in local app storage, never transmitted anywhere.</p>
         </div>
         <div class="card">
           <div class="card-title"><span class="dot third"></span>Handled by Google, not TrenDoc</div>
@@ -362,8 +362,9 @@
           Framework</strong> (SAF) — the system file picker you already use for Google
           Drive, Files, or any other app. When you pick a file, Android grants TrenDoc a
           one-time handle to <em>that specific file</em>; TrenDoc never requests broad
-          storage access, never scans your device for other files, and never learns your
-          folder structure.
+          storage access, and never scans your device for other files. The one exception is the optional
+          <strong>Files</strong> tab: if you choose a folder there, Android lets TrenDoc list
+          that folder (and only that folder) until you pick a different one or uninstall.
         </p>
         <p>
           Processing (merging, splitting, compressing, rendering, converting) happens
@@ -371,14 +372,14 @@
           out only through another SAF picker — a location you choose, every time. At no
           point does a file, a thumbnail, or any text extracted from a PDF get sent over
           the network. TrenDoc's <span class="mono">INTERNET</span> permission (see §3) is
-          used solely by the advertising and billing SDKs described below — the file-processing
+          used solely by the advertising, consent and billing SDKs described below — the file-processing
           code itself never calls it.
         </p>
       </section>
 
       <section id="permissions">
         <h2><span class="section-num">03</span>App permissions</h2>
-        <p>TrenDoc requests only two Android permissions, both declared in its manifest:</p>
+        <p>TrenDoc requests three Android permissions, all declared in its manifest:</p>
         <div class="overflow-wrap">
           <table class="data-table">
             <thead>
@@ -393,12 +394,16 @@
                 <td><span class="mono">ACCESS_NETWORK_STATE</span></td>
                 <td>Letting the AdMob SDK check connectivity before requesting an ad, so it can fail quietly rather than hang.</td>
               </tr>
+              <tr>
+                <td><span class="mono">CAMERA</span></td>
+                <td>Asked for only when you tap "Take Photo" in Image(s) → PDF. The photo is saved to the app's private cache, used to build your PDF, and is never transmitted. You can refuse it and still use every other feature.</td>
+              </tr>
             </tbody>
           </table>
         </div>
         <p>
           TrenDoc does <strong>not</strong> request <span class="mono">READ_EXTERNAL_STORAGE</span>,
-          <span class="mono">MANAGE_EXTERNAL_STORAGE</span>, camera, microphone, contacts,
+          <span class="mono">MANAGE_EXTERNAL_STORAGE</span>, microphone, contacts,
           location, or any other sensitive runtime permission.
         </p>
       </section>
@@ -421,8 +426,16 @@
                 <td>Remembers your Appearance choices between launches.</td>
               </tr>
               <tr>
-                <td>Whether "Remove Ads" has been purchased</td>
-                <td>Lets TrenDoc skip the ad banner without re-checking Google Play every time the app opens.</td>
+                <td>The date and time any ad-free period ends (from a purchase or a rewarded video)</td>
+                <td>Lets TrenDoc hide the ad banner until then without re-checking Google Play every time the app opens.</td>
+              </tr>
+              <tr>
+                <td>Recently opened files (name and a system file handle), and the folder chosen in the Files tab</td>
+                <td>Shows your Recents list and Files tab. Clearing Recents or uninstalling removes them.</td>
+              </tr>
+              <tr>
+                <td>Whether the first-launch introduction has been seen</td>
+                <td>So the introduction is shown only once.</td>
               </tr>
             </tbody>
           </table>
@@ -433,26 +446,33 @@
       <section id="ads">
         <h2><span class="section-num">05</span>Advertising (Google AdMob)</h2>
         <p>
-          TrenDoc shows a single small banner ad on the Home screen, served by
-          <strong>Google AdMob</strong>. To do this, the AdMob SDK running inside TrenDoc
-          communicates with Google's ad servers and may collect an advertising identifier,
+          TrenDoc shows a single small banner ad at the bottom of every screen, served by
+          <strong>Google AdMob</strong>, and — only if you choose to watch one — a
+          full-screen rewarded video ad that removes the banner for 2 hours. To do this, the AdMob SDK running inside TrenDoc
+          communicates with Google's ad servers and collects your device's <strong>advertising ID</strong>,
           coarse device and app information, and general engagement signals (for example,
           whether an ad was shown or tapped), governed by
           <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google's own privacy policy</a>.
           TrenDoc itself never sees or stores this data — it passes directly between your
           device and Google.
         </p>
-        <p>No ad is shown anywhere except the Home screen; there are no interstitial or rewarded ads in TrenDoc.</p>
+        <p>
+          There are no interstitial ads, and a video ad never plays unless you tap to watch one.
+          For users in the European Economic Area and the UK, TrenDoc uses Google's
+          <strong>User Messaging Platform</strong> to ask for consent before any ad is requested,
+          and you can change your choice later from <em>Appearance → Privacy options</em>.
+        </p>
       </section>
 
       <section id="billing">
         <h2><span class="section-num">06</span>Purchases (Google Play Billing)</h2>
         <p>
-          The optional, one-time "Remove Ads" purchase is processed entirely by
+          The optional "Remove Ads" purchase — a one-off payment for 1 day (24 hours) without the
+          banner, which does not renew and is not a subscription — is processed entirely by
           <strong>Google Play's billing system</strong> — TrenDoc never collects or sees
           your payment method, card details, or billing address. Google shares back only a
-          purchase confirmation, which TrenDoc uses to flip the local "ads removed" flag
-          described in §4. Refunds, payment history, and receipts are managed through your
+          purchase confirmation, which TrenDoc uses to record when the ad-free day ends
+          (§4). Refunds, payment history, and receipts are managed through your
           Google Play account, not through TrenDoc.
         </p>
       </section>
@@ -463,8 +483,9 @@
           TrenDoc has no analytics SDK, no crash-reporting service, and no advertising
           network of its own. The only data that leaves your device is what's described in
           §5 and §6 above — traffic between your device and Google's AdMob / Play Billing
-          services, governed by Google's policies, not TrenDoc's. TrenDoc does not sell
-          data, because it does not collect any to sell.
+          services, governed by Google's policies, not TrenDoc's. The advertising ID is shared with
+          Google AdMob for advertising; TrenDoc itself does not collect, store or sell it, and
+          never shares your documents or photos with anyone.
         </p>
       </section>
 
@@ -481,8 +502,9 @@
       <section id="choices">
         <h2><span class="section-num">09</span>Your choices</h2>
         <ul>
-          <li><strong>Remove the ad banner entirely</strong> via the one-time "Remove Ads" purchase on Home — this also stops the AdMob SDK from requesting ads at all.</li>
-          <li><strong>Opt out of personalized advertising</strong> at the OS level in <span class="mono">Settings → Privacy → Ads</span> on your Android device, which limits what Google's ad network can use your advertising ID for, independent of TrenDoc.</li>
+          <li><strong>Pause the ad banner</strong> for 1 day with the "Remove Ads" purchase, or for 2 hours by watching a rewarded video — no ads are requested during that time.</li>
+          <li><strong>Change your ad consent</strong> (EEA/UK) at any time from <em>Appearance → Privacy options</em>.</li>
+          <li><strong>Reset or delete your advertising ID</strong> at the OS level in <span class="mono">Settings → Privacy → Ads</span> on your Android device, independent of TrenDoc.</li>
           <li><strong>Revoke a file's access</strong> at any time — since TrenDoc only ever holds a one-time SAF grant, there is nothing broader to revoke in Android's permission settings.</li>
         </ul>
       </section>
