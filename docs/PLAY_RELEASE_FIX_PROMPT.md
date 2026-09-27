@@ -500,7 +500,7 @@ reader. Fix whichever ends up wrong after the 1.2 decision.
 - [ ] `res/mipmap-anydpi-v26/ic_launcher.xml` has no `<monochrome>` layer, so Android 13+ themed
       icons fall back. Add one.
 
-### 5.9 Version for release
+### 5.9 Version for release — ✅ DONE (2026-09-27: versionName 1.0.0, versionCode 1)
 
 `app/build.gradle.kts:26-27` is `versionCode = 1`, `versionName = "0.1.0"`. Fine for a first
 upload — just make it a deliberate choice rather than a leftover. Consider `1.0.0` for a public

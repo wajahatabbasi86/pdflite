@@ -65,8 +65,10 @@ android {
         // Play's annual rule requires new apps and updates to target the API level released
         // within the last year — API 36 (Android 16) as of the 31 Aug 2026 deadline.
         targetSdk = 36
+        // First public release. versionCode must increase by at least 1 on every upload to Play
+        // (it is what Play compares); versionName is the user-visible MAJOR.MINOR.PATCH.
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
