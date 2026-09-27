@@ -452,7 +452,11 @@ items in this document.
       `compileSdk = 36`.
 - [ ] `app/build.gradle.kts:96` — `var compileSdkMinor = 0` is dead code. Delete it.
 
-### 5.5 Add tests
+### 5.5 Add tests — ✅ unit tests DONE (2026-09-27); UI tests still open
+
+> 24 JVM tests across the four named areas, logic extracted into pure `PageRanges`, `RecentsCodec`
+> and `extendAdFreeUntil`. Checked that they bite: breaking Recents de-dupe or window stacking fails
+> 3 tests. README corrected — no Compose UI tests yet (need a connected device).
 
 **Problem.** JUnit, Turbine, and `kotlinx-coroutines-test` are all declared in
 `app/build.gradle.kts`, but there is **no** `src/test` or `src/androidTest` directory. The README's

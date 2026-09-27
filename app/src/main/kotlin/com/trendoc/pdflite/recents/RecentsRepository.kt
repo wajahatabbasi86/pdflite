@@ -8,8 +8,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import org.json.JSONArray
-import org.json.JSONObject
 
 private val Context.recentsDataStore by preferencesDataStore(name = "recents_preferences")
 
@@ -59,20 +57,17 @@ class RecentsRepository(private val context: Context) {
         } catch (e: SecurityException) {
         }
         context.recentsDataStore.edit { prefs ->
-            val current = parse(prefs[key]).toMutableList()
-            current.removeAll { it.uri == uri }
-            current.add(
-                0,
-                RecentEntry(uri, displayName, sizeBytes, pageCount, System.currentTimeMillis(), sourceLabel)
+            val entry = StoredRecent(
+                uri.toString(), displayName, sizeBytes, pageCount, System.currentTimeMillis(), sourceLabel
             )
-            prefs[key] = serialize(current.take(MAX_ENTRIES))
+            prefs[key] = RecentsCodec.encode(RecentsCodec.upsert(RecentsCodec.decode(prefs[key]), entry))
         }
     }
 
     suspend fun remove(uri: Uri) {
         context.recentsDataStore.edit { prefs ->
-            val current = parse(prefs[key]).filterNot { it.uri == uri }
-            prefs[key] = serialize(current)
+            val current = RecentsCodec.decode(prefs[key]).filterNot { it.uri == uri.toString() }
+            prefs[key] = RecentsCodec.encode(current)
         }
     }
 
@@ -80,42 +75,8 @@ class RecentsRepository(private val context: Context) {
         context.recentsDataStore.edit { prefs -> prefs[key] = "[]" }
     }
 
-    private fun parse(raw: String?): List<RecentEntry> {
-        if (raw.isNullOrBlank()) return emptyList()
-        return try {
-            val array = JSONArray(raw)
-            (0 until array.length()).map { i ->
-                val obj = array.getJSONObject(i)
-                RecentEntry(
-                    uri = Uri.parse(obj.getString("uri")),
-                    displayName = obj.getString("name"),
-                    sizeBytes = obj.getLong("size"),
-                    pageCount = obj.getInt("pages"),
-                    timestampMillis = obj.getLong("ts"),
-                    sourceLabel = obj.optString("source", "")
-                )
-            }
-        } catch (e: Exception) {
-            emptyList()
+    private fun parse(raw: String?): List<RecentEntry> =
+        RecentsCodec.decode(raw).map {
+            RecentEntry(Uri.parse(it.uri), it.displayName, it.sizeBytes, it.pageCount, it.timestampMillis, it.sourceLabel)
         }
-    }
-
-    private fun serialize(entries: List<RecentEntry>): String {
-        val array = JSONArray()
-        entries.forEach { entry ->
-            val obj = JSONObject()
-            obj.put("uri", entry.uri.toString())
-            obj.put("name", entry.displayName)
-            obj.put("size", entry.sizeBytes)
-            obj.put("pages", entry.pageCount)
-            obj.put("ts", entry.timestampMillis)
-            obj.put("source", entry.sourceLabel)
-            array.put(obj)
-        }
-        return array.toString()
-    }
-
-    companion object {
-        private const val MAX_ENTRIES = 20
-    }
 }

@@ -27,6 +27,8 @@ ump = "4.0.0"
 # floor. 9.x also drops the separate -ktx artifact's need for manual reconnection handling.
 billingKtx = "9.1.0"
 junit = "4.13.2"
+# Real org.json for JVM unit tests; android.jar only has stubs that throw "Stub!".
+orgJson = "20260814"
 androidxJunit = "1.2.1"
 espressoCore = "3.6.1"
 turbine = "1.2.0"
@@ -56,6 +58,7 @@ play-services-ads = { group = "com.google.android.gms", name = "play-services-ad
 ump = { group = "com.google.android.ump", name = "user-messaging-platform", version.ref = "ump" }
 billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billingKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }

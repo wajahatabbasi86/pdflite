@@ -270,49 +270,8 @@ class SplitViewModel @JvmOverloads constructor(
     /** Validates as the user types (§4 edge case: reject bad ranges before enabling the action). */
     fun onRangeInputChanged(input: String) {
         val pageCount = _uiState.value.pages.size
-        val error = validateRanges(input, pageCount)
+        val error = PageRanges.validate(input, pageCount)
         _uiState.update { it.copy(rangeInput = input, rangeError = error) }
-    }
-
-    private fun validateRanges(input: String, pageCount: Int): String? {
-        if (input.isBlank()) return null
-        val parts = input.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        if (parts.isEmpty()) return "Enter at least one page or range."
-
-        for (part in parts) {
-            val range = part.split("-").map { it.trim() }
-            when (range.size) {
-                1 -> {
-                    val page = range[0].toIntOrNull()
-                        ?: return "\"$part\" isn't a valid page number."
-                    if (page < 1 || page > pageCount) {
-                        return "Page $page is out of range (1-$pageCount)."
-                    }
-                }
-                2 -> {
-                    val start = range[0].toIntOrNull()
-                    val end = range[1].toIntOrNull()
-                    if (start == null || end == null) return "\"$part\" isn't a valid range."
-                    if (start < 1 || end > pageCount || start > end) {
-                        return "\"$part\" is out of range (1-$pageCount)."
-                    }
-                }
-                else -> return "\"$part\" isn't a valid range."
-            }
-        }
-        return null
-    }
-
-    /** Parses "1-3, 5, 7-9" into zero-based page index lists, one list per output file. */
-    private fun parseRangesToPageGroups(input: String): List<List<Int>> {
-        return input.split(",").map { it.trim() }.filter { it.isNotEmpty() }.map { part ->
-            val range = part.split("-").map { it.trim() }
-            if (range.size == 1) {
-                listOf(range[0].toInt() - 1)
-            } else {
-                (range[0].toInt() - 1..range[1].toInt() - 1).toList()
-            }
-        }
     }
 
     fun startExtract() {
@@ -348,7 +307,7 @@ class SplitViewModel @JvmOverloads constructor(
         _uiState.update { it.copy(isProcessing = true, errorMessage = null) }
 
         viewModelScope.launch {
-            val groups = parseRangesToPageGroups(input)
+            val groups = PageRanges.toPageGroups(input)
             val result = withContext(Dispatchers.IO) {
                 buildSubsetPdfs(uri, groups) { i -> "split_part_${i + 1}.pdf" }
             }

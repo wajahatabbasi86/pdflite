@@ -40,7 +40,7 @@ TrenDoc is a small, honest alternative: five core PDF tools, fully on-device, on
 | Image handling | Android `BitmapFactory`/`Bitmap` (built-in) |
 | Ads | Google AdMob (single banner placement) |
 | Payments | Google Play Billing (one-time IAP) |
-| Testing | JUnit + Turbine (unit), Compose UI Testing (UI, optional for v1) |
+| Testing | JUnit unit tests for the pure logic (`./gradlew testDebugUnitTest`): Split page ranges, the Recents list, ad-free window stacking, PDF error messages. No Compose UI tests yet. |
 | Min SDK | API 24 (Android 7.0) — raised from 21 by the 16 KB-compliant AdMob SDK line |
 | IDE | Android Studio (Quail 4 / 2026.1.4 or later stable) |
 

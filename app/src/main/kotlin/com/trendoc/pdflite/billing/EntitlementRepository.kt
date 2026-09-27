@@ -58,9 +58,16 @@ class EntitlementRepository(private val context: Context) {
      * it rather than overwriting it. */
     suspend fun grantAdFreeFor(durationMillis: Long) {
         context.entitlementDataStore.edit { prefs ->
-            val current = prefs[adsRemovedUntilKey] ?: 0L
-            val base = maxOf(current, System.currentTimeMillis())
-            prefs[adsRemovedUntilKey] = base + durationMillis
+            prefs[adsRemovedUntilKey] =
+                extendAdFreeUntil(prefs[adsRemovedUntilKey], System.currentTimeMillis(), durationMillis)
         }
     }
 }
+
+/**
+ * The new ad-free expiry after granting [durationMillis]: added to whichever is later, now or
+ * the current expiry. So a second video (or a purchase) while a window is running stacks onto
+ * it instead of cutting it short, and a long-expired window starts fresh from now.
+ */
+internal fun extendAdFreeUntil(currentUntil: Long?, now: Long, durationMillis: Long): Long =
+    maxOf(currentUntil ?: 0L, now) + durationMillis

@@ -189,6 +189,7 @@ dependencies {
     implementation(libs.billing.ktx)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
 
