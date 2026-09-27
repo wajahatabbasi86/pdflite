@@ -16,7 +16,7 @@ Copy these into **Play Console → App content → Data safety**. Every answer h
 | **Device or other IDs** (advertising ID) | Yes | Yes — Google AdMob | Advertising or marketing | No (required for ads) |
 | **App interactions** (ad impressions/taps, via AdMob) | Yes | Yes — Google AdMob | Advertising or marketing, Analytics | No |
 | **Diagnostics** (AdMob SDK crash/performance data) | Yes | Yes — Google AdMob | Advertising or marketing | No |
-| **Purchase history** | Yes (via Google Play Billing) | No | App functionality | Yes |
+| **Purchase history** (1-day Remove Ads, optional donations) | Yes (via Google Play Billing) | No | App functionality | Yes |
 | Files and docs | **No** — processed on-device only | No | — | — |
 | Photos and videos | **No** — camera photos stay in app-private cache | No | — | — |
 | Personal info, location, contacts, messages, audio, health, financial info | **No** | No | — | — |

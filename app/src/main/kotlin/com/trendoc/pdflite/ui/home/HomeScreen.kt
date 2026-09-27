@@ -99,9 +99,9 @@ private val bigTool = ToolCard(
 private val documentTools = listOf(
     ToolCard("Merge PDFs", "Combine multiple files with instant page reorder", "Fast", "Organize", "merge", Color(0xFFB7091B), Icons.Filled.SwapVert),
     ToolCard("Split & Extract", "Extract specific single pages or custom ranges", "Custom range", "Select Pages", "split", Color(0xFF4C5FD5), Icons.AutoMirrored.Filled.CallSplit),
-    ToolCard("Compress", "Reduce file size without quality loss", "Up to −88%", "Reduce Size", "compress", Color(0xFF2F8F82), Icons.Filled.Compress),
+    ToolCard("Compress", "Shrink files by re-encoding embedded images", "Size preview", "Reduce Size", "compress", Color(0xFF2F8F82), Icons.Filled.Compress),
     ToolCard("Image to PDF", "Convert photo gallery with fit-to-page margins", "JPG/PNG", "Batch Pick", "image_to_pdf", Color(0xFFC98A2E), Icons.Filled.PermMedia),
-    ToolCard("PDF to Image", "Export rendered pages as high-resolution PNGs", "300 DPI", "Render", "pdf_to_image", Color(0xFF7A4B8A), Icons.Filled.Image),
+    ToolCard("PDF to Image", "Export pages as JPG or PNG images", "Up to 2×", "Render", "pdf_to_image", Color(0xFF7A4B8A), Icons.Filled.Image),
     // Structured AcroForm fields only (§10) — not freeform text editing anywhere on the page.
     ToolCard("Fill Forms", "Fill in existing PDF form fields", "No subscription", "Fill Fields", "fill_forms", Color(0xFF4A8B5C), Icons.Filled.EditNote),
     // Works where Fill Forms cannot: a scanned claim or application form carries no AcroForm
@@ -575,7 +575,7 @@ private fun DocumentUtilityCard(
 
 /**
  * The flat/utilitarian List layout — a tinted circular icon avatar, title + a small colored
- * badge chip (e.g. "Multi-file", "Up to −88%"), a description line, and a trailing chevron,
+ * badge chip (e.g. "Multi-file", "Size preview"), a description line, and a trailing chevron,
  * on a plain, elevated white card. Each tool keeps its own identity tint for both its avatar
  * and its badge (not the single accent color) — Merge reads red, Split reads indigo, and so
  * on, the same variety as Bento's tiles.

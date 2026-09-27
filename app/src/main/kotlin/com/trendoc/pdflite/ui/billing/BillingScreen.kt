@@ -79,18 +79,20 @@ fun BillingScreen(onDone: () -> Unit, viewModel: BillingViewModel = viewModel())
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            // The rewarded video is an AdMob ad, not a Play purchase, so it stays available
+            // when billing is not — it used to sit inside the billing branch and vanish with it.
+            OptionCard(
+                title = "Watch a video",
+                subtitle = "2 hours ad-free, free",
+                buttonText = if (rewardedAdReady) "Watch" else "Loading…",
+                enabled = rewardedAdReady,
+                onClick = { (context as? Activity)?.let(viewModel::watchRewardedAd) }
+            )
+
             when {
                 uiState.billingUnavailable -> BillingUnavailableCard()
                 uiState.isConnecting -> LoadingIndicator()
                 else -> {
-                    OptionCard(
-                        title = "Watch a video",
-                        subtitle = "2 hours ad-free, free",
-                        buttonText = if (rewardedAdReady) "Watch" else "Loading…",
-                        enabled = rewardedAdReady,
-                        onClick = { (context as? Activity)?.let(viewModel::watchRewardedAd) }
-                    )
-
                     GradientButton(
                         text = if (uiState.isPurchasing) {
                             "Processing…"
@@ -189,7 +191,7 @@ private fun BillingUnavailableCard() {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Billing isn't available right now", style = MaterialTheme.typography.titleSmall)
             Text(
-                "Make sure you're signed in to the Play Store and connected to the internet, then come back to this screen. The ad banner stays visible until a purchase can complete.",
+                "Make sure you're signed in to the Play Store and connected to the internet, then come back to this screen. Buying is unavailable until then — watching a video above still works.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

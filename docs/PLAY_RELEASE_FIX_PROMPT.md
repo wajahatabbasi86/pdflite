@@ -126,6 +126,16 @@ is hosted."* Play requires a live, publicly reachable URL.
 
 ---
 
+### Phase 1 on-device verification (2026-09-27)
+
+Walked the debug build against every listing/policy claim. Found and fixed on
+`phase1-verification-fixes`: the free "Watch a video" option was hidden whenever Play Billing was
+unavailable; Home claimed "300 DPI" (max is 2×, ≈144 DPI), "without quality loss" and an invented
+"Up to −88%" for Compress; the donation purchases were undisclosed; the launcher name was
+"PDF Lite Viewer". Confirmed: first-launch introduction; banner on screens, none on the
+introduction; video grants 2 h and removes the banner; CAMERA is requested only on "Take Photo";
+"Privacy options" hidden outside the EEA; no ad requests when consent can't be obtained.
+
 ### 1.4 Replace Google's test AdMob IDs with real ones
 
 **Problem.** Three of Google's public test IDs are hardcoded and would ship to production:
@@ -395,7 +405,7 @@ prevents Play's translation tooling from working.
 - [ ] Use plurals (`<plurals>`) for page/file counts rather than string concatenation.
 - [ ] Typography already uses `sp` via `MaterialTheme`, so font scaling works — leave that alone.
 
-### 5.2 Fix the branding mismatch
+### 5.2 Fix the branding mismatch — ✅ DONE (2026-09-27, during Phase 1 verification: `app_name` = TrenDoc)
 
 `res/values/strings.xml` sets `app_name` to **"PDF Lite Viewer"**, but the package, store listing,
 privacy policy, and README all say **TrenDoc**. The launcher label and the Play listing title must

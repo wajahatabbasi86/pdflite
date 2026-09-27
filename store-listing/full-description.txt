@@ -5,7 +5,7 @@ WHAT YOU CAN DO
 • Split / Extract pages — pull out specific pages or burst a document into ranges
 • Compress PDF — shrink file size by re-encoding embedded images, with an honest before/after size (never a fabricated number)
 • Image(s) → PDF — turn photos or scans into a PDF, one page per image, or take a photo with the camera
-• PDF → Image(s) — export pages as high-resolution JPG or PNG
+• PDF → Image(s) — export pages as JPG or PNG, at up to twice the page's standard resolution
 • View PDF — open and read any PDF, including straight from your file manager's "Open with" menu, with pinch-to-zoom
 • Fill Forms — type into a PDF's fillable form fields and save a flattened copy
 • Add Text — tap anywhere on a page, including a scanned paper form with no fillable fields, and type onto it
@@ -32,6 +32,6 @@ WHERE YOUR FILES ACTUALLY GO: NOWHERE ELSE
 WHO IT'S FOR
 Anyone who needs to quickly merge a few PDFs before emailing them, pull one page out of a long document, shrink a scan-heavy file before uploading it, fill in a form, or turn a stack of photos into a single PDF — without wading through accounts or a paywall to do it.
 
-TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. Every tool is free to use.
+TrenDoc keeps a short, focused list of tools done well, rather than a long list of tools half-locked behind a subscription. Every tool is free to use. If you'd like to support development, there is an optional one-off donation in the app — it unlocks nothing and changes nothing.
 
 TrenDoc is built by TrenBridge IT.
