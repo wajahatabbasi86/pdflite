@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup (Android 11 and lower). Appearance and onboarding preferences are safe to restore;
+  these three are not:
+  - recents / files_browser hold content URIs of the user's own documents — never leave the device
+    (privacy policy §4: "None of it is synced to a server");
+  - entitlement is an ad-free expiry earned on this device, not something to carry to another.
+  Keep in step with data_extraction_rules.xml.
+-->
+<full-backup-content>
+    <exclude domain="file" path="datastore/recents_preferences.preferences_pb" />
+    <exclude domain="file" path="datastore/files_browser_preferences.preferences_pb" />
+    <exclude domain="file" path="datastore/entitlement_preferences.preferences_pb" />
+</full-backup-content>

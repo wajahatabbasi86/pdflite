@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ equivalent of backup_rules.xml, covering both cloud backup and
+     device-to-device transfer. Keep the two files in step. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="datastore/recents_preferences.preferences_pb" />
+        <exclude domain="file" path="datastore/files_browser_preferences.preferences_pb" />
+        <exclude domain="file" path="datastore/entitlement_preferences.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="datastore/recents_preferences.preferences_pb" />
+        <exclude domain="file" path="datastore/files_browser_preferences.preferences_pb" />
+        <exclude domain="file" path="datastore/entitlement_preferences.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>

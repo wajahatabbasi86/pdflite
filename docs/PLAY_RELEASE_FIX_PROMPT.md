@@ -308,7 +308,11 @@ overlay placement correct against a page that may not be resident yet.
 
 ## Phase 3 — Security hardening
 
-### 3.1 Restrict backup — currently leaks document URIs to Google Drive
+### 3.1 Restrict backup — currently leaks document URIs to Google Drive — ✅ DONE (2026-09-27)
+
+> Verified in the built APK (aapt2): both attributes wired, 6 excludes (3 files × cloud + transfer),
+> paths match the on-device `files/datastore/*.preferences_pb`. `bmgr backupnow` not run: Backup
+> Manager is disabled on the test phone and enabling it is a system-setting change.
 
 **Problem.** `AndroidManifest.xml:24` sets `allowBackup="true"` with **no** `dataExtractionRules`
 (required for targetSdk 31+) and no `fullBackupContent`. Result: the ad-free entitlement **and the
