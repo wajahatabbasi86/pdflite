@@ -94,7 +94,7 @@ So the default fix is to correct the listing, not the code.
 
 > Policy text corrected (CAMERA row, advertising ID, every-screen banner, rewarded video, 24h purchase,
 > recents/folder/onboarding stored locally, UMP consent). Console answers in `store-listing/data-safety.md`.
-> **Still manual:** host the policy (the domain `trenbridgeit.com` did not resolve on 2026-09-27) and
+> **Still manual:** host the policy (neither `trenbridgeit.com` nor the new `trenovasys.com` resolved on 2026-09-27) and
 > enter the Data Safety answers in Play Console.
 
 **Problem A — the policy states something false.** `store-listing/privacy-policy.html` §3 says
@@ -108,7 +108,7 @@ identifiers are shared. AdMob collects the **Advertising ID**. Your Data Safety 
 the most common rejection causes on Play.
 
 **Problem C — the URL may not be live.** `ui/settings/AppearanceScreen.kt:194` points at
-`https://trenbridgeit.com/trendoc/privacy-policy.html`, with a code comment saying *"Set once …
+`https://trenovasys.com/trendoc/privacy-policy.html`, with a code comment saying *"Set once …
 is hosted."* Play requires a live, publicly reachable URL.
 
 **Do:**

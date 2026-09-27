@@ -62,7 +62,7 @@ def pill(x, y, label):
 
 px_cursor = text_x
 py = 320
-for label in ("No pop-ups", "No subscription", "Nothing shared"):
+for label in ("No pop-ups", "No subscription", "Files stay on device"):
     px_cursor = pill(px_cursor, py, label) + 14
 
 # --- "by Trenovasys" byline, bottom-right ---

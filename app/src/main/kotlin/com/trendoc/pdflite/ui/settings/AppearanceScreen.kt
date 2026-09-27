@@ -218,7 +218,7 @@ fun AppearanceScreen(onBack: () -> Unit) {
 
 /** Set once the privacy policy page (store-listing/privacy-policy.html) is hosted —
  * see docs on Play Console's "Privacy policy" requirement. */
-private const val PRIVACY_POLICY_URL = "https://trenbridgeit.com/trendoc/privacy-policy.html"
+private const val PRIVACY_POLICY_URL = "https://trenovasys.com/trendoc/privacy-policy.html"
 
 @Composable
 private fun PrivacyPolicyRow(

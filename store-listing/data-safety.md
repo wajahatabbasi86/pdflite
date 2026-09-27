@@ -29,6 +29,6 @@ Notes:
 
 ## Other App content items
 - **Ads:** Yes, the app contains ads.
-- **Privacy policy URL:** `https://trenbridgeit.com/trendoc/privacy-policy.html` — must be live
-  before submitting (as of 2026-09-27 the domain does not resolve).
+- **Privacy policy URL:** `https://trenovasys.com/trendoc/privacy-policy.html` — must be live
+  before submitting (as of 2026-09-27 trenovasys.com does not resolve).
 - **Target audience:** 18+ / general audience, not directed at children (matches policy §8).
