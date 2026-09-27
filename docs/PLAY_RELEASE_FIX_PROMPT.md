@@ -330,7 +330,11 @@ This directly contradicts the privacy policy's *"None of it is synced to a serve
 
 ---
 
-### 3.2 Clean up camera captures
+### 3.2 Clean up camera captures — ✅ DONE (2026-09-27)
+
+> Deleted on cancel, on remove, and when the Image(s) → PDF screen's ViewModel is cleared; stale (>24h)
+> captures swept on app start (verified on device: 2-day-old file removed, fresh one kept). Deletes only
+> accept this app's own FileProvider capture Uris.
 
 **Problem.** `util/CameraCaptureUtils.kt:22` writes photos to `cacheDir/camera_captures/` and
 nothing ever deletes them. These are photos of the user's documents accumulating indefinitely.

@@ -12,6 +12,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trendoc.pdflite.recents.RecentsRepository
+import com.trendoc.pdflite.util.CameraCaptureUtils
 import com.trendoc.pdflite.util.PdfErrorMessages
 import com.trendoc.pdflite.util.SafFileUtils
 import com.tom_roush.pdfbox.pdmodel.PDDocument
@@ -191,6 +192,15 @@ class ImageToPdfViewModel(application: Application) : AndroidViewModel(applicati
 
     fun removeImage(uri: Uri) {
         _uiState.update { it.copy(images = it.images.filterNot { img -> img.uri == uri }) }
+        CameraCaptureUtils.deleteIfCapture(getApplication(), uri)
+    }
+
+    /** Leaving the screen ends the session, so its camera photos go with it. Kept until then
+     * rather than deleted after saving, so the user can still re-order and create again. */
+    override fun onCleared() {
+        super.onCleared()
+        val context = getApplication<Application>()
+        _uiState.value.images.forEach { CameraCaptureUtils.deleteIfCapture(context, it.uri) }
     }
 
     /** Rotates one image a further 90° clockwise (cumulative — four taps return to normal)

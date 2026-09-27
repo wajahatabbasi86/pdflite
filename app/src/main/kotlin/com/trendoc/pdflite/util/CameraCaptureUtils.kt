@@ -18,9 +18,46 @@ import java.util.UUID
  */
 object CameraCaptureUtils {
 
+    private const val AUTHORITY = "com.trendoc.pdflite.fileprovider"
+    private const val DIR = "camera_captures"
+    private const val PREFIX = "capture_"
+
+    /** Anything older than this is left over from a session that ended without cleaning up
+     * (process killed, crash) and is swept on the next launch. */
+    private const val STALE_AFTER_MILLIS = 24L * 60 * 60 * 1000
+
     fun newCaptureUri(context: Context): Uri {
-        val dir = File(context.cacheDir, "camera_captures").apply { mkdirs() }
-        val file = File(dir, "capture_${UUID.randomUUID()}.jpg")
-        return FileProvider.getUriForFile(context, "com.trendoc.pdflite.fileprovider", file)
+        val file = File(captureDir(context).apply { mkdirs() }, "$PREFIX${UUID.randomUUID()}.jpg")
+        return FileProvider.getUriForFile(context, AUTHORITY, file)
+    }
+
+    /**
+     * Deletes the photo behind [uri] if — and only if — it is one of this app's own captures.
+     * These are photos of the user's documents; they should live exactly as long as the
+     * Image(s) → PDF session using them, not accumulate in cache indefinitely.
+     * Gallery-picked Uris belong to other apps and are ignored.
+     */
+    fun deleteIfCapture(context: Context, uri: Uri) {
+        captureFile(context, uri)?.delete()
+    }
+
+    /** Removes captures left behind by earlier sessions. Call once on app start. */
+    fun sweepStale(context: Context, now: Long = System.currentTimeMillis()) {
+        captureDir(context).listFiles()?.forEach { file ->
+            if (now - file.lastModified() > STALE_AFTER_MILLIS) file.delete()
+        }
+    }
+
+    private fun captureDir(context: Context) = File(context.cacheDir, DIR)
+
+    /** Maps a FileProvider Uri back to its file, refusing anything that isn't a plain capture
+     * file name in the capture directory — so a crafted Uri can't point the delete elsewhere. */
+    private fun captureFile(context: Context, uri: Uri): File? {
+        if (uri.scheme != "content" || uri.authority != AUTHORITY) return null
+        val segments = uri.pathSegments
+        if (segments.size != 2 || segments[0] != DIR) return null
+        val name = segments[1]
+        if (!name.startsWith(PREFIX) || name.contains('/') || name.contains("..")) return null
+        return File(captureDir(context), name)
     }
 }

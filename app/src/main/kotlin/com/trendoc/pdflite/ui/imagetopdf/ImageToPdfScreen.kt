@@ -100,6 +100,9 @@ fun ImageToPdfScreen(
         pendingCaptureUri = null
         if (success && uri != null) {
             viewModel.onImagesPicked(listOf(uri))
+        } else if (uri != null) {
+            // Cancelled: the camera may still have created an empty file.
+            CameraCaptureUtils.deleteIfCapture(context, uri)
         }
     }
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
